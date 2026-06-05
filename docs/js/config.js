@@ -6,7 +6,7 @@ const ENV = "development";
 
 const GAS_URLS = {
     production:  "https://script.google.com/macros/s/AKfycbyzeUMTM_AK_8v00OUNz_BivDg-tL8GBhQclvMkUjLO5v60Xy4MlfyNjBev1xMT4gEj/exec",
-    development: "★テスト用GASのデプロイURLをここに入れる★"
+    development: "https://script.google.com/macros/s/AKfycbzxirixMouit12f5rfZmbBn59N4tUuZYmX4ZSw7diJOAr0-Hem9uMXCv6MUuzIWb7eA/exec"
 };
 
 window.GAS_URL = GAS_URLS[ENV];
