@@ -2,7 +2,6 @@
  * イベント一覧と集計の取得
  */
 
-//イベント取得
 function getEventsWithStatsGAS(userId) {
   const ss = getSS();
 
@@ -14,16 +13,12 @@ function getEventsWithStatsGAS(userId) {
   const answersData = answerSheet.getDataRange().getValues();
   const usersData = userSheet.getDataRange().getValues();
 
-  // ================================
-  //   USERS ヘッダーマップ
-  // ================================
   const UHEAD = usersData[0];
   const U = {};
   UHEAD.forEach((h, i) => U[h] = i);
 
   const uid = Number(userId);
 
-  // アクティブユーザーIDと名前の対応
   const activeUsers = [];
   const userIdNameMap = {};
 
@@ -31,19 +26,16 @@ function getEventsWithStatsGAS(userId) {
     const id = Number(r[U["userId"]]);
     const name = r[U["storedName"]];
     const status = r[U["status"]];
+    const createdAt = r[U["created_at"]];
 
     userIdNameMap[id] = name;
-    if (status === "active") activeUsers.push({ id, name });
+    if (status === "active") activeUsers.push({ id, name, createdAt });
   });
 
-  // ================================
-  //   EVENTS ヘッダーマップ
-  // ================================
   const EHEAD = eventsData[0];
   const E = {};
   EHEAD.forEach((h, i) => E[h] = i);
 
-  // イベント一覧
   const events = eventsData.slice(1).map(row => {
     const timeValue = row[E["time"]];
     return {
@@ -60,14 +52,10 @@ function getEventsWithStatsGAS(userId) {
     };
   }).filter(ev => ev.eventId);
 
-  // ================================
-  //   ANSWERS ヘッダーマップ
-  // ================================
   const AHEAD = answersData[0];
   const A = {};
   AHEAD.forEach((h, i) => A[h] = i);
 
-  // 回答データ eventId => 配列
   const answersMap = {};
   answersData.slice(1).forEach(row => {
     const eventId = Number(row[A["eventId"]]);
@@ -78,12 +66,19 @@ function getEventsWithStatsGAS(userId) {
     answersMap[eventId].push({ userId: user, status });
   });
 
-  // ================================
-  //   集計 ＋ 詳細（名前リスト）
-  // ================================
   const result = events.map(ev => {
     const eid = ev.eventId;
     const list = answersMap[eid] || [];
+
+    // イベント日付（比較用）
+    const evDate = ev.date instanceof Date ? ev.date : new Date(String(ev.date).replace(/\//g, "-"));
+
+    // イベント日時点で登録済みのメンバーのみ対象
+    const eligibleUsers = activeUsers.filter(u => {
+      if (!u.createdAt) return true;
+      const regDate = u.createdAt instanceof Date ? u.createdAt : new Date(String(u.createdAt).replace(/\//g, "-"));
+      return regDate <= evDate;
+    });
 
     let yes = 0, no = 0, na = 0;
     let myStatus = "未回答";
@@ -94,7 +89,7 @@ function getEventsWithStatsGAS(userId) {
     const answerMap = {};
     list.forEach(a => answerMap[a.userId] = a.status);
 
-    activeUsers.forEach(u => {
+    eligibleUsers.forEach(u => {
       const status = answerMap[u.id];
 
       if (!status) {
@@ -113,11 +108,10 @@ function getEventsWithStatsGAS(userId) {
     });
 
     const answered = [...yesNames, ...noNames];
-    const naNames = activeUsers
+    const naNames = eligibleUsers
       .filter(u => !answered.includes(u.name))
       .map(u => u.name);
 
-    // 日付処理
     let dateStr = "";
     let sortKey = 0;
 
@@ -147,7 +141,6 @@ function getEventsWithStatsGAS(userId) {
   return result.sort((a, b) => a.sortKey - b.sortKey);
 }
 
-//練習日取得
 function getPracticeWithStatsGAS(userId) {
   const ss = getSS();
 
@@ -159,16 +152,12 @@ function getPracticeWithStatsGAS(userId) {
   const answersData  = answerSheet.getDataRange().getValues();
   const usersData    = userSheet.getDataRange().getValues();
 
-  // -----------------------
-  // users ヘッダーマップ
-  // -----------------------
   const UHEAD = usersData[0];
   const U = {};
   UHEAD.forEach((h,i)=>U[h]=i);
 
   const uid = Number(userId);
 
-  // active user（id と名前両方必要）
   const activeUsers = usersData
     .slice(1)
     .filter(r => r[U["status"]] === "active")
@@ -177,22 +166,17 @@ function getPracticeWithStatsGAS(userId) {
       name: r[U["storedName"]]
     }));
 
-  // -----------------------
-  // PRACTICES ヘッダ
-  // -----------------------
   const PHEAD = practiceData[0];
   const P = {};
   PHEAD.forEach((h,i)=>P[h]=i);
 
   const practices = practiceData.slice(1).map(row => {
-    // start 列があれば使い、なければ time 列にフォールバック
     const startCol = P["start"] !== undefined ? P["start"] : P["time"];
     const startVal = row[startCol];
     const startStr = startVal instanceof Date
       ? Utilities.formatDate(startVal, "Asia/Tokyo", "HH:mm")
       : String(startVal || "");
 
-    // end 列があれば取得
     const endStr = P["end"] !== undefined
       ? (() => {
           const v = row[P["end"]];
@@ -214,9 +198,6 @@ function getPracticeWithStatsGAS(userId) {
     };
   }).filter(pr => pr.practiceId);
 
-  // -----------------------
-  // ANSWERS ヘッダ
-  // -----------------------
   const AHEAD = answersData[0];
   const A = {};
   AHEAD.forEach((h,i)=>A[h]=i);
@@ -231,9 +212,6 @@ function getPracticeWithStatsGAS(userId) {
     });
   });
 
-  // -----------------------
-  // 集計（休む／遅れるを「名前の配列」で返す）
-  // -----------------------
   const result = practices.map(pr=>{
     const pid  = Number(pr.practiceId);
     const list = answersMap[pid] || [];
@@ -242,11 +220,9 @@ function getPracticeWithStatsGAS(userId) {
     let late   = [];
     let myStatus = "";
 
-    // userId → status の辞書
     const answerMap = {};
     list.forEach(a => answerMap[a.userId] = a.status);
 
-    // active user の名前一覧を作りながら分類
     activeUsers.forEach(u=>{
       const status = answerMap[u.id];
 
@@ -256,7 +232,6 @@ function getPracticeWithStatsGAS(userId) {
       if (u.id === uid && status) myStatus = status;
     });
 
-    // 日付加工
     let sortKey = 0;
     let dateStr = "";
     if (pr.date instanceof Date) {
@@ -279,9 +254,6 @@ function getPracticeWithStatsGAS(userId) {
   return result.sort((a,b)=>a.sortKey - b.sortKey);
 }
 
-/**
- * 回答の更新
- */
 function updateEventResponseGAS(eventId, userId, status) {
   const ss = getSS();
 
@@ -292,16 +264,10 @@ function updateEventResponseGAS(eventId, userId, status) {
   const users = userSheet.getDataRange().getValues();
   const now = new Date();
 
-  // ============================
-  // ヘッダーマップ（users）
-  // ============================
   const UHEAD = users[0];
   const U = {};
   UHEAD.forEach((h, i) => U[h] = i);
 
-  // ============================
-  // ヘッダーマップ（answers）
-  // ============================
   const AHEAD = answers[0];
   const A = {};
   AHEAD.forEach((h, i) => A[h] = i);
@@ -309,33 +275,22 @@ function updateEventResponseGAS(eventId, userId, status) {
   const eid = Number(eventId);
   const uid = Number(userId);
 
-  // ============================
-  // activeユーザー取得
-  // ============================
   const activeUsers = users.slice(1)
     .filter(r => r[U["status"]] === "active")
     .map(r => ({ id: Number(r[U["userId"]]), name: r[U["storedName"]] }));
 
-  // ============================
-  // 既存回答の探索
-  // ============================
   let foundRow = -1;
 
   for (let i = 1; i < answers.length; i++) {
     const r = answers[i];
     if (Number(r[A["eventId"]]) === eid && Number(r[A["userId"]]) === uid) {
-      foundRow = i + 1; // GASは1基準
+      foundRow = i + 1;
       break;
     }
   }
 
-  // ============================
-  // 更新 or 新規追加
-  // ============================
   if (foundRow !== -1) {
-    // status
     answerSheet.getRange(foundRow, A["status"] + 1).setValue(status);
-    // updated_at
     answerSheet.getRange(foundRow, A["updated_at"] + 1).setValue(now);
   } else {
     const newRow = [];
@@ -345,7 +300,6 @@ function updateEventResponseGAS(eventId, userId, status) {
     newRow[A["created_at"]] = now;
     newRow[A["updated_at"]] = now;
 
-    // 空セル対策：列数揃える
     const rowArr = Array(answerSheet.getLastColumn()).fill("");
     Object.keys(A).forEach(key => {
       rowArr[A[key]] = newRow[A[key]] || "";
@@ -354,9 +308,6 @@ function updateEventResponseGAS(eventId, userId, status) {
     answerSheet.appendRow(rowArr);
   }
 
-  // ============================
-  // 最新回答で集計
-  // ============================
   const latest = answerSheet.getDataRange().getValues();
 
   const yes = [], no = [], na = [];
@@ -386,16 +337,10 @@ function updatePracticeResponseGAS(practiceId, userId, status) {
   const users   = userSheet.getDataRange().getValues();
   const now = new Date();
 
-  // ============================
-  // ヘッダーマップ（users）
-  // ============================
   const UHEAD = users[0];
   const U = {};
   UHEAD.forEach((h, i) => U[h] = i);
 
-  // ============================
-  // ヘッダーマップ（answers）
-  // ============================
   const AHEAD = answers[0];
   const A = {};
   AHEAD.forEach((h, i) => A[h] = i);
@@ -403,9 +348,6 @@ function updatePracticeResponseGAS(practiceId, userId, status) {
   const pid = Number(practiceId);
   const uid = Number(userId);
 
-  // ============================
-  // activeユーザー
-  // ============================
   const activeUsers = users.slice(1)
     .filter(r => r[U["status"]] === "active")
     .map(r => ({
@@ -413,26 +355,19 @@ function updatePracticeResponseGAS(practiceId, userId, status) {
       name: r[U["storedName"]]
     }));
 
-  // ============================
-  // 既存回答の探索
-  // ============================
   let foundRow = -1;
 
   for (let i = 1; i < answers.length; i++) {
     const r = answers[i];
     if (Number(r[A["practiceId"]]) === pid && Number(r[A["userId"]]) === uid) {
-      foundRow = i + 1; // GASは1基準
+      foundRow = i + 1;
       break;
     }
   }
 
-  // ============================
-  // 更新 or 新規追加
-  // ============================
   if (foundRow !== -1) {
     answerSheet.getRange(foundRow, A["status"] + 1).setValue(status);
     answerSheet.getRange(foundRow, A["updated_at"] + 1).setValue(now);
-
   } else {
     const newRow = [];
     newRow[A["practiceId"]] = pid;
@@ -449,9 +384,6 @@ function updatePracticeResponseGAS(practiceId, userId, status) {
     answerSheet.appendRow(rowArr);
   }
 
-  // ============================
-  // 最新回答で集計
-  // ============================
   const latest = answerSheet.getDataRange().getValues();
 
   const absent = [];
@@ -472,10 +404,6 @@ function updatePracticeResponseGAS(practiceId, userId, status) {
   return { absent, late };
 }
 
-
-/**
- * Gemini API チャット (OpenAIからの移行版)
- */
 function chatAI(userMessage) {
   const apiKey = PropertiesService.getScriptProperties().getProperty('GEMINI_API_KEY');
   if (!apiKey) {
@@ -485,7 +413,6 @@ function chatAI(userMessage) {
   const rawEvents = getEventsWithStatsGAS("AI_SYSTEM");
   const today = Utilities.formatDate(new Date(), "Asia/Tokyo", "yyyy/MM/dd");
 
-  // 🔽 --- イベントを最小限だけのテキストに変換（超軽量） ---
   const events = rawEvents.map(e => {
     const d = e.date || "";
     const t = e.title || "";
@@ -506,7 +433,6 @@ ${events}
 ユーザーの質問にフレンドリーに、イベント情報は正確に回答してください。
 `;
 
-  // --- Gemini API ---
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
   const payload = {
@@ -552,20 +478,16 @@ ${events}
   }
 }
 
-//無料版ローカル
 function chatAI_local(userMessage) {
   const rawEvents = getEventsWithStatsGAS("AI_SYSTEM");
   const today = Utilities.formatDate(new Date(), "Asia/Tokyo", "yyyy/MM/dd");
 
-  // --- キーワードによる返答 ---
   const msg = userMessage.toLowerCase();
 
-  // 今日の日付を返す
   if (msg.includes("今日") && msg.includes("日")) {
     return { success: true, reply: `今日は ${today} じゃよ。` };
   }
 
-  // 次のイベント
   if (msg.includes("次") && msg.includes("イベント")) {
     const e = rawEvents[0];
     if (e) return {
@@ -575,20 +497,17 @@ function chatAI_local(userMessage) {
     return { success: true, reply: "今のところ予定はないのう。" };
   }
 
-  //「獅子」「天狗」「ひょっとこ」などのキーワード応答
   if (msg.includes("天狗")) {
     return { success: true, reply: "天狗は足が速くてかっこいいんじゃ！" };
   }
   if (msg.includes("ひょっとこ")) {
-    return { success: true, reply: "ひょっとこは愛嬌たっぷりで人気じゃのう！" };
+    return { success: true, reply: "ひょっとこは愛嫉たっぷりで人気じゃのう！" };
   }
 
-  // 雑談
   if (msg.includes("こんにちは") || msg.includes("やあ")) {
     return { success: true, reply: "おう、こんにちは！ししまるじゃ。" };
   }
 
-  // デフォルト
   return {
     success: true,
     reply: "すまんのう、うまく答えられん質問じゃった…"
@@ -613,53 +532,33 @@ function getMemberRawData() {
   const users = usersSheet.getDataRange().getValues();
   const children = childrenSheet.getDataRange().getValues();
 
-  // ==================================
-  // ヘッダーマップ生成（USERS）
-  // ==================================
   const UHEAD = users[0];
   const U = {};
   UHEAD.forEach((h, i) => U[h] = i);
 
-  // ==================================
-  // ヘッダーマップ生成（CHILDREN）
-  // ==================================
   const CHEAD = children[0];
   const C = {};
   CHEAD.forEach((h, i) => C[h] = i);
 
   const raw = [];
 
-  // ==================================
-  // USERS 読み込み
-  // ==================================
   for (let i = 1; i < users.length; i++) {
     const row = users[i];
 
     const userId          = row[U["userId"]];
     const name            = row[U["storedName"]];
     const role            = row[U["role"]];
-    const status          = row[U["status"]]; // active / hold
+    const status          = row[U["status"]];
     const position        = row[U["position"]];
-    const phone           = row[U["phone"]];
-    const prefecture      = row[U["prefecture"]];
-    const city            = row[U["city"]];
-    const addressDetail   = row[U["addressDetail"]];
-    const birthday        = row[U["birthday"]];
 
-    // active または hold 以外はスキップ
     if (status !== "active" && status !== "hold") continue;
 
-    // ==================================
-    // CHILDREN の紐付け
-    // ==================================
     const kids = children
       .slice(1)
       .filter(c => Number(c[C["userId"]]) === Number(userId))
       .map(c => ({
         childId: c[C["childId"]],
         childName: c[C["childName"]],
-
-        // 親が hold → 子も強制 hold
         status: status === "hold" ? "hold" : c[C["status"]]
       }));
 
@@ -702,7 +601,6 @@ function formatMembersAdmin(raw) {
   }));
 }
 
-// -----------------ユーザー承認----------------------//
 function approveMemberAPI(userId) {
   const usersSheet = SHEETS.USERS();
   const childrenSheet = SHEETS.CHILDREN();
@@ -710,19 +608,14 @@ function approveMemberAPI(userId) {
   const users = usersSheet.getDataRange().getValues();
   const children = childrenSheet.getDataRange().getValues();
 
-  // ===== USERS ヘッダーマップ =====
   const UHEAD = users[0];
   const U = {};
   UHEAD.forEach((h, i) => U[h] = i);
 
-  // ===== CHILDREN ヘッダーマップ =====
   const CHEAD = children[0];
   const C = {};
   CHEAD.forEach((h, i) => C[h] = i);
 
-  // ------------------------
-  // 親ステータスを active に変更
-  // ------------------------
   for (let i = 1; i < users.length; i++) {
     if (String(users[i][U["userId"]]) === String(userId)) {
       usersSheet.getRange(i + 1, U["status"] + 1).setValue("active");
@@ -730,9 +623,6 @@ function approveMemberAPI(userId) {
     }
   }
 
-  // ------------------------
-  // 子どもステータスも active に変更
-  // ------------------------
   for (let i = 1; i < children.length; i++) {
     if (String(children[i][C["userId"]]) === String(userId)) {
       childrenSheet.getRange(i + 1, C["status"] + 1).setValue("active");
@@ -742,7 +632,6 @@ function approveMemberAPI(userId) {
   return { success: true };
 }
 
-// -----------------ユーザー削除（ステータス変更）----------------------//
 function deleteMemberAPI(userId) {
   const usersSheet = SHEETS.USERS();
   const childrenSheet = SHEETS.CHILDREN();
@@ -750,28 +639,20 @@ function deleteMemberAPI(userId) {
   const users = usersSheet.getDataRange().getValues();
   const children = childrenSheet.getDataRange().getValues();
 
-  // ===== USERS ヘッダーマップ =====
   const UHEAD = users[0];
   const U = {};
   UHEAD.forEach((h, i) => U[h] = i);
 
-  // ===== CHILDREN ヘッダーマップ =====
   const CHEAD = children[0];
   const C = {};
   CHEAD.forEach((h, i) => C[h] = i);
 
-  // ------------------------
-  // 子どもステータスを deleted に変更
-  // ------------------------
   for (let i = 1; i < children.length; i++) {
     if (String(children[i][C["userId"]]) === String(userId)) {
       childrenSheet.getRange(i + 1, C["status"] + 1).setValue("deleted");
     }
   }
 
-  // ------------------------
-  // 親ステータスを deleted に変更
-  // ------------------------
   for (let i = 1; i < users.length; i++) {
     if (String(users[i][U["userId"]]) === String(userId)) {
       usersSheet.getRange(i + 1, U["status"] + 1).setValue("deleted");
@@ -787,25 +668,20 @@ function saveEventGAS(event) {
     const sheet = ss.getSheetByName("events");
     const now = new Date();
 
-    // ▼ 日付（yyyy-MM-dd）→ Date 型に
     const dateOnly = new Date(event.date);
 
-    // ▼ 時間（HH:mm）→ 時間だけの Date に
     const [h, m] = event.time.split(":").map(Number);
     const timeOnly = new Date(1899, 11, 30, h, m);
 
-    // =========================================================
-    // ① 編集（UPDATE）
-    // =========================================================
     if (event.eventId) {
       const id = Number(event.eventId);
       const lastRow = sheet.getLastRow();
-      const values = sheet.getRange(2, 1, lastRow - 1, 1).getValues(); // A列( eventId )
+      const values = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
 
       let targetRow = null;
       for (let i = 0; i < values.length; i++) {
         if (Number(values[i][0]) === id) {
-          targetRow = i + 2; // 2行目以降
+          targetRow = i + 2;
           break;
         }
       }
@@ -814,36 +690,32 @@ function saveEventGAS(event) {
         return { success: false, message: "ID が見つかりません" };
       }
 
-      // A:eventId 以外を更新（必要な列に合わせて調整）
-      sheet.getRange(targetRow, 2).setValue(dateOnly);       // B:日付
-      sheet.getRange(targetRow, 3).setValue(event.title);    // C:タイトル
-      sheet.getRange(targetRow, 4).setValue(event.type);     // D:タイプ
-      sheet.getRange(targetRow, 5).setValue(timeOnly);       // E:時間
-      sheet.getRange(targetRow, 6).setValue(event.location); // F:場所
-      sheet.getRange(targetRow, 7).setValue(event.comment);  // G:コメント
-      sheet.getRange(targetRow, 8).setValue(event.deadline); // H:期限
-      sheet.getRange(targetRow, 10).setValue(now);           // J: updatedAt
+      sheet.getRange(targetRow, 2).setValue(dateOnly);
+      sheet.getRange(targetRow, 3).setValue(event.title);
+      sheet.getRange(targetRow, 4).setValue(event.type);
+      sheet.getRange(targetRow, 5).setValue(timeOnly);
+      sheet.getRange(targetRow, 6).setValue(event.location);
+      sheet.getRange(targetRow, 7).setValue(event.comment);
+      sheet.getRange(targetRow, 8).setValue(event.deadline);
+      sheet.getRange(targetRow, 10).setValue(now);
 
       return { success: true, eventId: id, updated: true };
     }
 
-    // =========================================================
-    // ② 新規（INSERT）
-    // =========================================================
     const lastRow = sheet.getLastRow();
     const lastId = lastRow > 1 ? sheet.getRange(lastRow, 1).getValue() : 0;
     const newId = lastId + 1;
 
     sheet.appendRow([
-      newId,           // A:ID
-      dateOnly,        // B:日付
-      event.title,     // C:タイトル
-      event.type,      // D:タイプ
-      timeOnly,        // E:時間
-      event.location,  // F:場所
-      event.comment,   // G:コメント
-      now,             // H:createdAt
-      now              // I:updatedAt
+      newId,
+      dateOnly,
+      event.title,
+      event.type,
+      timeOnly,
+      event.location,
+      event.comment,
+      now,
+      now
     ]);
 
     return { success: true, eventId: newId, created: true };
@@ -853,68 +725,57 @@ function saveEventGAS(event) {
   }
 }
 
-/**
- * 練習日保存（新規のみ）
- * practices シートの列: practiceId, date, title, type, start, end, location, comment, createdAt, updatedAt
- * ※ start/end 列がなく time 列のみの場合は start → time に書き込まれます
- */
 function savePracticeGAS(practice) {
   try {
     const sheet = SHEETS.PRACTICES();
     const now = new Date();
 
-    // ヘッダーマップを取得してフレキシブルに列を特定
     const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
     const P = {};
-    headers.forEach((h, i) => { if (h) P[h] = i + 1; }); // 1基準の列番号
+    headers.forEach((h, i) => { if (h) P[h] = i + 1; });
 
-    // 日付
     const dateOnly = new Date(practice.date);
 
-    // 開始時間
     const startTime = (() => {
       if (!practice.start) return "";
       const [h, m] = practice.start.split(":").map(Number);
       return new Date(1899, 11, 30, h, m);
     })();
 
-    // 終了時間
     const endTime = (() => {
       if (!practice.end) return "";
       const [h, m] = practice.end.split(":").map(Number);
       return new Date(1899, 11, 30, h, m);
     })();
 
-    // 新しい practiceId を採番
     const lastRow = sheet.getLastRow();
     const lastId = lastRow > 1
       ? sheet.getRange(lastRow, P["practiceId"]).getValue()
       : 0;
     const newId = Number(lastId) + 1;
 
-    // シートの列構成に合わせて行データを作成
     const rowArr = Array(sheet.getLastColumn()).fill("");
 
     rowArr[P["practiceId"] - 1] = newId;
     rowArr[P["date"] - 1]       = dateOnly;
-    rowArr[P["title"] - 1]      = practice.title || "練習日";
+    rowArr[P["title"] - 1]      = practice.title || "練習";
 
-    // start / time 列どちらでも対応
     if (P["start"]) {
       rowArr[P["start"] - 1] = startTime;
     } else if (P["time"]) {
       rowArr[P["time"] - 1]  = startTime;
     }
 
-    // end 列があれば書き込む
     if (P["end"]) {
       rowArr[P["end"] - 1] = endTime;
     }
 
-    if (P["location"])  rowArr[P["location"] - 1]  = practice.location || "";
-    if (P["comment"])   rowArr[P["comment"] - 1]   = practice.comment  || "";
-    if (P["createdAt"]) rowArr[P["createdAt"] - 1] = now;
-    if (P["updatedAt"]) rowArr[P["updatedAt"] - 1] = now;
+    if (P["location"])   rowArr[P["location"] - 1]   = practice.location || "";
+    if (P["comment"])    rowArr[P["comment"] - 1]    = practice.comment  || "";
+    if (P["created_at"]) rowArr[P["created_at"] - 1] = now;
+    if (P["updated_at"]) rowArr[P["updated_at"] - 1] = now;
+    if (P["createdAt"])  rowArr[P["createdAt"] - 1]  = now;
+    if (P["updatedAt"])  rowArr[P["updatedAt"] - 1]  = now;
 
     sheet.appendRow(rowArr);
 
@@ -925,7 +786,6 @@ function savePracticeGAS(practice) {
   }
 }
 
-// 演目保存
 function addPerformanceGAS(performance) {
   try {
     const sheet = ss.getSheetByName("performances");
@@ -950,7 +810,6 @@ function addPerformanceGAS(performance) {
   }
 }
 
-// 演目担当欄取得
 function getPerformanceRoles() {
   try {
     const sheet = ss.getSheetByName("performanceRoles");
