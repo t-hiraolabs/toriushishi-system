@@ -1,7 +1,7 @@
 // =======================================================
 // グローバル設定
 // =======================================================
-const SPREADSHEET_ID = '1P8K54zgvzA9koGhCCJmNTldo0ED8DZDo7V0AQ6n2qQI';
+const SPREADSHEET_ID = '16AIWCya73T6kOkVujh5PrSUsHx9NosY0el8-uTrk3wo';
 
 // ヘルパー関数: スプレッドシート取得
 const getSS = () => SpreadsheetApp.openById(SPREADSHEET_ID);
