@@ -53,6 +53,19 @@ function renderGearList() {
             .filter(([f]) => g[f] !== "" && g[f] !== undefined)
             .map(([f, label]) => `<span class="gear-tag">${label}：${escHtml(String(g[f]))}</span>`).join("");
         const memoTag = g.memo ? `<span class="gear-tag gear-tag-memo">${escHtml(String(g.memo))}</span>` : "";
+
+        const childrenHtml = (m.children || []).map(c => {
+            const cg = c.gear || {};
+            const ctags = [
+                cg.kimono_top ? `<span class="gear-tag">着物上：${escHtml(String(cg.kimono_top))}</span>` : "",
+                cg.kimono_bottom ? `<span class="gear-tag">着物下：${escHtml(String(cg.kimono_bottom))}</span>` : ""
+            ].join("");
+            return `<div class="gear-child-row">
+                <span class="gear-child-name">${escHtml(c.childName)}</span>
+                <div class="gear-tags">${ctags || '<span style="color:var(--text-3);font-size:.8rem;">未登録</span>'}</div>
+            </div>`;
+        }).join("");
+
         const item = document.createElement("div");
         item.className = "gear-item";
         item.innerHTML = `
@@ -61,6 +74,7 @@ function renderGearList() {
                 ${isAdmin ? `<button class="gear-edit-btn" aria-label="編集"><i class="fas fa-pen"></i></button>` : ""}
             </div>
             <div class="gear-tags">${tags || memoTag ? tags + memoTag : '<span style="color:var(--text-3);font-size:.8rem;">未登録</span>'}</div>
+            ${childrenHtml}
         `;
         if (isAdmin) item.querySelector(".gear-edit-btn").addEventListener("click", () => openGearEdit(m));
         list.appendChild(item);
@@ -75,6 +89,30 @@ function openGearEdit(member) {
         const el = document.getElementById("gEdit_" + f);
         if (el) el.value = g[f] !== undefined ? String(g[f]) : "";
     });
+
+    const container = document.getElementById("gearEditChildren");
+    if (container) {
+        container.innerHTML = "";
+        (member.children || []).forEach(c => {
+            const cg = c.gear || {};
+            const section = document.createElement("div");
+            section.className = "gear-edit-child-section";
+            section.dataset.childId = c.childId;
+            section.innerHTML = `
+                <div class="gear-edit-child-title">${escHtml(c.childName)}</div>
+                <div class="gear-edit-row">
+                    <label>着物上</label>
+                    <input type="text" class="gear-edit-child-top" value="${escHtml(String(cg.kimono_top || ""))}" placeholder="着物上">
+                </div>
+                <div class="gear-edit-row">
+                    <label>着物下</label>
+                    <input type="text" class="gear-edit-child-bottom" value="${escHtml(String(cg.kimono_bottom || ""))}" placeholder="着物下">
+                </div>
+            `;
+            container.appendChild(section);
+        });
+    }
+
     document.getElementById("gearEditCard").classList.add("active");
 }
 
@@ -84,11 +122,32 @@ async function saveGear() {
     GEAR_FIELDS.forEach(f => { gear[f] = document.getElementById("gEdit_" + f)?.value.trim() ?? ""; });
     const btn = document.getElementById("gearSaveBtn");
     btn.disabled = true; btn.textContent = "保存中…";
+
     const res = await callGasApi({ action: "saveGear", targetUserId: gearEditTargetUserId, gear, userId });
+    if (!res?.success) { btn.disabled = false; btn.textContent = "保存"; alert(res?.msg || "保存失敗"); return; }
+
+    const childSections = document.querySelectorAll("#gearEditChildren .gear-edit-child-section");
+    for (const sec of childSections) {
+        const childId = sec.dataset.childId;
+        const cGear = {
+            kimono_top: sec.querySelector(".gear-edit-child-top")?.value.trim() ?? "",
+            kimono_bottom: sec.querySelector(".gear-edit-child-bottom")?.value.trim() ?? ""
+        };
+        await callGasApi({ action: "saveChildGear", childId, gear: cGear, userId });
+    }
+
     btn.disabled = false; btn.textContent = "保存";
-    if (!res?.success) { alert(res?.msg || "保存失敗"); return; }
     const m = gearData.find(m => m.userId === gearEditTargetUserId);
-    if (m) m.gear = gear;
+    if (m) {
+        m.gear = gear;
+        childSections.forEach(sec => {
+            const child = (m.children || []).find(c => c.childId === sec.dataset.childId);
+            if (child) child.gear = {
+                kimono_top: sec.querySelector(".gear-edit-child-top")?.value.trim() ?? "",
+                kimono_bottom: sec.querySelector(".gear-edit-child-bottom")?.value.trim() ?? ""
+            };
+        });
+    }
     document.getElementById("gearEditCard").classList.remove("active");
     renderGearList();
 }

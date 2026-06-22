@@ -14,6 +14,16 @@ function ensureGearSheet() {
   return sheet;
 }
 
+function ensureChildGearSheet() {
+  const ss = getSS();
+  let sheet = ss.getSheetByName("child_gear");
+  if (!sheet) {
+    sheet = ss.insertSheet("child_gear");
+    sheet.appendRow(["childId", "kimono_top", "kimono_bottom"]);
+  }
+  return sheet;
+}
+
 function ensureSpareSheet() {
   const ss = getSS();
   let sheet = ss.getSheetByName("gear_spare");
@@ -49,7 +59,46 @@ function getGearGAS() {
     gearMap[String(r[gH["userId"]])] = obj;
   });
 
-  return { success: true, members: members.map(m => ({ ...m, gear: gearMap[m.userId] || {} })) };
+  // 子供情報
+  const childrenSheet = ss.getSheetByName("children");
+  const childrenMap = {}; // userId -> [{childId, childName}]
+  if (childrenSheet) {
+    const cRows = childrenSheet.getDataRange().getValues();
+    const cH = {};
+    cRows[0].forEach((v, i) => cH[v] = i);
+    cRows.slice(1).forEach(r => {
+      if (!r[0]) return;
+      const uid = String(r[cH["userId"]]);
+      if (!childrenMap[uid]) childrenMap[uid] = [];
+      childrenMap[uid].push({ childId: String(r[cH["childId"]]), childName: r[cH["childName"]] });
+    });
+  }
+
+  // 子供衣装情報
+  const childGearSheet = ensureChildGearSheet();
+  const cgRows = childGearSheet.getDataRange().getValues();
+  const cgH = {};
+  cgRows[0].forEach((v, i) => cgH[v] = i);
+  const childGearMap = {};
+  cgRows.slice(1).forEach(r => {
+    if (!r[0]) return;
+    childGearMap[String(r[cgH["childId"]])] = {
+      kimono_top: r[cgH["kimono_top"]] ?? "",
+      kimono_bottom: r[cgH["kimono_bottom"]] ?? ""
+    };
+  });
+
+  return {
+    success: true,
+    members: members.map(m => ({
+      ...m,
+      gear: gearMap[m.userId] || {},
+      children: (childrenMap[m.userId] || []).map(c => ({
+        ...c,
+        gear: childGearMap[c.childId] || {}
+      }))
+    }))
+  };
 }
 
 function saveGearGAS(targetUserId, gear, requestUserId) {
@@ -212,6 +261,25 @@ function getMyPageGAS(userId) {
   }
 
   return { success: true, user, gear, eventRate, practiceRate };
+}
+
+function saveChildGearGAS(childId, gear, requestUserId) {
+  if (!isAdmin_(requestUserId)) return { success: false, msg: "権限がありません" };
+
+  const sheet = ensureChildGearSheet();
+  const rows = sheet.getDataRange().getValues();
+  const h = {};
+  rows[0].forEach((v, i) => h[v] = i);
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][h["childId"]]) === String(childId)) {
+      sheet.getRange(i + 1, h["kimono_top"] + 1).setValue(gear.kimono_top ?? "");
+      sheet.getRange(i + 1, h["kimono_bottom"] + 1).setValue(gear.kimono_bottom ?? "");
+      return { success: true };
+    }
+  }
+  sheet.appendRow([childId, gear.kimono_top ?? "", gear.kimono_bottom ?? ""]);
+  return { success: true };
 }
 
 function isAdmin_(userId) {

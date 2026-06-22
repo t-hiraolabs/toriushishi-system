@@ -178,6 +178,10 @@ function doPost(e) {
         result = upsertGearSpareGAS(data.item_type, data.value, data.quantity, data.userId);
         break;
 
+      case "saveChildGear":
+        result = saveChildGearGAS(data.childId, data.gear, data.userId);
+        break;
+
       case "getMyPage":
         result = getMyPageGAS(data.userId);
         break;
