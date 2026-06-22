@@ -1,5 +1,5 @@
 // =======================================================
-// 装備管理
+// 衣装管理
 // =======================================================
 
 const GEAR_FIELDS = ["happi_no", "tshirt_size", "tekkou", "hakama", "kimono_top", "kimono_bottom", "memo"];
@@ -30,7 +30,7 @@ function initGearTabs() {
     });
 }
 
-// ===== メンバー装備 =====
+// ===== メンバー衣装 =====
 async function loadGear() {
     const card = document.getElementById("gearCard");
     const overlay = card.querySelector(".loading-overlay");
@@ -69,7 +69,7 @@ function renderGearList() {
 
 function openGearEdit(member) {
     gearEditTargetUserId = member.userId;
-    document.getElementById("gearEditTitle").textContent = `装備編集：${member.name}`;
+    document.getElementById("gearEditTitle").textContent = `衣装編集：${member.name}`;
     const g = member.gear || {};
     GEAR_FIELDS.forEach(f => {
         const el = document.getElementById("gEdit_" + f);
@@ -123,16 +123,39 @@ function renderSpareList() {
             items.forEach(s => {
                 const row = document.createElement("div");
                 row.className = "gear-spare-row";
-                row.innerHTML = `
-                    <span class="gear-spare-value">${escHtml(String(s.value))}</span>
-                    <span class="gear-spare-qty-badge">${s.quantity}個</span>
-                    ${isAdmin ? `
-                        <div class="gear-spare-inline-edit">
-                            <button class="gear-qty-btn gear-qty-inline-minus">－</button>
-                            <span class="gear-spare-qty-display">${s.quantity}</span>
-                            <button class="gear-qty-btn gear-qty-inline-plus">＋</button>
-                        </div>` : ""}
-                `;
+
+                if (type === "Tシャツ") {
+                    // Tシャツ：在庫マスタ - メンバー使用数 = 未配布
+                    const available = s.quantity - (s.member_count || 0);
+                    row.innerHTML = `
+                        <span class="gear-spare-value">${escHtml(String(s.value))}</span>
+                        <div class="gear-spare-tshirt-stats">
+                            <span class="gear-spare-stat">在庫 <b>${s.quantity}</b></span>
+                            <span class="gear-spare-stat">使用中 <b>${s.member_count || 0}</b></span>
+                            <span class="gear-spare-stat gear-spare-available ${available <= 0 ? 'gear-spare-zero' : ''}">未配布 <b>${available}</b></span>
+                        </div>
+                        ${isAdmin ? `
+                            <div class="gear-spare-inline-edit">
+                                <span class="gear-spare-master-label">在庫マスタ</span>
+                                <button class="gear-qty-btn gear-qty-inline-minus">－</button>
+                                <span class="gear-spare-qty-display">${s.quantity}</span>
+                                <button class="gear-qty-btn gear-qty-inline-plus">＋</button>
+                            </div>` : ""}
+                    `;
+                } else {
+                    // 手甲：従来通り数量のみ表示
+                    row.innerHTML = `
+                        <span class="gear-spare-value">${escHtml(String(s.value))}</span>
+                        <span class="gear-spare-qty-badge">${s.quantity}個</span>
+                        ${isAdmin ? `
+                            <div class="gear-spare-inline-edit">
+                                <button class="gear-qty-btn gear-qty-inline-minus">－</button>
+                                <span class="gear-spare-qty-display">${s.quantity}</span>
+                                <button class="gear-qty-btn gear-qty-inline-plus">＋</button>
+                            </div>` : ""}
+                    `;
+                }
+
                 if (isAdmin) {
                     let qty = s.quantity;
                     const display = row.querySelector(".gear-spare-qty-display");

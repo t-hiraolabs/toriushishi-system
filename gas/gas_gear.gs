@@ -1,5 +1,5 @@
 // =======================================================
-// 装備管理 GAS
+// 衣装管理 GAS
 // =======================================================
 
 const GEAR_COLS = ["userId", "happi_no", "tshirt_size", "tekkou", "hakama", "kimono_top", "kimono_bottom", "memo"];
@@ -76,13 +76,35 @@ function getGearSpareGAS() {
   const rows = sheet.getDataRange().getValues();
   const h = {};
   rows[0].forEach((v, i) => h[v] = i);
+
+  // Tシャツ：メンバーの使用数をカウント
+  const tshirtUsage = {};
+  const gearSheet = ensureGearSheet();
+  const gearRows = gearSheet.getDataRange().getValues();
+  const gH = {};
+  gearRows[0].forEach((v, i) => gH[v] = i);
+  gearRows.slice(1).forEach(r => {
+    const size = String(r[gH["tshirt_size"]] || "").trim();
+    if (size) tshirtUsage[size] = (tshirtUsage[size] || 0) + 1;
+  });
+
   const items = rows.slice(1)
     .filter(r => r[0])
-    .map(r => ({
-      item_type: r[h["item_type"]],
-      value: String(r[h["value"]]),
-      quantity: Number(r[h["quantity"]]) || 0
-    }));
+    .map(r => {
+      const item_type = r[h["item_type"]];
+      const value = String(r[h["value"]]);
+      const quantity = Number(r[h["quantity"]]) || 0;
+      const member_count = item_type === "Tシャツ" ? (tshirtUsage[value] || 0) : undefined;
+      return { item_type, value, quantity, ...(member_count !== undefined ? { member_count } : {}) };
+    });
+
+  // Tシャツはメンバーが使用中だが在庫マスタに未登録のサイズも追加
+  Object.entries(tshirtUsage).forEach(([size, count]) => {
+    if (!items.find(i => i.item_type === "Tシャツ" && i.value === size)) {
+      items.push({ item_type: "Tシャツ", value: size, quantity: 0, member_count: count });
+    }
+  });
+
   return { success: true, items };
 }
 

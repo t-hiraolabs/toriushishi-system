@@ -172,3 +172,27 @@
   width: 100%;
   box-sizing: border-box;
 }
+
+/* Tシャツ在庫統計 */
+.gear-spare-tshirt-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+.gear-spare-stat {
+  font-size: .78rem;
+  color: var(--text-2);
+  background: var(--surface-3);
+  padding: 2px 8px;
+  border-radius: 100px;
+}
+.gear-spare-stat b { color: var(--text-1); }
+.gear-spare-available { background: var(--surface-3); }
+.gear-spare-available b { color: var(--accent-teal); }
+.gear-spare-zero b { color: var(--accent); }
+.gear-spare-master-label {
+  font-size: .72rem;
+  color: var(--text-3);
+  margin-right: 4px;
+}
