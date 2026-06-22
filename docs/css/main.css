@@ -745,6 +745,21 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   background: var(--accent); cursor: pointer; margin-left: 8px;
 }
 
+.member-profile-btn {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  width: 32px; height: 32px; border: none; border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text-2);
+  font-size: .85rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .18s, color .18s, transform .18s;
+}
+.member-profile-btn:hover, .member-profile-btn:active {
+  background: var(--accent-teal);
+  color: #fff;
+  transform: translateY(-50%) scale(1.12);
+}
+
 .member-item .member-action {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
   padding: 6px 12px; border: none; border-radius: 100px;

@@ -443,11 +443,15 @@ async function loadMembersAdmin() {
     } finally { overlay.style.display = "none"; }
 }
 function buildMemberItemUser(member) {
-    const li = document.createElement("li"); li.classList.add("member-item"); li.style.cursor = "pointer";
+    const li = document.createElement("li"); li.classList.add("member-item");
     if (member.position) { const p = document.createElement("span"); p.classList.add("member-position"); p.textContent = member.position; li.appendChild(p); }
     const n = document.createElement("span"); n.classList.add("member-name"); n.textContent = member.name; li.appendChild(n);
     appendChildren(li, member, false);
-    li.addEventListener("click", () => openMemberProfile(member.userId, member.name));
+    const btn = document.createElement("button");
+    btn.classList.add("member-profile-btn");
+    btn.innerHTML = `<i class="fas fa-user"></i>`;
+    btn.addEventListener("click", () => openMemberProfile(member.userId, member.name));
+    li.appendChild(btn);
     return li;
 }
 function buildMemberItemAdmin(member, isHold) {
