@@ -196,3 +196,27 @@
   color: var(--text-3);
   margin-right: 4px;
 }
+
+/* 子供衣装 */
+.gear-child-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 0 12px;
+  flex-wrap: wrap;
+}
+.gear-child-name {
+  font-size: .8rem;
+  color: var(--text-2);
+  white-space: nowrap;
+}
+.gear-edit-child-section {
+  border-top: 1px solid var(--border);
+  padding: 10px 16px 4px;
+}
+.gear-edit-child-title {
+  font-size: .85rem;
+  color: var(--text-2);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
