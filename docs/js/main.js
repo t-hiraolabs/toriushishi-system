@@ -443,10 +443,11 @@ async function loadMembersAdmin() {
     } finally { overlay.style.display = "none"; }
 }
 function buildMemberItemUser(member) {
-    const li = document.createElement("li"); li.classList.add("member-item");
+    const li = document.createElement("li"); li.classList.add("member-item"); li.style.cursor = "pointer";
     if (member.position) { const p = document.createElement("span"); p.classList.add("member-position"); p.textContent = member.position; li.appendChild(p); }
     const n = document.createElement("span"); n.classList.add("member-name"); n.textContent = member.name; li.appendChild(n);
-    appendChildren(li, member);
+    appendChildren(li, member, false);
+    li.addEventListener("click", () => openMemberProfile(member.userId, member.name));
     return li;
 }
 function buildMemberItemAdmin(member, isHold) {
@@ -454,20 +455,31 @@ function buildMemberItemAdmin(member, isHold) {
     if (isHold) li.classList.add("is-hold");
     if (member.position) { const p = document.createElement("span"); p.classList.add("member-position"); p.textContent = member.position; li.appendChild(p); }
     const n = document.createElement("span"); n.classList.add("member-name"); n.textContent = member.name; li.appendChild(n);
-    appendChildren(li, member);
+    appendChildren(li, member, true);
     const btn = document.createElement("button"); btn.classList.add("member-action");
     if (isHold) { btn.textContent = "承認する"; btn.addEventListener("click", () => approveMember(member.userId)); }
     else { btn.textContent = "削除"; btn.addEventListener("click", () => deleteMember(member.userId)); }
     li.appendChild(btn);
     return li;
 }
-function appendChildren(li, member) {
+function appendChildren(li, member, isAdmin) {
     if (!member.children?.length) return;
     const details = document.createElement("details"); details.classList.add("children-details");
     const summary = document.createElement("summary"); summary.textContent = `子供 (${member.children.length}人)`;
     details.appendChild(summary);
     const ul = document.createElement("ul");
-    member.children.forEach(child => { const c = document.createElement("li"); c.textContent = child.childName; ul.appendChild(c); });
+    member.children.forEach(child => {
+        const c = document.createElement("li");
+        c.textContent = child.childName;
+        if (isAdmin && child.childId) {
+            const delBtn = document.createElement("button");
+            delBtn.textContent = "削除";
+            delBtn.classList.add("child-delete-btn");
+            delBtn.addEventListener("click", (e) => { e.stopPropagation(); deleteChild(child.childId, child.childName); });
+            c.appendChild(delBtn);
+        }
+        ul.appendChild(c);
+    });
     details.appendChild(ul); li.appendChild(details);
 }
 function makeTitle(text) { const p = document.createElement("p"); p.textContent = text; p.classList.add("list-title"); return p; }
@@ -480,6 +492,11 @@ async function deleteMember(userId) {
     if (!confirm("本当に削除しますか？")) return;
     const res = await callGasApi({ action: "deleteMember", userId });
     if (res.success) { alert("削除しました！"); loadMembersAdmin(); } else alert("削除に失敗しました");
+}
+async function deleteChild(childId, childName) {
+    if (!confirm(`「${childName}」を削除しますか？`)) return;
+    const res = await callGasApi({ action: "deleteChild", childId, userId });
+    if (res.success) { alert("削除しました！"); loadMembersAdmin(); } else alert(res.msg || "削除に失敗しました");
 }
 
 /* =======================================================

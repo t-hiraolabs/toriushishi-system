@@ -663,6 +663,41 @@ function deleteMemberAPI(userId) {
   return { success: true };
 }
 
+function deleteChildAPI(childId, requestUserId) {
+  const usersSheet = SHEETS.USERS();
+  const users = usersSheet.getDataRange().getValues();
+  const UHEAD = users[0]; const U = {};
+  UHEAD.forEach((h, i) => U[h] = i);
+  const reqRow = users.slice(1).find(r => String(r[U["userId"]]) === String(requestUserId));
+  if (!reqRow || reqRow[U["role"]] !== "admin") return { success: false, msg: "権限がありません" };
+
+  const childrenSheet = SHEETS.CHILDREN();
+  const children = childrenSheet.getDataRange().getValues();
+  const CHEAD = children[0]; const C = {};
+  CHEAD.forEach((h, i) => C[h] = i);
+  for (let i = children.length - 1; i >= 1; i--) {
+    if (String(children[i][C["childId"]]) === String(childId)) {
+      childrenSheet.getRange(i + 1, C["status"] + 1).setValue("deleted");
+      break;
+    }
+  }
+
+  // child_gear も削除
+  const ss = getSS();
+  const cgSheet = ss.getSheetByName("child_gear");
+  if (cgSheet) {
+    const cgRows = cgSheet.getDataRange().getValues();
+    const cgH = {}; cgRows[0].forEach((v, i) => cgH[v] = i);
+    for (let i = cgRows.length - 1; i >= 1; i--) {
+      if (String(cgRows[i][cgH["childId"]]) === String(childId)) {
+        cgSheet.deleteRow(i + 1); break;
+      }
+    }
+  }
+
+  return { success: true };
+}
+
 function saveEventGAS(event) {
   try {
     const sheet = ss.getSheetByName("events");
