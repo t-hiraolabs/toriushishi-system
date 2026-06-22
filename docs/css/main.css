@@ -738,6 +738,12 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
 .children-details summary::before { content: "▶ "; font-size: .65rem; }
 .children-details[open] summary::before { content: "▼ "; }
 .children-details summary::-webkit-details-marker { display: none; }
+.children-details ul li { display: flex; align-items: center; justify-content: space-between; padding: 2px 0; }
+.child-delete-btn {
+  padding: 2px 8px; border: none; border-radius: 100px;
+  font-size: .72rem; font-weight: 700; color: #fff;
+  background: var(--accent); cursor: pointer; margin-left: 8px;
+}
 
 .member-item .member-action {
   position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
