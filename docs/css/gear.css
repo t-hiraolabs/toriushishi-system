@@ -213,10 +213,32 @@
 .gear-edit-child-section {
   border-top: 1px solid var(--border);
   padding: 10px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 .gear-edit-child-title {
   font-size: .85rem;
   color: var(--text-2);
   font-weight: 600;
-  margin-bottom: 6px;
+  margin-bottom: -4px;
+}
+.gear-edit-child-section .gear-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.gear-edit-child-section label {
+  font-size: .85rem;
+  color: var(--text-2);
+}
+.gear-edit-child-section input[type="text"] {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  padding: 8px 12px;
+  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
