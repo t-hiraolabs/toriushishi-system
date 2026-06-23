@@ -150,7 +150,7 @@ function createEventCard(ev, options = {}) {
         <div class="event-title">${ev.title}</div>
         <div class="answer">${ev.myStatus}</div>
         <div class="responses-list">参加:${ev.yes} 不参加:${ev.no}</div>
-        ${includeDeadline ? `<div class="deadline">期限:${ev.deadline}</div>` : ""}
+        ${includeDeadline ? `<div class="deadline">期限:${ev.deadline ? ev.deadline.split("T")[0].replace(/-/g, "/") : ""}</div>` : ""}
     `;
     return card;
 }
