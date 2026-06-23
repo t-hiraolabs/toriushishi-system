@@ -199,6 +199,12 @@ function getMyPageGAS(userId) {
   const user = {
     name: uRow[uH["storedName"]],
     role: uRow[uH["role"]],
+    position: uRow[uH["position"]] || "",
+    phone: uRow[uH["phone"]] || "",
+    prefecture: uRow[uH["prefecture"]] || "",
+    city: uRow[uH["city"]] || "",
+    addressDetail: uRow[uH["addressDetail"]] || "",
+    birthday: uRow[uH["birthday"]] || "",
     createdAt: uRow[uH["created_at"]] ? new Date(uRow[uH["created_at"]]) : null
   };
 

@@ -42,6 +42,29 @@
   letter-spacing: .06em;
   margin-bottom: 12px;
 }
+.mypage-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mypage-edit-btn {
+  background: var(--surface-3);
+  border: none;
+  border-radius: 100px;
+  color: var(--text-2);
+  font-size: .75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background .18s, color .18s;
+}
+.mypage-edit-btn:hover {
+  background: var(--accent-teal);
+  color: #fff;
+}
 .mypage-empty {
   font-size: .88rem;
   color: var(--text-3);

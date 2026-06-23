@@ -97,6 +97,10 @@ function doPost(e) {
         result = deleteChildAPI(data.childId, data.userId);
         break;
 
+      case "updateMemberInfo":
+        result = updateMemberInfoAPI(data.targetUserId, data.data, data.userId);
+        break;
+
       case "saveEvent":
         result = saveEventGAS(data.event);
         break;

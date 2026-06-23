@@ -663,6 +663,30 @@ function deleteMemberAPI(userId) {
   return { success: true };
 }
 
+function updateMemberInfoAPI(targetUserId, data, requestUserId) {
+  const usersSheet = SHEETS.USERS();
+  const rows = usersSheet.getDataRange().getValues();
+  const UHEAD = rows[0]; const U = {};
+  UHEAD.forEach((h, i) => U[h] = i);
+
+  const reqRow = rows.slice(1).find(r => String(r[U["userId"]]) === String(requestUserId));
+  if (!reqRow || reqRow[U["role"]] !== "admin") return { success: false, msg: "権限がありません" };
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][U["userId"]]) === String(targetUserId)) {
+      const fields = ["storedName", "phone", "prefecture", "city", "addressDetail", "birthday", "position"];
+      fields.forEach(f => {
+        if (data[f] !== undefined && U[f] !== undefined) {
+          usersSheet.getRange(i + 1, U[f] + 1).setValue(data[f]);
+        }
+      });
+      usersSheet.getRange(i + 1, U["updated_at"] + 1).setValue(new Date());
+      return { success: true };
+    }
+  }
+  return { success: false, msg: "ユーザーが見つかりません" };
+}
+
 function deleteChildAPI(childId, requestUserId) {
   const usersSheet = SHEETS.USERS();
   const users = usersSheet.getDataRange().getValues();

@@ -2,6 +2,9 @@
 // マイページ
 // =======================================================
 
+let myPageTargetUserId = null;
+let myPageCurrentUser = null;
+
 function openMyPage() {
     document.getElementById("myPageTitle").textContent = "マイページ";
     document.getElementById("myPageCard").classList.add("active");
@@ -15,6 +18,7 @@ function openMemberProfile(targetUserId, name) {
 }
 
 async function loadMyPageFor(targetUserId, showRate) {
+    myPageTargetUserId = targetUserId;
     const card = document.getElementById("myPageCard");
     const overlay = card.querySelector(".loading-overlay");
     const content = document.getElementById("myPageContent");
@@ -23,6 +27,7 @@ async function loadMyPageFor(targetUserId, showRate) {
     const res = await callGasApi({ action: "getMyPage", userId: targetUserId });
     overlay.style.display = "none";
     if (!res?.success) { content.innerHTML = '<p style="padding:16px;color:var(--text-3);">取得失敗</p>'; return; }
+    myPageCurrentUser = res.user;
     renderMyPage(res, showRate);
 }
 
@@ -40,14 +45,33 @@ function renderMyPage({ user, gear, eventRate, practiceRate }, showRate = true) 
     ].filter(r => r.val !== "" && r.val !== undefined);
 
     const roleLabel = user.role === "admin" ? "管理者" : "一般";
-    const eventPct  = eventRate   ? Math.round(eventRate.rate * 100)   : null;
-    const pracPct   = practiceRate ? Math.round(practiceRate.rate * 100) : null;
+    const isAdmin = typeof userRole !== "undefined" && userRole === "admin";
 
     const rateSection = showRate ? `
         <div class="mypage-section">
             <div class="mypage-section-title">参加率</div>
-            ${eventRate ? rateBar("イベント", eventPct, eventRate.participated, eventRate.total) : '<p class="mypage-empty">データなし</p>'}
-            ${practiceRate ? rateBar("練習", pracPct, practiceRate.participated, practiceRate.total) : ""}
+            ${eventRate ? rateBar("イベント", Math.round(eventRate.rate * 100), eventRate.participated, eventRate.total) : '<p class="mypage-empty">データなし</p>'}
+            ${practiceRate ? rateBar("練習", Math.round(practiceRate.rate * 100), practiceRate.participated, practiceRate.total) : ""}
+        </div>
+    ` : "";
+
+    const personalSection = isAdmin ? `
+        <div class="mypage-section">
+            <div class="mypage-section-title mypage-section-title-row">
+                <span>個人情報</span>
+                <button class="mypage-edit-btn" id="openMemberInfoEditBtn"><i class="fas fa-pen"></i> 編集</button>
+            </div>
+            ${[
+                { label: "役職",     val: user.position },
+                { label: "電話番号", val: user.phone },
+                { label: "住所",     val: [user.prefecture, user.city, user.addressDetail].filter(Boolean).join(" ") },
+                { label: "生年月日", val: user.birthday },
+            ].filter(r => r.val).map(r => `
+                <div class="mypage-gear-row">
+                    <span class="mypage-gear-label">${escHtml(r.label)}</span>
+                    <span class="mypage-gear-val">${escHtml(String(r.val))}</span>
+                </div>
+            `).join("") || '<p class="mypage-empty">未登録</p>'}
         </div>
     ` : "";
 
@@ -61,6 +85,7 @@ function renderMyPage({ user, gear, eventRate, practiceRate }, showRate = true) 
         </div>
 
         ${rateSection}
+        ${personalSection}
 
         <div class="mypage-section">
             <div class="mypage-section-title">衣装情報</div>
@@ -72,7 +97,58 @@ function renderMyPage({ user, gear, eventRate, practiceRate }, showRate = true) 
             `).join("") : '<p class="mypage-empty">未登録</p>'}
         </div>
     `;
+
+    if (isAdmin) {
+        document.getElementById("openMemberInfoEditBtn")?.addEventListener("click", () => openMemberInfoEdit(user));
+    }
 }
+
+function openMemberInfoEdit(user) {
+    document.getElementById("memberInfoEditTitle").textContent = `編集：${user.name}`;
+    document.getElementById("mEdit_name").value = user.name || "";
+    document.getElementById("mEdit_position").value = user.position || "";
+    document.getElementById("mEdit_phone").value = user.phone || "";
+    document.getElementById("mEdit_prefecture").value = user.prefecture || "";
+    document.getElementById("mEdit_city").value = user.city || "";
+    document.getElementById("mEdit_addressDetail").value = user.addressDetail || "";
+    document.getElementById("mEdit_birthday").value = user.birthday || "";
+    document.getElementById("memberInfoEditCard").classList.add("active");
+}
+
+async function saveMemberInfo() {
+    if (!myPageTargetUserId) return;
+    const data = {
+        storedName:    document.getElementById("mEdit_name").value.trim(),
+        position:      document.getElementById("mEdit_position").value.trim(),
+        phone:         document.getElementById("mEdit_phone").value.trim(),
+        prefecture:    document.getElementById("mEdit_prefecture").value.trim(),
+        city:          document.getElementById("mEdit_city").value.trim(),
+        addressDetail: document.getElementById("mEdit_addressDetail").value.trim(),
+        birthday:      document.getElementById("mEdit_birthday").value,
+    };
+    const btn = document.getElementById("memberInfoSaveBtn");
+    btn.disabled = true; btn.textContent = "保存中…";
+    const res = await callGasApi({ action: "updateMemberInfo", targetUserId: myPageTargetUserId, data, userId });
+    btn.disabled = false; btn.textContent = "保存";
+    if (!res?.success) { alert(res?.msg || "保存失敗"); return; }
+    document.getElementById("memberInfoEditCard").classList.remove("active");
+    // myPageのタイトルと表示を更新
+    document.getElementById("myPageTitle").textContent = data.storedName;
+    if (myPageCurrentUser) {
+        myPageCurrentUser.name = data.storedName;
+        myPageCurrentUser.position = data.position;
+        myPageCurrentUser.phone = data.phone;
+        myPageCurrentUser.prefecture = data.prefecture;
+        myPageCurrentUser.city = data.city;
+        myPageCurrentUser.addressDetail = data.addressDetail;
+        myPageCurrentUser.birthday = data.birthday;
+        renderMyPage({ user: myPageCurrentUser, gear: null, eventRate: null, practiceRate: null }, false);
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("memberInfoSaveBtn")?.addEventListener("click", saveMemberInfo);
+});
 
 function rateBar(label, pct, participated, total) {
     return `
