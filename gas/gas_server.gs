@@ -105,7 +105,21 @@ function doPost(e) {
         result = saveEventGAS(data.event);
         if (result.success) {
           const ev = data.event;
-          const msg = `【イベント通知】\n${ev.title}\n日時：${ev.date} ${ev.time}\n場所：${ev.location || "未設定"}`;
+          const weekdays = ["日","月","火","水","木","金","土"];
+          const d = new Date(ev.date.replace(/\//g, "-"));
+          const dateStr = `${ev.date}（${weekdays[d.getDay()]}）`;
+          const typeLabel = ev.type === "festival" ? "🎉" : "📢";
+          const msg = [
+            `${typeLabel} 新しいイベントが登録されました`,
+            ``,
+            `📌 ${ev.title}`,
+            `📅 ${dateStr} ${ev.time || ""}`,
+            `📍 ${ev.location || "未設定"}`,
+            ev.deadline ? `\n回答期限：${ev.deadline}` : "",
+            ``,
+            `アプリから参加・不参加を回答してください。`,
+            `https://arudiosu.github.io/toriushishi-system/`
+          ].filter(l => l !== undefined).join("\n");
           sendLineNotification(msg);
         }
         break;
