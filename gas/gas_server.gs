@@ -103,7 +103,7 @@ function doPost(e) {
 
       case "saveEvent":
         result = saveEventGAS(data.event);
-        if (result.success) {
+        if (result.success && !data.event.eventId) {
           const ev = data.event;
           const weekdays = ["日","月","火","水","木","金","土"];
           const d = new Date(ev.date.replace(/\//g, "-"));
