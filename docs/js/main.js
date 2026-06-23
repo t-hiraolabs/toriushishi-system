@@ -511,6 +511,8 @@ function initEventCreateCard() {
     document.getElementById("eventTitle").value = "";
     document.getElementById("eventDate").value = "";
     document.getElementById("eventTime").value = "";
+    document.getElementById("eventTimeUndecided").checked = false;
+    document.getElementById("eventTime").disabled = false;
     document.getElementById("eventLocation").value = "";
     document.getElementById("eventComment").value = "";
     document.getElementById("performanceList").innerHTML = "";
@@ -528,7 +530,11 @@ function openEditForm(eventData) {
     document.querySelectorAll('input[name="eventType"]').forEach(r => r.checked = (r.value === eventData.type));
     document.getElementById("eventTitle").value = eventData.title || "";
     document.getElementById("eventDate").value = (eventData.date || "").replace(/\//g, "-");
-    document.getElementById("eventTime").value = eventData.time || "";
+    const timeVal = eventData.time || "";
+    const isUndecided = timeVal === "未定" || timeVal === "";
+    document.getElementById("eventTimeUndecided").checked = isUndecided && timeVal === "未定";
+    document.getElementById("eventTime").value = (timeVal && timeVal !== "未定") ? timeVal : "";
+    document.getElementById("eventTime").disabled = timeVal === "未定";
     document.getElementById("eventLocation").value = eventData.location || "";
     document.getElementById("eventComment").value = eventData.comment || "";
     const performanceList = document.getElementById("performanceList");
@@ -539,6 +545,12 @@ function openEditForm(eventData) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("eventTimeUndecided").addEventListener("change", (e) => {
+        const timeInput = document.getElementById("eventTime");
+        timeInput.disabled = e.target.checked;
+        if (e.target.checked) timeInput.value = "";
+    });
+
     document.getElementById("addPerformanceBtn").addEventListener("click", () => {
         const list = document.getElementById("performanceList");
         const nextNo = list.querySelectorAll(".perf-item").length + 1;
@@ -550,12 +562,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const type = document.querySelector('input[name="eventType"]:checked').value;
         const title = document.getElementById("eventTitle").value.trim();
         const date = document.getElementById("eventDate").value;
-        const time = document.getElementById("eventTime").value;
+        const timeUndecided = document.getElementById("eventTimeUndecided").checked;
+        const time = timeUndecided ? "未定" : document.getElementById("eventTime").value;
         const location = document.getElementById("eventLocation").value.trim();
         const comment = document.getElementById("eventComment").value;
         if (!title) return alert("タイトルを入力してください");
         if (!date) return alert("日付を選択してください");
-        if (!time) return alert("時間を選択してください");
+        if (!timeUndecided && !time) return alert("時間を選択するか「未定」にチェックしてください");
         const createCard = document.querySelector(".event-create-card");
         const eventId = createCard.dataset.eventId ? Number(createCard.dataset.eventId) : null;
         const performances = collectPerformances();

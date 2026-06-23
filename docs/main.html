@@ -375,7 +375,10 @@
             <label for="eventDate">日付</label>
             <input type="date" id="eventDate" />
             <label for="eventTime">時間</label>
-            <input type="time" id="eventTime" />
+            <div class="time-input-wrap">
+                <input type="time" id="eventTime" />
+                <label class="undecided-label"><input type="checkbox" id="eventTimeUndecided"> 未定</label>
+            </div>
         </div>
         <div class="event-create-card-location">
             <label for="eventLocation">場所</label>

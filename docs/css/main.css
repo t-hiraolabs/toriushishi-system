@@ -616,6 +616,11 @@ li { list-style: none; }
 
 .event-create-card input[type="text"],
 .event-create-card input[type="date"],
+.time-input-wrap { display: flex; align-items: center; gap: 12px; }
+.time-input-wrap input[type="time"] { flex: 1; }
+.time-input-wrap input[type="time"]:disabled { opacity: 0.4; pointer-events: none; }
+.undecided-label { display: flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--text-2); font-size: 0.9rem; cursor: pointer; }
+.undecided-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
 .event-create-card input[type="time"],
 .event-create-card textarea {
   width: 100%;
