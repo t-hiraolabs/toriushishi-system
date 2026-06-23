@@ -607,7 +607,7 @@ li { list-style: none; }
 
 .event-create-card label,
 .weekday-select label {
-  font-size: .8rem;
+  font-size: .88rem;
   font-weight: 700;
   letter-spacing: .04em;
   color: var(--text-2);
@@ -629,14 +629,15 @@ li { list-style: none; }
 .event-create-card input[type="time"],
 .event-create-card textarea {
   width: 100%;
-  padding: 11px 14px;
-  background: var(--surface);
+  padding: 13px 16px;
+  background: var(--surface-2) !important;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  color: var(--text-1);
-  font-size: .95rem;
+  color: var(--text-1) !important;
+  font-size: 1.05rem;
   transition: border-color var(--transition);
   -webkit-appearance: none;
+  color-scheme: dark;
 }
 
 .event-create-card input:focus,
@@ -700,12 +701,12 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
 .save-practice-btn {
   display: block;
   margin: 8px 16px 16px;
-  padding: 15px;
+  padding: 17px;
   background: var(--accent);
   border: none;
   border-radius: var(--radius-md);
   color: #fff;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition);
