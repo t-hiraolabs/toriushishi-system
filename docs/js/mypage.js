@@ -65,7 +65,7 @@ function renderMyPage({ user, gear, eventRate, practiceRate }, showRate = true) 
                 { label: "役職",     val: user.position },
                 { label: "電話番号", val: user.phone },
                 { label: "住所",     val: [user.prefecture, user.city, user.addressDetail].filter(Boolean).join(" ") },
-                { label: "生年月日", val: user.birthday },
+                { label: "生年月日", val: user.birthday ? user.birthday.replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$1年$2月$3日").replace(/年0(\d)/, "年$1").replace(/月0(\d)/, "月$1") : "" },
             ].filter(r => r.val).map(r => `
                 <div class="mypage-gear-row">
                     <span class="mypage-gear-label">${escHtml(r.label)}</span>

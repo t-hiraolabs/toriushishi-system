@@ -204,7 +204,7 @@ function getMyPageGAS(userId) {
     prefecture: uRow[uH["prefecture"]] || "",
     city: uRow[uH["city"]] || "",
     addressDetail: uRow[uH["addressDetail"]] || "",
-    birthday: uRow[uH["birthday"]] || "",
+    birthday: uRow[uH["birthday"]] ? Utilities.formatDate(new Date(uRow[uH["birthday"]]), "Asia/Tokyo", "yyyy-MM-dd") : "",
     createdAt: uRow[uH["created_at"]] ? new Date(uRow[uH["created_at"]]) : null
   };
 
