@@ -28,10 +28,9 @@ if (loginBtn) {
             console.log(data);
 
             if (data.success) {
-                // 🔑 セッションIDだけ保存
                 localStorage.setItem("sessionId", data.sessionId);
-
-                // 他の情報は API を呼ぶたびに取得
+                localStorage.setItem("savedUsername", username);
+                localStorage.setItem("savedPassword", password);
                 location.href = "main.html";
             } else {
                 message.textContent = data.msg;

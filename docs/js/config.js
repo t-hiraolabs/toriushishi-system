@@ -23,36 +23,52 @@ async function callGasApi(payload) {
 let userId;   // ページ内で一時的に保持
 let userRole; // ページ内で一時的に保持
 
+async function tryAutoLogin() {
+    const username = localStorage.getItem("savedUsername");
+    const password = localStorage.getItem("savedPassword");
+    if (!username || !password) return false;
+    try {
+        const res = await fetch(GAS_URL, {
+            method: "POST",
+            body: JSON.stringify({ action: "login", username, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+            localStorage.setItem("sessionId", data.sessionId);
+            return true;
+        }
+    } catch (e) {}
+    return false;
+}
+
 async function checkSessionAndGetUserId() {
     try {
-        const sessionId = localStorage.getItem("sessionId");
+        let sessionId = localStorage.getItem("sessionId");
         if (!sessionId) {
-            alert("ログインしてください");
-            location.href = "index.html";
-            return false;
+            const ok = await tryAutoLogin();
+            if (!ok) { location.href = "index.html"; return false; }
+            sessionId = localStorage.getItem("sessionId");
         }
 
-        const res = await callGasApi({
-            action: "validateSession",
-            sessionId
-        });
+        const res = await callGasApi({ action: "validateSession", sessionId });
 
         if (!res.valid) {
-            alert("ログインし直してください");
             localStorage.removeItem("sessionId");
-            location.href = "index.html";
-            return false;
+            const ok = await tryAutoLogin();
+            if (!ok) { location.href = "index.html"; return false; }
+            const res2 = await callGasApi({ action: "validateSession", sessionId: localStorage.getItem("sessionId") });
+            if (!res2.valid) { location.href = "index.html"; return false; }
+            userId = res2.userId;
+            userRole = res2.role;
+            return true;
         }
 
-        // 🔥 ここで userId と role をセット
         userId = res.userId;
         userRole = res.role;
-
         return true;
 
     } catch (err) {
         console.error("Session check error:", err);
-        alert("通信エラー");
         location.href = "index.html";
         return false;
     }
@@ -60,42 +76,34 @@ async function checkSessionAndGetUserId() {
 
 async function checkAdminAccess() {
     try {
-        const sessionId = localStorage.getItem("sessionId");
+        let sessionId = localStorage.getItem("sessionId");
         if (!sessionId) {
-            alert("ログインしてください");
-            location.href = "index.html";
-            return false;
+            const ok = await tryAutoLogin();
+            if (!ok) { location.href = "index.html"; return false; }
+            sessionId = localStorage.getItem("sessionId");
         }
 
-        const res = await callGasApi({
-            action: "validateSession",
-            sessionId,
-            requiredRole: "admin"
-        });
+        let res = await callGasApi({ action: "validateSession", sessionId, requiredRole: "admin" });
 
         if (!res.valid) {
-            alert(res.msg || "権限がありません");
-
-            // セッション無効なら sessionId 削除
-            if (res.reason === "invalid_session") {
-                localStorage.removeItem("sessionId");
+            localStorage.removeItem("sessionId");
+            const ok = await tryAutoLogin();
+            if (ok) {
+                res = await callGasApi({ action: "validateSession", sessionId: localStorage.getItem("sessionId"), requiredRole: "admin" });
             }
-
-            // 必ずログインページへ戻す
-            location.href = "index.html";
-            return false;
+            if (!res.valid) {
+                alert(res.msg || "権限がありません");
+                location.href = "index.html";
+                return false;
+            }
         }
 
-        // --- 管理者OK の場合 ---
         userId = res.userId;
         userRole = res.role;
         return true;
 
     } catch (err) {
         console.error("Admin check error:", err);
-        alert("通信エラー");
-
-        // 念のためトップへ戻す
         location.href = "index.html";
         return false;
     }
