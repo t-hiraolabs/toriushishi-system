@@ -574,7 +574,7 @@ li { list-style: none; }
 /* =======================================================
   Create / Edit Form
 ======================================================= */
-.event-create-card { padding: 8px 0 0; gap: 0; }
+.event-create-card { padding: 8px 0 0; gap: 0; color-scheme: dark; }
 
 .event-create-card > *:not(.close-card-btn):not(.save-event-btn):not(.save-practice-btn) {
   margin: 0 16px;
@@ -638,6 +638,11 @@ li { list-style: none; }
   transition: border-color var(--transition);
   -webkit-appearance: none;
   color-scheme: dark;
+}
+.event-create-card input:-webkit-autofill,
+.event-create-card input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset !important;
+  -webkit-text-fill-color: var(--text-1) !important;
 }
 
 .event-create-card input:focus,
