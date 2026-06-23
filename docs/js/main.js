@@ -391,6 +391,7 @@ function initEventDelegation() {
                 case "gear-management":    document.getElementById("gearCard")?.classList.remove("active"); break;
                 case "gear-edit":          document.getElementById("gearEditCard")?.classList.remove("active"); break;
                 case "mypage":             document.getElementById("myPageCard")?.classList.remove("active"); break;
+                case "member-info-edit":   document.getElementById("memberInfoEditCard")?.classList.remove("active"); break;
             }
             return;
         }
