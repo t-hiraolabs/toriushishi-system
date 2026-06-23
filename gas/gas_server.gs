@@ -103,6 +103,11 @@ function doPost(e) {
 
       case "saveEvent":
         result = saveEventGAS(data.event);
+        if (result.success) {
+          const ev = data.event;
+          const msg = `【イベント通知】\n${ev.title}\n日時：${ev.date} ${ev.time}\n場所：${ev.location || "未設定"}`;
+          sendLineNotification(msg);
+        }
         break;
 
       case "savePractice":
@@ -268,4 +273,22 @@ function getHeaderMap(sheet) {
     if (name) map[name] = i;
   });
   return map;
+}
+
+function sendLineNotification(message) {
+  const props = PropertiesService.getScriptProperties();
+  const token = props.getProperty("LINE_TOKEN");
+  const groupId = props.getProperty("LINE_GROUP_ID");
+  if (!token || !groupId) return;
+  try {
+    UrlFetchApp.fetch("https://api.line.me/v2/bot/message/push", {
+      method: "post",
+      contentType: "application/json",
+      headers: { "Authorization": "Bearer " + token },
+      payload: JSON.stringify({
+        to: groupId,
+        messages: [{ type: "text", text: message }]
+      })
+    });
+  } catch(e) {}
 }
