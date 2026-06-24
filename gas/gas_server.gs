@@ -117,7 +117,6 @@ function doPost(e) {
             ev.deadline ? `回答期限：${ev.deadline}` : "",
             ``,
             `アプリから参加・不参加を回答してください。`,
-            `https://arudiosu.github.io/toriushishi-system/`
           ].filter(l => l !== undefined).join("\n");
           sendLineNotification(msg);
         }
