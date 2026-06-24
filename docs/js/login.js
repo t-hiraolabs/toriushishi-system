@@ -29,8 +29,6 @@ if (loginBtn) {
 
             if (data.success) {
                 localStorage.setItem("sessionId", data.sessionId);
-                localStorage.setItem("savedUsername", username);
-                localStorage.setItem("savedPassword", password);
                 location.href = "main.html";
             } else {
                 message.textContent = data.msg;
