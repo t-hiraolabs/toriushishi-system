@@ -497,6 +497,8 @@ li { list-style: none; }
 .response-btn.absent.selected { box-shadow: 0 0 18px rgba(217,55,62,.6); }
 .response-btn.late   { background: #e07b00; }
 .response-btn.late.selected  { box-shadow: 0 0 18px rgba(224,123,0,.6); }
+.response-btn.cancel-ans { background: var(--surface-3); color: var(--text-2); }
+.response-btn.cancel-ans.selected { box-shadow: 0 0 18px rgba(255,255,255,.15); color: var(--text-1); }
 
 /* =======================================================
   Toggle Buttons

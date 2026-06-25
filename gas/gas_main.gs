@@ -366,9 +366,13 @@ function updatePracticeResponseGAS(practiceId, userId, status) {
   }
 
   if (foundRow !== -1) {
-    answerSheet.getRange(foundRow, A["status"] + 1).setValue(status);
-    answerSheet.getRange(foundRow, A["updated_at"] + 1).setValue(now);
-  } else {
+    if (!status) {
+      answerSheet.deleteRow(foundRow);
+    } else {
+      answerSheet.getRange(foundRow, A["status"] + 1).setValue(status);
+      answerSheet.getRange(foundRow, A["updated_at"] + 1).setValue(now);
+    }
+  } else if (status) {
     const newRow = [];
     newRow[A["practiceId"]] = pid;
     newRow[A["userId"]]     = uid;
