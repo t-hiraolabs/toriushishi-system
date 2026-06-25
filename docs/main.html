@@ -523,6 +523,7 @@
             <div class="otabi-action-row">
                 <button class="otabi-action-chip" id="copyScheduleBtn">前年コピー</button>
                 <button class="otabi-action-chip" id="shareScheduleBtn">PDF出力</button>
+                <button class="otabi-action-chip" id="otabiProgressBtn">進行状況</button>
             </div>
             <div id="otabiScheduleList" class="otabi-list-area"></div>
             <button class="otabi-add-btn" id="addEntryBtn">＋ 一括入力</button>
@@ -630,6 +631,12 @@
     <div id="otabiPrintOverlay" style="display:none;position:fixed;inset:0;background:#fff;color:#111;z-index:300;overflow-y:auto;padding:20px;">
         <button id="otabiPrintClose" style="position:sticky;top:0;display:block;margin-bottom:16px;padding:10px 20px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">✕ 閉じる</button>
         <div id="otabiPrintContent"></div>
+    </div>
+
+    <!-- 進行状況オーバーレイ -->
+    <div id="otabiProgressOverlay" style="display:none;position:fixed;inset:0;background:#1a1a2e;color:#eee;z-index:300;overflow-y:auto;padding:20px;">
+        <button id="otabiProgressClose" style="position:sticky;top:0;display:block;margin-bottom:16px;padding:10px 20px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">✕ 閉じる</button>
+        <div id="otabiProgressContent"></div>
     </div>
 
     <!-- スケジュール一括入力カード -->

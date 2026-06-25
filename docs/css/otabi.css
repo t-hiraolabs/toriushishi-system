@@ -125,7 +125,52 @@
 
 /* --- スケジュールエントリ --- */
 .otabi-entry-no   { flex-shrink: 0; width: 24px; text-align: center; font-size: .78rem; font-weight: 700; color: var(--text-3); }
-.otabi-entry-time { flex-shrink: 0; width: 44px; font-size: .82rem; font-weight: 700; color: var(--accent-teal); }
+.otabi-entry-time-col { flex-shrink: 0; width: 52px; display: flex; flex-direction: column; gap: 2px; }
+.otabi-entry-time { font-size: .82rem; font-weight: 700; color: var(--accent-teal); }
+.otabi-actual-wrap { display: flex; flex-direction: column; gap: 1px; }
+.otabi-actual-time { font-size: .75rem; font-weight: 700; color: #06d6a0; }
+.otabi-diff { font-size: .7rem; font-weight: 700; }
+.otabi-diff-late  { color: #e63946; }
+.otabi-diff-early { color: #06d6a0; }
+.otabi-diff-zero  { color: var(--text-3); }
+.otabi-entry-done { opacity: 0.7; }
+.otabi-complete-btn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: var(--accent-teal);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.otabi-complete-btn.done {
+  background: var(--surface-3);
+  color: var(--text-3);
+}
+
+/* --- 進行状況オーバーレイ --- */
+.prog-group { margin-bottom: 20px; }
+.prog-group-title {
+  font-size: 1rem; font-weight: 800; margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.15); padding-bottom: 4px;
+}
+.prog-count { font-size: .85rem; font-weight: 400; color: #aaa; margin-left: 8px; }
+.prog-row {
+  display: grid;
+  grid-template-columns: 28px 48px 1fr 48px 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  font-size: .88rem;
+}
+.prog-done { opacity: .65; }
+.prog-no   { text-align: center; color: #aaa; font-size: .78rem; }
+.prog-time { color: #06d6a0; font-weight: 700; }
+.prog-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prog-actual { font-weight: 700; color: #ffd166; }
 .otabi-donation-badge {
   flex-shrink: 0;
   font-size: .78rem;

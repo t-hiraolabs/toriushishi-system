@@ -171,6 +171,14 @@ function doPost(e) {
         result = saveOtabiDonationsGAS(data.donations);
         break;
 
+      case "markOtabiComplete":
+        result = markOtabiCompleteGAS(data.entryId, data.actualTime);
+        break;
+
+      case "getOtabiAllProgress":
+        result = getOtabiAllProgressGAS(data.year, data.day);
+        break;
+
       case "getParticipationStats":
         result = getParticipationStatsGAS(data.filter || "event");
         break;

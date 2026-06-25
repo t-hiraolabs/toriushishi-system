@@ -172,6 +172,15 @@ function invalidateSchedCache() {
     otabiSchedCachedYear = null;
 }
 
+function timeDiff(planned, actual) {
+    if (!planned || !actual) return "";
+    const [ph, pm] = planned.split(":").map(Number);
+    const [ah, am] = actual.split(":").map(Number);
+    const diff = (ah * 60 + am) - (ph * 60 + pm);
+    if (diff === 0) return "±0分";
+    return diff > 0 ? `+${diff}分` : `${diff}分`;
+}
+
 function renderOtabiSchedule() {
     const list = document.getElementById("otabiScheduleList");
     if (!otabiScheduleEntries.length) {
@@ -183,24 +192,111 @@ function renderOtabiSchedule() {
         const mapBtn = place?.address
             ? `<a class="otabi-map-icon" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" target="_blank" rel="noopener" title="地図を見る"><i class="fas fa-map-marker-alt"></i></a>`
             : '';
+        const done = !!e.actual_time;
+        const diff = timeDiff(e.time, e.actual_time);
+        const diffClass = diff.startsWith("+") ? "otabi-diff-late" : diff.startsWith("-") ? "otabi-diff-early" : "otabi-diff-zero";
+        const actualHtml = done
+            ? `<div class="otabi-actual-wrap"><span class="otabi-actual-time">${e.actual_time}</span><span class="otabi-diff ${diffClass}">${diff}</span></div>`
+            : '';
+        const completeBtn = done
+            ? `<button class="otabi-complete-btn done" data-id="${e.entry_id}">完了済</button>`
+            : `<button class="otabi-complete-btn" data-id="${e.entry_id}">完了</button>`;
         return `
-        <div class="otabi-item otabi-entry-item" data-entry-id="${e.entry_id}">
+        <div class="otabi-item otabi-entry-item${done ? ' otabi-entry-done' : ''}" data-entry-id="${e.entry_id}">
             <div class="otabi-entry-no">${e.no || '-'}</div>
-            <div class="otabi-entry-time">${e.time || '--:--'}</div>
+            <div class="otabi-entry-time-col">
+                <div class="otabi-entry-time">${e.time || '--:--'}</div>
+                ${actualHtml}
+            </div>
             <div class="otabi-item-body">
                 <div class="otabi-item-title">${e.place_name || '未設定'}</div>
                 ${e.memo ? `<div class="otabi-item-sub">${e.memo}</div>` : ''}
             </div>
             ${mapBtn}
             ${e.donation ? `<div class="otabi-donation-badge">￥${Number(e.donation).toLocaleString()}</div>` : ''}
+            ${completeBtn}
         </div>`;
     }).join('');
     list.querySelectorAll(".otabi-entry-item").forEach(item => {
         item.addEventListener("click", e => {
-            if (e.target.closest(".otabi-map-icon")) return;
+            if (e.target.closest(".otabi-map-icon") || e.target.closest(".otabi-complete-btn")) return;
             openEntryForm(otabiScheduleEntries.find(en => en.entry_id == item.dataset.entryId));
         });
     });
+    list.querySelectorAll(".otabi-complete-btn").forEach(btn => {
+        btn.addEventListener("click", e => {
+            e.stopPropagation();
+            markEntryComplete(Number(btn.dataset.id));
+        });
+    });
+}
+
+async function markEntryComplete(entryId) {
+    const entry = otabiScheduleEntries.find(e => e.entry_id == entryId);
+    if (!entry) return;
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const defaultTime = `${hh}:${mm}`;
+    const input = prompt(`「${entry.place_name}」の到着時間を入力してください`, defaultTime);
+    if (input === null) return;
+    const timeVal = input.trim() || defaultTime;
+    loadingOverlay.style.display = "flex";
+    try {
+        const res = await callGasApi({ action: "markOtabiComplete", entryId, actualTime: timeVal });
+        if (!res.success) throw new Error(res.msg || "失敗");
+        entry.actual_time = timeVal;
+        const cacheKey = `${otabiYear}_${getEffectiveGroup()}_${otabiDay}`;
+        if (otabiSchedCache[cacheKey]) {
+            const cached = otabiSchedCache[cacheKey].find(e => e.entry_id == entryId);
+            if (cached) cached.actual_time = timeVal;
+        }
+        renderOtabiSchedule();
+    } catch(err) { alert("保存中にエラーが発生しました"); }
+    finally { loadingOverlay.style.display = "none"; }
+}
+
+async function openProgressOverlay() {
+    const overlay = document.getElementById("otabiProgressOverlay");
+    overlay.style.display = "block";
+    overlay.querySelector("#otabiProgressContent").innerHTML = '<div class="skeleton skeleton-card"></div>';
+    try {
+        const res = await callGasApi({ action: "getOtabiAllProgress", year: otabiYear, day: otabiDay });
+        if (!res.success) throw new Error();
+        renderProgressOverlay(res.groups);
+    } catch(e) {
+        overlay.querySelector("#otabiProgressContent").innerHTML = '<p>読み込みに失敗しました</p>';
+    }
+}
+
+function renderProgressOverlay(groups) {
+    const content = document.getElementById("otabiProgressContent");
+    const groupKeys = Object.keys(groups).sort();
+    if (!groupKeys.length) {
+        content.innerHTML = '<p style="color:#555;">データがありません</p>';
+        return;
+    }
+    content.innerHTML = groupKeys.map(g => {
+        const entries = groups[g];
+        const total = entries.length;
+        const done = entries.filter(e => e.actual_time).length;
+        const rows = entries.map(e => {
+            const done = !!e.actual_time;
+            const diff = timeDiff(e.time, e.actual_time);
+            const diffClass = diff.startsWith("+") ? "otabi-diff-late" : diff.startsWith("-") ? "otabi-diff-early" : "otabi-diff-zero";
+            return `<div class="prog-row${done ? ' prog-done' : ''}">
+                <span class="prog-no">${e.no}</span>
+                <span class="prog-time">${e.time || '--:--'}</span>
+                <span class="prog-name">${e.place_name}</span>
+                <span class="prog-actual">${e.actual_time || ''}</span>
+                ${diff ? `<span class="otabi-diff ${diffClass}">${diff}</span>` : '<span></span>'}
+            </div>`;
+        }).join('');
+        return `<div class="prog-group">
+            <div class="prog-group-title">${g} <span class="prog-count">${done}/${total}</span></div>
+            ${rows}
+        </div>`;
+    }).join('');
 }
 
 async function openEntryForm(entry = null) {
@@ -537,6 +633,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("shareScheduleBtn")?.addEventListener("click", printOtabiSchedule);
     document.getElementById("otabiPrintClose")?.addEventListener("click", () => {
         document.getElementById("otabiPrintOverlay").style.display = "none";
+    });
+    document.getElementById("otabiProgressBtn")?.addEventListener("click", openProgressOverlay);
+    document.getElementById("otabiProgressClose")?.addEventListener("click", () => {
+        document.getElementById("otabiProgressOverlay").style.display = "none";
     });
     document.getElementById("savePlaceBtn")?.addEventListener("click", savePlaceForm);
     document.getElementById("deletePlaceBtn")?.addEventListener("click", deletePlaceForm);

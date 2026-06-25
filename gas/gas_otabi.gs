@@ -12,14 +12,18 @@ function ensureOtabiSheets() {
   let schedSheet = ss.getSheetByName("otabi_schedules");
   if (!schedSheet) {
     schedSheet = ss.insertSheet("otabi_schedules");
-    schedSheet.appendRow(["entry_id", "year", "group", "day", "no", "time", "place_id", "place_name", "memo", "donation", "created_at", "updated_at"]);
+    schedSheet.appendRow(["entry_id", "year", "group", "day", "no", "time", "place_id", "place_name", "memo", "donation", "actual_time", "created_at", "updated_at"]);
   } else {
-    // 既存シートに day 列がなければ追加
     const headers = schedSheet.getRange(1, 1, 1, schedSheet.getLastColumn()).getValues()[0];
     if (!headers.includes("day")) {
       const groupIdx = headers.indexOf("group");
       schedSheet.insertColumnAfter(groupIdx + 1);
       schedSheet.getRange(1, groupIdx + 2).setValue("day");
+    }
+    if (!headers.includes("actual_time")) {
+      const donIdx = headers.indexOf("donation");
+      schedSheet.insertColumnAfter(donIdx + 1);
+      schedSheet.getRange(1, donIdx + 2).setValue("actual_time");
     }
   }
   return { placesSheet, schedSheet };
@@ -109,7 +113,12 @@ function getOtabiScheduleGAS(year, group, day) {
         place_id: row[P["place_id"]],
         place_name: row[P["place_name"]],
         memo: row[P["memo"]],
-        donation: Number(row[P["donation"]]) || 0
+        donation: Number(row[P["donation"]]) || 0,
+        actual_time: P["actual_time"] !== undefined
+          ? (row[P["actual_time"]] instanceof Date
+              ? Utilities.formatDate(row[P["actual_time"]], "Asia/Tokyo", "HH:mm")
+              : String(row[P["actual_time"]] || ""))
+          : ""
       };
     });
 
@@ -148,9 +157,60 @@ function saveOtabiEntryGAS(entry) {
     entry.no || "", entry.time || "",
     entry.place_id || "", entry.place_name || "",
     entry.memo || "", Number(entry.donation) || 0,
-    now, now
+    "", now, now
   ]);
   return { success: true, entry_id: newId };
+}
+
+function markOtabiCompleteGAS(entryId, actualTime) {
+  const { schedSheet } = ensureOtabiSheets();
+  const data = schedSheet.getDataRange().getValues();
+  const headers = data[0];
+  const P = {};
+  headers.forEach((h, i) => { P[h] = i + 1; });
+  for (let r = 2; r <= data.length; r++) {
+    if (Number(data[r-1][0]) === Number(entryId)) {
+      schedSheet.getRange(r, P["actual_time"]).setValue(actualTime);
+      schedSheet.getRange(r, P["updated_at"]).setValue(new Date());
+      return { success: true };
+    }
+  }
+  return { success: false, msg: "entry not found" };
+}
+
+function getOtabiAllProgressGAS(year, day) {
+  const { schedSheet } = ensureOtabiSheets();
+  const data = schedSheet.getDataRange().getValues();
+  if (data.length <= 1) return { success: true, groups: {} };
+  const headers = data[0];
+  const P = {};
+  headers.forEach((h, i) => { P[h] = i; });
+
+  const result = {};
+  data.slice(1).forEach(row => {
+    if (!row[0]) return;
+    if (String(row[P["year"]]) !== String(year)) return;
+    if (day && row[P["day"]] !== day) return;
+    const group = row[P["group"]];
+    if (!result[group]) result[group] = [];
+    const timeVal = row[P["time"]];
+    const timeStr = timeVal instanceof Date
+      ? Utilities.formatDate(timeVal, "Asia/Tokyo", "HH:mm")
+      : String(timeVal || "");
+    const actualVal = P["actual_time"] !== undefined ? row[P["actual_time"]] : "";
+    const actualStr = actualVal instanceof Date
+      ? Utilities.formatDate(actualVal, "Asia/Tokyo", "HH:mm")
+      : String(actualVal || "");
+    result[group].push({
+      entry_id: row[P["entry_id"]],
+      no: row[P["no"]],
+      time: timeStr,
+      place_name: row[P["place_name"]],
+      actual_time: actualStr
+    });
+  });
+  Object.keys(result).forEach(g => result[g].sort((a, b) => Number(a.no) - Number(b.no)));
+  return { success: true, groups: result };
 }
 
 function deleteOtabiEntryGAS(entryId) {
