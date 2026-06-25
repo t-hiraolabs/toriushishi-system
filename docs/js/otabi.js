@@ -363,48 +363,35 @@ function printOtabiSchedule() {
 
     const rows = otabiScheduleEntries.map(e => {
         const don = e.donation ? `￥${Number(e.donation).toLocaleString()}` : "";
-        return `<tr>
-            <td class="no">${e.no || ''}</td>
-            <td class="time">${e.time || '--:--'}</td>
-            <td class="place">${e.place_name || ''}</td>
-            <td class="memo">${e.memo || ''}</td>
-            <td class="don">${don}</td>
+        return `<tr style="border-bottom:1px solid #ddd;">
+            <td style="padding:8px 6px;text-align:center;color:#555;font-size:0.85em;">${e.no || ''}</td>
+            <td style="padding:8px 6px;white-space:nowrap;font-weight:600;">${e.time || '--:--'}</td>
+            <td style="padding:8px 6px;font-weight:600;">${e.place_name || ''}</td>
+            <td style="padding:8px 6px;color:#666;font-size:0.9em;">${e.memo || ''}</td>
+            <td style="padding:8px 6px;text-align:right;">${don}</td>
         </tr>`;
     }).join("");
 
-    const html = `<!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8">
-<title>${title}</title>
-<style>
-  body { font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 13px; margin: 24px; color: #111; }
-  h1 { font-size: 16px; margin-bottom: 16px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
-  th { background: #f0f0f0; font-weight: bold; }
-  .no { width: 40px; text-align: center; }
-  .time { width: 70px; }
-  .don { width: 90px; text-align: right; }
-  .total { text-align: right; font-weight: bold; margin-top: 10px; }
-  @media print { body { margin: 12px; } }
-</style>
-</head><body>
-<h1>${title}</h1>
-<table>
-  <thead><tr><th class="no">順</th><th class="time">時間</th><th class="place">訪問先</th><th class="memo">備考</th><th class="don">お花代</th></tr></thead>
-  <tbody>${rows}</tbody>
-</table>
-${totalDon ? `<p class="total">合計：￥${totalDon.toLocaleString()}</p>` : ""}
-</body></html>`;
+    const content = `
+        <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:16px;color:#111;">${title}</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:0.95rem;">
+            <thead>
+                <tr style="border-bottom:2px solid #333;">
+                    <th style="padding:8px 6px;text-align:center;width:36px;">順</th>
+                    <th style="padding:8px 6px;width:64px;">時間</th>
+                    <th style="padding:8px 6px;">訪問先</th>
+                    <th style="padding:8px 6px;">備考</th>
+                    <th style="padding:8px 6px;text-align:right;">お花代</th>
+                </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+        </table>
+        ${totalDon ? `<p style="text-align:right;font-weight:700;margin-top:12px;">合計：￥${totalDon.toLocaleString()}</p>` : ""}
+        <p style="color:#aaa;font-size:0.8rem;margin-top:20px;">スクリーンショットで保存してください</p>
+    `;
 
-    let iframe = document.getElementById("_printFrame");
-    if (!iframe) {
-        iframe = document.createElement("iframe");
-        iframe.id = "_printFrame";
-        iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;";
-        document.body.appendChild(iframe);
-    }
-    iframe.srcdoc = html;
-    iframe.onload = () => iframe.contentWindow.print();
+    document.getElementById("otabiPrintContent").innerHTML = content;
+    document.getElementById("otabiPrintOverlay").style.display = "block";
 }
 
 // ===== お花代（Excel風一括入力） =====
@@ -548,6 +535,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("saveBulkEntriesBtn")?.addEventListener("click", saveBulkEntries);
     document.getElementById("copyScheduleBtn")?.addEventListener("click", copyOtabiSchedule);
     document.getElementById("shareScheduleBtn")?.addEventListener("click", printOtabiSchedule);
+    document.getElementById("otabiPrintClose")?.addEventListener("click", () => {
+        document.getElementById("otabiPrintOverlay").style.display = "none";
+    });
     document.getElementById("savePlaceBtn")?.addEventListener("click", savePlaceForm);
     document.getElementById("deletePlaceBtn")?.addEventListener("click", deletePlaceForm);
     document.getElementById("saveEntryBtn")?.addEventListener("click", saveEntryForm);

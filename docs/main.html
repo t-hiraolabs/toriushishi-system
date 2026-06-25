@@ -626,6 +626,12 @@
         <button class="otabi-delete-btn" id="deleteEntryBtn" style="display:none;">削除</button>
     </div>
 
+    <!-- PDF プレビューオーバーレイ -->
+    <div id="otabiPrintOverlay" style="display:none;position:fixed;inset:0;background:#fff;z-index:300;overflow-y:auto;padding:20px;">
+        <button id="otabiPrintClose" style="position:sticky;top:0;display:block;margin-bottom:16px;padding:10px 20px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">✕ 閉じる</button>
+        <div id="otabiPrintContent"></div>
+    </div>
+
     <!-- スケジュール一括入力カード -->
     <div class="member-card otabi-form-card" id="otabiBulkEntryCard">
         <button class="close-card-btn" data-target="otabi-bulk-entry">戻る</button>
