@@ -355,25 +355,52 @@ async function copyOtabiSchedule() {
     } finally { loadingOverlay.style.display = "none"; }
 }
 
-async function shareOtabiSchedule() {
+function printOtabiSchedule() {
     if (!otabiScheduleEntries.length) return alert("スケジュールがありません");
-    const lines = [`${otabiYear}年 ${otabiGroup} お旅スケジュール`, ""];
-    otabiScheduleEntries.forEach(e => {
-        const don = e.donation ? ` ￥${Number(e.donation).toLocaleString()}` : "";
-        const memo = e.memo ? ` [​${e.memo}]` : "";
-        lines.push(`${String(e.no || '').padStart(2,'　')} ${e.time || '--:--'} ${e.place_name}${memo}${don}`);
-    });
-    const text = lines.join('\n');
-    try {
-        await navigator.clipboard.writeText(text);
-        alert("クリップボードにコピーしました\nLINEなどに貼り付けて利用できます");
-    } catch {
-        const ta = document.createElement("textarea");
-        ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0";
-        document.body.appendChild(ta); ta.select();
-        document.execCommand("copy"); document.body.removeChild(ta);
-        alert("コピーしました");
-    }
+    const groupLabel = otabiMode === "合同" ? "合同" : otabiGroup;
+    const title = `${otabiYear}年 ${groupLabel} お旅スケジュール（${otabiDay}）`;
+    const totalDon = otabiScheduleEntries.reduce((s, e) => s + (Number(e.donation) || 0), 0);
+
+    const rows = otabiScheduleEntries.map(e => {
+        const don = e.donation ? `￥${Number(e.donation).toLocaleString()}` : "";
+        return `<tr>
+            <td class="no">${e.no || ''}</td>
+            <td class="time">${e.time || '--:--'}</td>
+            <td class="place">${e.place_name || ''}</td>
+            <td class="memo">${e.memo || ''}</td>
+            <td class="don">${don}</td>
+        </tr>`;
+    }).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<title>${title}</title>
+<style>
+  body { font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif; font-size: 13px; margin: 24px; color: #111; }
+  h1 { font-size: 16px; margin-bottom: 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #f0f0f0; font-weight: bold; }
+  .no { width: 40px; text-align: center; }
+  .time { width: 70px; }
+  .don { width: 90px; text-align: right; }
+  .total { text-align: right; font-weight: bold; margin-top: 10px; }
+  @media print { body { margin: 12px; } }
+</style>
+</head><body>
+<h1>${title}</h1>
+<table>
+  <thead><tr><th class="no">順</th><th class="time">時間</th><th class="place">訪問先</th><th class="memo">備考</th><th class="don">お花代</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+${totalDon ? `<p class="total">合計：￥${totalDon.toLocaleString()}</p>` : ""}
+<script>window.onload = () => { window.print(); }<\/script>
+</body></html>`;
+
+    const win = window.open("", "_blank");
+    if (!win) return alert("ポップアップをブロックしています。許可してください。");
+    win.document.write(html);
+    win.document.close();
 }
 
 // ===== お花代（Excel風一括入力） =====
@@ -516,7 +543,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("addBulkRowBtn")?.addEventListener("click", () => addBulkRow());
     document.getElementById("saveBulkEntriesBtn")?.addEventListener("click", saveBulkEntries);
     document.getElementById("copyScheduleBtn")?.addEventListener("click", copyOtabiSchedule);
-    document.getElementById("shareScheduleBtn")?.addEventListener("click", shareOtabiSchedule);
+    document.getElementById("shareScheduleBtn")?.addEventListener("click", printOtabiSchedule);
     document.getElementById("savePlaceBtn")?.addEventListener("click", savePlaceForm);
     document.getElementById("deletePlaceBtn")?.addEventListener("click", deletePlaceForm);
     document.getElementById("saveEntryBtn")?.addEventListener("click", saveEntryForm);
