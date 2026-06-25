@@ -183,6 +183,20 @@
 }
 .otabi-group-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+.otabi-mode-btn {
+  padding: 10px 28px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
+}
+.otabi-mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
 /* 曜日・フィルタボタン（group-btnと同スタイル） */
 .otabi-day-btn,
 .otabi-place-filter-btn {
