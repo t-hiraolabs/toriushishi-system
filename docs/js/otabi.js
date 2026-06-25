@@ -4,11 +4,31 @@
 let otabiPlaces = [];
 let otabiScheduleEntries = [];
 let otabiYear = new Date().getFullYear();
+let otabiMode = "合同";   // "合同" | "個別"
 let otabiGroup = "上組";
 let otabiDay = "土曜";
-let otabiPlaceFilter = "";   // "" = すべて
+let otabiPlaceFilter = "";
 let otabiDonGroup = "上組";
 let otabiDonDay = "土曜";
+
+function getEffectiveGroup() {
+    return otabiMode === "合同" ? "合同" : otabiGroup;
+}
+
+function updateModeUI() {
+    document.querySelectorAll(".otabi-mode-btn").forEach(b => b.classList.toggle("active", b.dataset.mode === otabiMode));
+    const groupRow = document.getElementById("otabiGroupToggleRow");
+    const dayRow   = document.getElementById("otabiDayToggleRow");
+    if (otabiMode === "合同") {
+        groupRow.style.display = "none";
+        if (dayRow) dayRow.style.display = "";
+    } else {
+        groupRow.style.display = "";
+        if (dayRow) dayRow.style.display = "none";
+    }
+    document.querySelectorAll(".otabi-group-btn").forEach(b => b.classList.toggle("active", b.dataset.group === otabiGroup));
+    document.querySelectorAll(".otabi-day-btn").forEach(b => b.classList.toggle("active", b.dataset.day === otabiDay));
+}
 
 function openOtabiCard() {
     otabiYear = new Date().getFullYear();
@@ -122,10 +142,10 @@ let otabiSchedCachedYear = null;
 
 async function loadOtabiSchedule(forceReload = false) {
     document.getElementById("otabiScheduleYear").textContent = otabiYear;
-    document.querySelectorAll(".otabi-group-btn").forEach(b => b.classList.toggle("active", b.dataset.group === otabiGroup));
-    document.querySelectorAll(".otabi-day-btn").forEach(b => b.classList.toggle("active", b.dataset.day === otabiDay));
+    updateModeUI();
 
-    const cacheKey = `${otabiYear}_${otabiGroup}_${otabiDay}`;
+    const group = getEffectiveGroup();
+    const cacheKey = `${otabiYear}_${group}_${otabiDay}`;
     const yearChanged = otabiSchedCachedYear !== otabiYear;
 
     if (forceReload || yearChanged || !otabiSchedCache[cacheKey]) {
@@ -136,7 +156,7 @@ async function loadOtabiSchedule(forceReload = false) {
             Object.keys(otabiSchedCache).forEach(k => delete otabiSchedCache[k]);
             otabiSchedCachedYear = otabiYear;
         }
-        const fetches = [callGasApi({ action: "getOtabiSchedule", year: otabiYear, group: otabiGroup, day: otabiDay })];
+        const fetches = [callGasApi({ action: "getOtabiSchedule", year: otabiYear, group, day: otabiDay })];
         if (!otabiPlaces.length) fetches.push(callGasApi({ action: "getOtabiPlaces" }));
         const [schedRes, placesRes] = await Promise.all(fetches);
         otabiSchedCache[cacheKey] = schedRes.entries || [];
@@ -214,7 +234,7 @@ async function saveEntryForm() {
     const entry = {
         entry_id: id ? Number(id) : null,
         year: otabiYear,
-        group: otabiGroup,
+        group: getEffectiveGroup(),
         day: document.querySelector('input[name="entryDay"]:checked')?.value || "土曜",
         no: Number(document.getElementById("entryFormNo").value) || 0,
         time: document.getElementById("entryFormTime").value,
@@ -297,7 +317,7 @@ async function saveBulkEntries() {
         entries.push({
             entry_id: null,
             year: otabiYear,
-            group: otabiGroup,
+            group: getEffectiveGroup(),
             day: otabiDay,
             no: Number(row.querySelector(".bulk-no").value) || 0,
             time: row.querySelector(".bulk-time").value,
@@ -323,7 +343,7 @@ async function copyOtabiSchedule() {
     if (!confirm(`${fromYear}年の${otabiGroup}スケジュールを${otabiYear}年にコピーしますか？\n(お花代はリセットされます)`)) return;
     loadingOverlay.style.display = "flex";
     try {
-        const res = await callGasApi({ action: "copyOtabiSchedule", fromYear, toYear: otabiYear, group: otabiGroup });
+        const res = await callGasApi({ action: "copyOtabiSchedule", fromYear, toYear: otabiYear, group: getEffectiveGroup() });
         if (!res.success) return alert(res.msg || "コピー失敗");
         alert(`${res.count}件コピーしました`);
         invalidateSchedCache(); await loadOtabiSchedule();
@@ -465,6 +485,9 @@ document.addEventListener("DOMContentLoaded", () => {
         })
     );
     // スケジュール
+    document.querySelectorAll(".otabi-mode-btn").forEach(btn =>
+        btn.addEventListener("click", () => { otabiMode = btn.dataset.mode; invalidateSchedCache(); loadOtabiSchedule(); })
+    );
     document.querySelectorAll(".otabi-group-btn").forEach(btn =>
         btn.addEventListener("click", () => { otabiGroup = btn.dataset.group; loadOtabiSchedule(); })
     );
