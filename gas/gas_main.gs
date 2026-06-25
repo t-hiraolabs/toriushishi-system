@@ -734,13 +734,22 @@ function saveEventGAS(event) {
     const dateOnly = new Date(event.date);
 
     const timeStr = event.time || "";
+    const isTimeDecided = timeStr && timeStr !== "未定" && timeStr.includes(":");
     let timeOnly;
-    if (timeStr && timeStr !== "未定" && timeStr.includes(":")) {
+    if (isTimeDecided) {
       const [h, m] = timeStr.split(":").map(Number);
       timeOnly = new Date(1899, 11, 30, h, m);
     } else {
-      timeOnly = timeStr; // "未定" or "" をそのまま文字列で保存
+      timeOnly = timeStr === "未定" ? "未定" : "";
     }
+
+    const setTimeCell = (range) => {
+      if (isTimeDecided) {
+        range.setNumberFormat("hh:mm").setValue(timeOnly);
+      } else {
+        range.setNumberFormat("@").setValue(timeOnly);
+      }
+    };
 
     if (event.eventId) {
       const id = Number(event.eventId);
@@ -762,7 +771,7 @@ function saveEventGAS(event) {
       sheet.getRange(targetRow, 2).setValue(dateOnly);
       sheet.getRange(targetRow, 3).setValue(event.title);
       sheet.getRange(targetRow, 4).setValue(event.type);
-      sheet.getRange(targetRow, 5).setValue(timeOnly);
+      setTimeCell(sheet.getRange(targetRow, 5));
       sheet.getRange(targetRow, 6).setValue(event.location);
       sheet.getRange(targetRow, 7).setValue(event.comment);
       sheet.getRange(targetRow, 8).setValue(event.deadline);
@@ -780,13 +789,15 @@ function saveEventGAS(event) {
       dateOnly,
       event.title,
       event.type,
-      timeOnly,
+      isTimeDecided ? timeOnly : timeOnly,
       event.location,
       event.comment,
       event.deadline || "",
       now,
       now
     ]);
+    const newRow = sheet.getLastRow();
+    setTimeCell(sheet.getRange(newRow, 5));
 
     return { success: true, eventId: newId, created: true };
 
