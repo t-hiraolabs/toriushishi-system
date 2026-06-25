@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initCalendar();
     loadMembersUser();
     if (userRole === "admin") loadMembersAdmin();
+    initHaruWidget();
 });
 
 /* =======================================================
@@ -865,6 +866,100 @@ async function deleteMemo(memoId) {
 
 function escHtml(str) {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/* =======================================================
+春例大祭 進行状況ウィジェット
+======================================================= */
+let haruDay = "土曜";
+
+function initHaruWidget() {
+    document.querySelectorAll(".haru-day-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            haruDay = btn.dataset.day;
+            document.querySelectorAll(".haru-day-btn").forEach(b => b.classList.toggle("active", b.dataset.day === haruDay));
+            loadHaruProgress();
+        });
+    });
+    loadHaruProgress();
+}
+
+async function loadHaruProgress() {
+    const list = document.getElementById("haruProgressList");
+    list.innerHTML = '<div class="skeleton skeleton-card" style="height:60px;"></div>';
+    try {
+        const year = new Date().getFullYear();
+        const res = await callGasApi({ action: "getOtabiAllProgress", year, day: haruDay });
+        if (!res.success) throw new Error();
+        renderHaruProgress(res.groups);
+    } catch(e) {
+        list.innerHTML = '<p style="color:var(--text-3);padding:12px;">読み込みに失敗しました</p>';
+    }
+}
+
+function haruTimeDiff(planned, actual) {
+    if (!planned || !actual) return "";
+    const [ph, pm] = planned.split(":").map(Number);
+    const [ah, am] = actual.split(":").map(Number);
+    const diff = (ah * 60 + am) - (ph * 60 + pm);
+    if (diff === 0) return "±0分";
+    return diff > 0 ? `+${diff}分` : `${diff}分`;
+}
+
+function renderHaruProgress(groups) {
+    const list = document.getElementById("haruProgressList");
+    const groupKeys = Object.keys(groups).sort();
+    if (!groupKeys.length) {
+        list.innerHTML = '<p style="color:var(--text-3);padding:12px;">データがありません</p>';
+        return;
+    }
+    const isAdmin = userRole === "admin";
+    list.innerHTML = groupKeys.map(g => {
+        const entries = groups[g];
+        const done = entries.filter(e => e.actual_time).length;
+        const rows = entries.map(e => {
+            const isDone = !!e.actual_time;
+            const diff = haruTimeDiff(e.time, e.actual_time);
+            const diffClass = diff.startsWith("+") ? "haru-diff-late" : diff.startsWith("-") ? "haru-diff-early" : "haru-diff-zero";
+            const completeBtn = isAdmin
+                ? `<button class="haru-complete-btn${isDone ? ' done' : ''}" data-id="${e.entry_id}" data-name="${escHtml(e.place_name)}">${isDone ? '完了済' : '完了'}</button>`
+                : '';
+            return `<div class="haru-entry-row${isDone ? ' done' : ''}">
+                <span class="haru-no">${e.no}</span>
+                <span class="haru-time">${e.time || '--:--'}</span>
+                <span class="haru-name">${escHtml(e.place_name)}</span>
+                <span class="haru-actual">${e.actual_time || ''}</span>
+                ${diff ? `<span class="haru-diff ${diffClass}">${diff}</span>` : '<span></span>'}
+                ${completeBtn}
+            </div>`;
+        }).join('');
+        return `<div class="haru-group-block">
+            <div class="haru-group-label">${g} <span class="haru-count">${done}/${entries.length}</span></div>
+            ${rows}
+        </div>`;
+    }).join('');
+
+    if (isAdmin) {
+        list.querySelectorAll(".haru-complete-btn").forEach(btn => {
+            btn.addEventListener("click", () => haruMarkComplete(Number(btn.dataset.id), btn.dataset.name));
+        });
+    }
+}
+
+async function haruMarkComplete(entryId, placeName) {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const input = prompt(`「${placeName}」の到着時間`, `${hh}:${mm}`);
+    if (input === null) return;
+    const timeVal = input.trim() || `${hh}:${mm}`;
+    loadingOverlay.style.display = "flex";
+    try {
+        const res = await callGasApi({ action: "markOtabiComplete", entryId, actualTime: timeVal });
+        if (!res.success) throw new Error(res.msg || "失敗");
+        await loadHaruProgress();
+    } catch(e) { alert("保存中にエラーが発生しました"); }
+    finally { loadingOverlay.style.display = "none"; }
 }
 
 /* =======================================================
