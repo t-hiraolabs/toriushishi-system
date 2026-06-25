@@ -360,7 +360,7 @@ function initEventDelegation() {
                 if (practiceDate < today) { alert("過去の練習には回答できません。"); return; }
                 let answer = "";
                 const isSelected = responseBtn.classList.contains("selected");
-                if (responseBtn.classList.contains("cancel-ans") || isSelected) {
+                if (isSelected) {
                     answer = "";
                 } else if (responseBtn.classList.contains("absent")) {
                     answer = "欠席";
@@ -690,7 +690,6 @@ async function updatePracticeResponse(practiceId, answer, card, userId) {
         const result = await callGasApi({ action: "updatePracticeResponse", practiceId, userId, answer });
         card.querySelector(".response-btn.absent")?.classList.toggle("selected", answer === "欠席");
         card.querySelector(".response-btn.late")?.classList.toggle("selected", answer === "遅刻");
-        card.querySelector(".response-btn.cancel-ans")?.classList.toggle("selected", answer === "");
         fillResponseList(card.querySelector("ul.response-list.absent"), result.absent);
         fillResponseList(card.querySelector("ul.response-list.late"), result.late);
         card.querySelector(".toggle-response-btn.absent").textContent = `欠席 ${result.absent.length}人`;
@@ -743,7 +742,6 @@ async function fillPracticeDetailCard(practiceData, userId, card) {
     if (lateToggle) lateToggle.textContent = `遅れて参加 ${(practiceData.late || []).length}人`;
     card.querySelector(".response-btn.absent")?.classList.toggle("selected", (practiceData.myStatus || "") === "欠席");
     card.querySelector(".response-btn.late")?.classList.toggle("selected", (practiceData.myStatus || "") === "遅刻");
-    card.querySelector(".response-btn.cancel-ans")?.classList.toggle("selected", !(practiceData.myStatus));
 }
 
 /* =======================================================
