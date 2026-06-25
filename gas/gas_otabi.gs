@@ -128,14 +128,14 @@ function saveOtabiEntryGAS(entry) {
   if (entry.entry_id) {
     for (let r = 2; r <= data.length; r++) {
       if (Number(data[r-1][0]) === Number(entry.entry_id)) {
-        if (P["day"] !== undefined) schedSheet.getRange(r, P["day"] + 1).setValue(entry.day || "土曜");
-        schedSheet.getRange(r, P["no"] + 1).setValue(entry.no || "");
-        schedSheet.getRange(r, P["time"] + 1).setValue(entry.time || "");
-        schedSheet.getRange(r, P["place_id"] + 1).setValue(entry.place_id || "");
-        schedSheet.getRange(r, P["place_name"] + 1).setValue(entry.place_name || "");
-        schedSheet.getRange(r, P["memo"] + 1).setValue(entry.memo || "");
-        schedSheet.getRange(r, P["donation"] + 1).setValue(Number(entry.donation) || 0);
-        schedSheet.getRange(r, P["updated_at"] + 1).setValue(now);
+        if (P["day"]) schedSheet.getRange(r, P["day"]).setValue(entry.day || "土曜");
+        schedSheet.getRange(r, P["no"]).setValue(entry.no || "");
+        schedSheet.getRange(r, P["time"]).setValue(entry.time || "");
+        schedSheet.getRange(r, P["place_id"]).setValue(entry.place_id || "");
+        schedSheet.getRange(r, P["place_name"]).setValue(entry.place_name || "");
+        schedSheet.getRange(r, P["memo"]).setValue(entry.memo || "");
+        schedSheet.getRange(r, P["donation"]).setValue(Number(entry.donation) || 0);
+        schedSheet.getRange(r, P["updated_at"]).setValue(now);
         return { success: true, entry_id: entry.entry_id };
       }
     }
