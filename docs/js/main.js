@@ -924,10 +924,11 @@ function renderHaruProgress(groups) {
             const completeBtn = isAdmin
                 ? `<button class="haru-complete-btn${isDone ? ' done' : ''}" data-id="${e.entry_id}" data-name="${escHtml(e.place_name)}">${isDone ? '完了済' : '完了'}</button>`
                 : '';
-            return `<div class="haru-entry-row${isDone ? ' done' : ''}">
+            const jointBadge = e.is_joint ? '<span class="haru-joint-badge">合同</span>' : '';
+            return `<div class="haru-entry-row${isDone ? ' done' : ''}${e.is_joint ? ' haru-joint' : ''}">
                 <span class="haru-no">${e.no}</span>
                 <span class="haru-time">${e.time || '--:--'}</span>
-                <span class="haru-name">${escHtml(e.place_name)}</span>
+                <span class="haru-name">${escHtml(e.place_name)}${jointBadge}</span>
                 <span class="haru-actual">${e.actual_time || ''}</span>
                 ${diff ? `<span class="haru-diff ${diffClass}">${diff}</span>` : '<span></span>'}
                 ${completeBtn}
