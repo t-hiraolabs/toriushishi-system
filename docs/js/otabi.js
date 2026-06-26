@@ -608,7 +608,9 @@ async function loadOtabiDonations(forceReload = false) {
         otabiDonCachedYear = otabiYear;
     }
 
-    otabiDonEntries = otabiDonAllCache.filter(e => e.group === otabiDonGroup && e.day === otabiDonDay);
+    otabiDonEntries = otabiDonAllCache
+        .filter(e => (e.group === otabiDonGroup || e.group === "合同") && e.day === otabiDonDay)
+        .sort((a, b) => Number(a.no) - Number(b.no));
     renderOtabiDonations();
 }
 
@@ -619,23 +621,23 @@ function renderOtabiDonations() {
         updateDonationTotal();
         return;
     }
-    grid.innerHTML = `
-        <div class="otabi-don-grid-head">
-            <span class="dg-no">No.</span>
-            <span class="dg-name">訪問先</span>
-            <span class="dg-amount">お花代</span>
-        </div>
-    ` + otabiDonEntries.map((e, i) => `
-        <div class="otabi-don-grid-row">
-            <span class="dg-no">${e.no || '-'}</span>
-            <span class="dg-name">${e.place_name || ''}</span>
-            <span class="dg-amount">
+    grid.innerHTML = otabiDonEntries.map((e, i) => {
+        const isJoint = e.group === "合同";
+        const jointBadge = isJoint ? '<span class="otabi-joint-badge">合同</span>' : '';
+        return `
+        <div class="otabi-item otabi-don-item">
+            <div class="otabi-entry-no">${e.no || '-'}</div>
+            <div class="otabi-item-body">
+                <div class="otabi-item-title">${e.place_name || ''}${jointBadge}</div>
+            </div>
+            <div class="dg-amount-col">
                 <input type="number" inputmode="numeric" class="dg-input"
                        data-idx="${i}" value="${e.donation || ''}"
                        placeholder="0" min="0" step="500" />
-            </span>
-        </div>
-    `).join('');
+                <span class="dg-unit">円</span>
+            </div>
+        </div>`;
+    }).join('');
 
     const inputs = [...grid.querySelectorAll(".dg-input")];
     inputs.forEach((input, idx) => {
@@ -643,7 +645,6 @@ function renderOtabiDonations() {
             otabiDonEntries[idx].donation = Number(input.value) || 0;
             updateDonationTotal();
         });
-        // Enter / 下矢印で次の行へ（Excel風）
         input.addEventListener("keydown", ev => {
             if (ev.key === "Enter" || ev.key === "ArrowDown") {
                 ev.preventDefault();

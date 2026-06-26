@@ -420,6 +420,38 @@
   border-color: var(--accent);
   background: var(--surface-3);
 }
+.otabi-don-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+}
+.dg-amount-col {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.dg-amount-col .dg-input {
+  width: 96px;
+  text-align: right;
+}
+.dg-unit {
+  font-size: .8rem;
+  color: var(--text-3);
+  white-space: nowrap;
+}
+.otabi-joint-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f0a500;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
 
 .otabi-don-group-btn,
 .otabi-don-day-btn {
