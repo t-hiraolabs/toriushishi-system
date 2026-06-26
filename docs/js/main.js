@@ -872,6 +872,8 @@ function escHtml(str) {
 春例大祭 進行状況ウィジェット
 ======================================================= */
 let haruDay = "土曜";
+let haruGroup = "上組";
+let haruAllGroups = {};
 
 function initHaruWidget() {
     document.querySelectorAll(".haru-day-btn").forEach(btn => {
@@ -879,6 +881,13 @@ function initHaruWidget() {
             haruDay = btn.dataset.day;
             document.querySelectorAll(".haru-day-btn").forEach(b => b.classList.toggle("active", b.dataset.day === haruDay));
             loadHaruProgress();
+        });
+    });
+    document.querySelectorAll(".haru-group-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            haruGroup = btn.dataset.group;
+            document.querySelectorAll(".haru-group-btn").forEach(b => b.classList.toggle("active", b.dataset.group === haruGroup));
+            renderHaruProgress(haruAllGroups);
         });
     });
     loadHaruProgress();
@@ -891,7 +900,8 @@ async function loadHaruProgress() {
         const year = new Date().getFullYear();
         const res = await callGasApi({ action: "getOtabiAllProgress", year, day: haruDay });
         if (!res.success) throw new Error();
-        renderHaruProgress(res.groups);
+        haruAllGroups = res.groups || {};
+        renderHaruProgress(haruAllGroups);
     } catch(e) {
         list.innerHTML = '<p style="color:var(--text-3);padding:12px;">読み込みに失敗しました</p>';
     }
@@ -908,7 +918,7 @@ function haruTimeDiff(planned, actual) {
 
 function renderHaruProgress(groups) {
     const list = document.getElementById("haruProgressList");
-    const groupKeys = Object.keys(groups).sort();
+    const groupKeys = Object.keys(groups).filter(g => g === haruGroup);
     if (!groupKeys.length) {
         list.innerHTML = '<p style="color:var(--text-3);padding:12px;">データがありません</p>';
         return;
@@ -958,7 +968,12 @@ async function haruMarkComplete(entryId, placeName) {
     try {
         const res = await callGasApi({ action: "markOtabiComplete", entryId, actualTime: timeVal });
         if (!res.success) throw new Error(res.msg || "失敗");
-        await loadHaruProgress();
+        // ローカルキャッシュを更新して再描画
+        Object.values(haruAllGroups).forEach(entries => {
+            const e = entries.find(e => e.entry_id === entryId);
+            if (e) e.actual_time = timeVal;
+        });
+        renderHaruProgress(haruAllGroups);
     } catch(e) { alert("保存中にエラーが発生しました"); }
     finally { loadingOverlay.style.display = "none"; }
 }

@@ -571,45 +571,6 @@ async function copyOtabiSchedule() {
     } finally { loadingOverlay.style.display = "none"; }
 }
 
-function printOtabiSchedule() {
-    if (!otabiScheduleEntries.length) return alert("スケジュールがありません");
-    const groupLabel = otabiGroup;
-    const title = `${otabiYear}年 ${groupLabel} お旅スケジュール（${otabiDay}）`;
-    const totalDon = otabiScheduleEntries.reduce((s, e) => s + (Number(e.donation) || 0), 0);
-
-    const rows = otabiScheduleEntries.map(e => {
-        const don = e.donation ? `￥${Number(e.donation).toLocaleString()}` : "";
-        return `<tr style="border-bottom:1px solid #ddd;">
-            <td style="padding:8px 6px;text-align:center;color:#555;font-size:0.85em;">${e.no || ''}</td>
-            <td style="padding:8px 6px;white-space:nowrap;font-weight:600;">${e.time || '--:--'}</td>
-            <td style="padding:8px 6px;font-weight:600;">${e.place_name || ''}</td>
-            <td style="padding:8px 6px;color:#666;font-size:0.9em;">${e.memo || ''}</td>
-            <td style="padding:8px 6px;text-align:right;">${don}</td>
-        </tr>`;
-    }).join("");
-
-    const content = `
-        <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:16px;color:#111;">${title}</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:0.95rem;">
-            <thead>
-                <tr style="border-bottom:2px solid #333;">
-                    <th style="padding:8px 6px;text-align:center;width:36px;">順</th>
-                    <th style="padding:8px 6px;width:64px;">時間</th>
-                    <th style="padding:8px 6px;">訪問先</th>
-                    <th style="padding:8px 6px;">備考</th>
-                    <th style="padding:8px 6px;text-align:right;">お花代</th>
-                </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-        </table>
-        ${totalDon ? `<p style="text-align:right;font-weight:700;margin-top:12px;">合計：￥${totalDon.toLocaleString()}</p>` : ""}
-        <p style="color:#aaa;font-size:0.8rem;margin-top:20px;">スクリーンショットで保存してください</p>
-    `;
-
-    document.getElementById("otabiPrintContent").innerHTML = content;
-    document.getElementById("otabiPrintOverlay").style.display = "block";
-}
-
 // ===== お花代（Excel風一括入力） =====
 
 let otabiDonEntries = [];   // 現在表示中（グループ＋曜日でフィルタ済み）
@@ -752,10 +713,6 @@ document.addEventListener("DOMContentLoaded", () => {
         row.querySelector(".bulk-place-search").focus();
     });
     document.getElementById("copyScheduleBtn")?.addEventListener("click", copyOtabiSchedule);
-    document.getElementById("shareScheduleBtn")?.addEventListener("click", printOtabiSchedule);
-    document.getElementById("otabiPrintClose")?.addEventListener("click", () => {
-        document.getElementById("otabiPrintOverlay").style.display = "none";
-    });
     document.getElementById("otabiProgressBtn")?.addEventListener("click", openProgressOverlay);
     document.getElementById("otabiProgressClose")?.addEventListener("click", () => {
         document.getElementById("otabiProgressOverlay").style.display = "none";

@@ -1182,6 +1182,22 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   border-color: var(--accent);
   color: #fff;
 }
+.haru-group-toggle { display: flex; gap: 6px; padding: 4px 0 8px; }
+.haru-group-btn {
+  padding: 4px 16px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: .85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.haru-group-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .haru-progress-list { padding: 4px 0 8px; }
 .haru-group-block { padding: 8px 14px 4px; }
 .haru-group-label {

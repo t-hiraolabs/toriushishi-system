@@ -197,6 +197,10 @@
                     <button class="haru-day-btn" data-day="日曜">日曜</button>
                 </div>
             </div>
+            <div class="haru-group-toggle">
+                <button class="haru-group-btn active" data-group="上組">上組</button>
+                <button class="haru-group-btn" data-group="下組">下組</button>
+            </div>
             <div id="haruProgressList" class="haru-progress-list"></div>
         </div>
         <div class="event-status">進行中のイベント</div>
@@ -522,7 +526,6 @@
             </div>
             <div class="otabi-action-row">
                 <button class="otabi-action-chip" id="copyScheduleBtn">前年コピー</button>
-                <button class="otabi-action-chip" id="shareScheduleBtn">PDF出力</button>
                 <button class="otabi-action-chip" id="otabiProgressBtn">進行状況</button>
             </div>
             <div id="otabiScheduleList" class="otabi-list-area"></div>
@@ -651,12 +654,6 @@
         </div>
         <button class="save-event-btn" id="saveEntryBtn">保存</button>
         <button class="otabi-delete-btn" id="deleteEntryBtn" style="display:none;">削除</button>
-    </div>
-
-    <!-- PDF プレビューオーバーレイ -->
-    <div id="otabiPrintOverlay" style="display:none;position:fixed;inset:0;background:#fff;color:#111;z-index:300;overflow-y:auto;padding:20px;">
-        <button id="otabiPrintClose" style="position:sticky;top:0;display:block;margin-bottom:16px;padding:10px 20px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">✕ 閉じる</button>
-        <div id="otabiPrintContent"></div>
     </div>
 
     <!-- 進行状況オーバーレイ -->
