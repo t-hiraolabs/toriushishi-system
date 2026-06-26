@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>鳥生獅子連システム</title>
+<link rel="icon" href="images/favicon.ico" />
+<link rel="icon" type="image/png" href="images/鳥生獅子連中＿icon.png" />
+<link rel="apple-touch-icon" href="images/鳥生獅子連中＿画像.png">
+<link rel="apple-touch-icon" sizes="180x180" href="images/鳥生獅子連中＿画像.png">
+
+<link rel="stylesheet" href="css/login.css">
+</head>
+
+<body>
+
+<div class="header">鳥生獅子連中</div>
+
+<div class="icon">
+    <img src="images/鳥生獅子連中＿画像.png" alt="img">
+</div>
+
+
+<div class="login">
+    <form id="loginForm">
+        <div class="name">
+            <label for="username">ユーザー名</label>
+            <input type="text" id="username" name="username">
+        </div>
+        <div class="password">
+            <label for="password">パスワード</label>
+            <input type="password" id="password" name="password">
+        </div>
+        <button type="button" id="loginBtn">ログイン</button>
+        <br>
+        <span id="message" style="color:red;"></span>
+    </form>
+    <div class="regist">
+        <button type="button" id="gotoRegist">メンバー申請</button>
+    </div>
+
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/login.js"></script>
+
+</body>
+</html>

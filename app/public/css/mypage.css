@@ -1,0 +1,108 @@
+/* =======================================================
+   マイページ
+======================================================= */
+.mypage-profile {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 4px;
+}
+.mypage-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.6rem;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.mypage-name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-1);
+}
+.mypage-role {
+  font-size: .8rem;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.mypage-section {
+  padding: 16px 16px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.mypage-section:last-child { border-bottom: none; }
+.mypage-section-title {
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin-bottom: 12px;
+}
+.mypage-section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.mypage-edit-btn {
+  background: var(--surface-3);
+  border: none;
+  border-radius: 100px;
+  color: var(--text-2);
+  font-size: .75rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: background .18s, color .18s;
+}
+.mypage-edit-btn:hover {
+  background: var(--accent-teal);
+  color: #fff;
+}
+.mypage-empty {
+  font-size: .88rem;
+  color: var(--text-3);
+  margin: 0 0 12px;
+}
+
+/* 参加率バー */
+.mypage-rate-item { margin-bottom: 14px; }
+.mypage-rate-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.mypage-rate-label { font-size: .9rem; color: var(--text-2); flex: 1; }
+.mypage-rate-pct { font-size: 1.05rem; font-weight: 800; color: var(--text-1); }
+.mypage-rate-count { font-size: .78rem; color: var(--text-3); }
+.mypage-bar-wrap {
+  height: 8px;
+  background: var(--surface-3);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.mypage-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width .6s ease;
+}
+
+/* 装備情報 */
+.mypage-gear-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border);
+}
+.mypage-gear-row:last-child { border-bottom: none; }
+.mypage-gear-label { font-size: .88rem; color: var(--text-2); }
+.mypage-gear-val { font-size: .92rem; font-weight: 600; color: var(--text-1); }

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>メンバー登録</title>
+<link rel="stylesheet" href="css/regist.css">
+
+</head>
+<body>
+
+<div class="regist">
+
+    <div class="title">メンバー登録</div>
+
+    <form id="registForm">
+
+        <div class="row">
+            <div class="input-block">
+                <label>氏</label>
+                <input type="text" id="lastName" name="lastName">
+            </div>
+            <div class="input-block">
+                <label>名</label>
+                <input type="text" id="firstName" name="firstName">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="input-block">
+                <label>パスワード</label>
+                <input type="password" id="password">
+            </div>
+        </div>
+
+        <!-- ★ 住所（都道府県は愛媛県のみ、市区町村を選択） -->
+        <div class="row">
+            <div class="input-block">
+                <label>都道府県</label>
+                <select id="prefecture">
+                    <option value="愛媛県">愛媛県</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="input-block">
+                <label>市区町村</label>
+                <select id="city">
+                    <option value="">市区町村を選択</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 詳細住所 -->
+        <div class="row">
+            <div class="input-block">
+                <label>住所（番地・建物名）</label>
+                <input type="text" id="addressDetail" placeholder="例：〇〇町 1-2-3 ○○マンション 101号">
+            </div>
+        </div>
+
+        <!-- ★ 電話番号（3分割） -->
+        <div class="row phone-row">
+            <div class="input-block">
+                <label>電話番号</label>
+                <div class="phone-split">
+                    <input type="tel" id="phone1" maxlength="3">
+                    <span class="separator">-</span>
+                    <input type="tel" id="phone2" maxlength="4">
+                    <span class="separator">-</span>
+                    <input type="tel" id="phone3" maxlength="4">
+                </div>
+            </div>
+        </div>
+
+        <!-- ★ 生年月日 -->
+        <div class="row">
+            <div class="input-block">
+                <label>生年月日</label>
+                <input type="date" id="birthDate" name="birthDate">
+            </div>
+        </div>
+
+        <div class="child-title">中学生以下の子役の名前</div>
+
+        <div id="childList" class="child-list">
+            <div class="child-row">
+                <input type="text" class="child-lastname" placeholder="姓">
+                <input type="text" class="child-firstname" placeholder="名">
+                <input type="date" class="child-birth" placeholder="生年月日">
+            </div>
+        </div>
+
+        <div class="sns-consent-wrap">
+            <input type="checkbox" id="snsConsent">
+            <label for="snsConsent">SNSへの写真・動画の掲載に同意する</label>
+        </div>
+
+        <button type="button" class="add-btn" id="addChildBtn">＋ 子どもを追加</button>
+        <button type="button" id="registBtn">申請</button>
+        <button type="button" class="back-btn" id="backLogin">戻る</button>
+    </form>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/regist.js"></script>
+</body>
+</html>

@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="css/main.css">
+<link rel="stylesheet" href="css/otabi.css">
+<link rel="stylesheet" href="css/gear.css">
+<link rel="stylesheet" href="css/mypage.css">
+<style>
+.practice-mode-toggle { margin: 8px 0; }
+.weekday-select { margin-top: 8px; }
+.weekday-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.weekday-checkboxes label { display: flex; align-items: center; gap: 3px; font-size: 14px; }
+
+/* ===== 演目フォーム ===== */
+.perf-item {
+    background: var(--surface-2);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.perf-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.perf-item-header-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; }
+.perf-no-input { width: 56px; }
+.perf-tilde { color: var(--text-3); font-size: .85rem; flex-shrink: 0; }
+.perf-remove-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--surface-3);
+    border: none;
+    color: var(--text-3);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: .85rem;
+}
+.perf-drums { display: flex; gap: 8px; }
+.perf-drums input { flex: 1; }
+.perf-roles-list { display: flex; flex-direction: column; gap: 0; }
+.perf-role-row {
+    background: var(--surface-3);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.perf-role-row-top { display: flex; gap: 6px; align-items: center; }
+.perf-role-row-top .role-label-input { flex: 1; }
+.role-remove-btn {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-3);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: .8rem;
+}
+.perf-add-role-btn {
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-3);
+    padding: 6px;
+    font-size: .8rem;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+}
+.perf-item input[type="text"],
+.perf-item input[type="number"],
+.perf-item input[type="time"],
+.perf-item textarea {
+    padding: 8px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-1);
+    font-size: .88rem;
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+}
+.perf-role-row input[type="text"] { background: var(--surface-2); }
+.perf-role-row textarea { background: var(--surface-2); }
+.perf-item textarea { resize: vertical; font-family: inherit; min-height: 48px; }
+/* ===== 演目詳細表示 ===== */
+.performance-list { padding: 4px 0; }
+.perf-detail-item {
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
+}
+.perf-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+.perf-no-badge {
+    width: 24px; height: 24px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .75rem;
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.perf-detail-time { font-size: .8rem; color: var(--accent-teal); font-weight: 600; }
+.perf-detail-name { font-weight: 700; font-size: .95rem; }
+.perf-detail-drums {
+    font-size: .8rem;
+    color: var(--text-2);
+    margin-bottom: 6px;
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.perf-detail-role {
+    display: flex;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: baseline;
+}
+.perf-detail-role:last-child { border-bottom: none; }
+.perf-role-label-text {
+    font-size: .75rem;
+    font-weight: 700;
+    color: var(--text-3);
+    white-space: nowrap;
+    min-width: 46px;
+}
+.perf-role-members-text {
+    font-size: .88rem;
+    color: var(--text-1);
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+</style>
+</head>
+
+<body>
+
+<div id="loading">
+    <img src="images/鳥生獅子連中＿loading.png" alt="ローディング" class="loading-img rotating">
+</div>
+
+<div id="globalLoading" class="loading-overlay" style="display:none;">
+    <img src="images/鳥生獅子連_詳細ローディング.gif" alt="読み込み中…">
+</div>
+
+<div id="main-content" style="display:none;">
+    <div class="bottom-nav">
+        <button data-tab="home" class="bottom-nav-btn active">
+            <i class="fas fa-home"></i><span>ホーム</span>
+        </button>
+        <button data-tab="event" class="bottom-nav-btn">
+            <i class="fas fa-book-open"></i><span>イベント</span>
+        </button>
+        <button data-tab="chat" class="bottom-nav-btn">
+            <i class="fas fa-paw"></i><span>ししまる</span>
+        </button>
+        <button data-tab="calendar" class="bottom-nav-btn">
+            <i class="fas fa-calendar-alt"></i><span>カレンダー</span>
+        </button>
+        <button data-tab="user" class="bottom-nav-btn">
+            <i class="fas fa-user"></i><span>ユーザー</span>
+        </button>
+    </div>
+</div>
+
+<!-- ホーム画面 -->
+<div class="tab-content active" id="home">
+    <div class="nav-title">
+        <h1>ホーム</h1>
+        <button class="reload-btn" title="更新"><i class="fas fa-sync-alt"></i></button>
+    </div>
+    <div class="contents">
+        <div class="event-status">進行中のイベント</div>
+        <div id="home-schedule"></div>
+        <!-- 春例大祭セクション -->
+        <div class="haru-section" id="haruWidget">
+            <div class="haru-section-header">春例大祭</div>
+            <!-- 進行状況ウィジェット -->
+            <div class="haru-widget">
+                <div class="haru-widget-toggle" id="haruWidgetToggle" role="button">
+                    <span class="haru-widget-title">進行状況</span>
+                    <div class="haru-day-toggle">
+                        <button class="haru-day-btn active" data-day="土曜">土曜</button>
+                        <button class="haru-day-btn" data-day="日曜">日曜</button>
+                    </div>
+                    <span class="haru-toggle-icon">▼</span>
+                </div>
+                <div class="haru-widget-body" id="haruWidgetBody" style="display:none;">
+                    <div class="haru-tab-bar">
+                        <button class="haru-tab-btn active" data-group="上組">上組</button>
+                        <button class="haru-tab-btn" data-group="下組">下組</button>
+                    </div>
+                    <div id="haruProgressList" class="haru-progress-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- イベント画面 -->
+<div class="tab-content" id="event">
+    <div class="nav-title">
+        <h1>イベント</h1>
+        <button class="reload-btn" title="更新"><i class="fas fa-sync-alt"></i></button>
+    </div>
+    <div class="contents">
+        <div class="event-status">進行中のイベント</div>
+        <div id="event-active-schedule"></div>
+        <div class="event-status">過去のイベント</div>
+        <div id="event-past-schedule"></div>
+    </div>
+</div>
+
+<!-- ししまるタブ -->
+<div class="tab-content" id="chat">
+    <div class="contents">
+        <div class="shishi-banner">
+            <img src="images/鳥生獅子連_ししまる.PNG" class="shishi-banner-img" alt="ししまる">
+            <div class="shishi-banner-text">
+                <div class="shishi-banner-title">ししまる</div>
+                <div class="shishi-banner-sub">参加率 &amp; 気づきメモ</div>
+            </div>
+            <button class="shishi-refresh-btn" id="shishiRefreshBtn"><i class="fas fa-sync-alt"></i></button>
+        </div>
+        <div class="shishi-tabs">
+            <button class="shishi-tab-btn active" data-shishi-tab="stats">参加率</button>
+            <button class="shishi-tab-btn" data-shishi-tab="memo">気づきメモ</button>
+        </div>
+        <div class="shishi-tab-content active" id="shishiStatsTab">
+            <div class="stats-filter">
+                <button class="stats-filter-btn active" data-filter="event">イベント</button>
+                <button class="stats-filter-btn" data-filter="practice">練習</button>
+            </div>
+            <div id="statsArea"></div>
+        </div>
+        <div class="shishi-tab-content" id="shishiMemoTab">
+            <div id="memoFeed"></div>
+        </div>
+    </div>
+</div>
+
+<!-- メモ入力エリア -->
+<div class="memo-input-area" id="memoInputArea" style="display:none;">
+    <textarea id="memoInput" placeholder="気づきを入力…" rows="2"></textarea>
+    <button id="memoSendBtn"><i class="fas fa-paper-plane"></i></button>
+</div>
+
+<!-- カレンダー画面 -->
+<div class="tab-content" id="calendar">
+    <div class="nav-title">
+        <h1>カレンダー</h1>
+        <button class="reload-btn" title="更新"><i class="fas fa-sync-alt"></i></button>
+    </div>
+    <div class="contents">
+        <div class="calendar-form">
+            <div id="calendarArea"></div>
+            <div id="eventArea"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ユーザー画面 -->
+<div class="tab-content" id="user">
+    <div class="nav-title">
+        <h1>ユーザー</h1>
+        <button class="reload-btn" title="更新"><i class="fas fa-sync-alt"></i></button>
+    </div>
+    <div class="contents">
+        <div class="top-instagram">
+            <a href="https://www.instagram.com/toriu_shishi" target="_blank">
+                <img src="images/インスタグラムアイコン.png" class="insta-icon">
+            </a>
+        </div>
+        <div class="menu">
+            <section class="section">
+                <p class="section-title">ユーザーメニュー</p>
+                <ul class="tab-list">
+                    <li class="tab-item" data-target="mypage">マイページ</li>
+                    <li class="tab-item" data-target="member">メンバー</li>
+                </ul>
+            </section>
+        </div>
+        <div class="admin-menu">
+            <section class="section">
+                <p class="section-title">管理者メニュー</p>
+                <ul class="tab-list">
+                    <li class="tab-item" data-target="member-management">メンバー管理</li>
+                    <li class="tab-item" data-target="event-management">イベント管理</li>
+                    <li class="tab-item" data-target="practice-management">練習日管理</li>
+                    <li class="tab-item" data-target="otabi-management">お旅管理</li>
+                    <li class="tab-item" data-target="gear-management">衣装管理</li>
+                </ul>
+            </section>
+        </div>
+
+        <div class="app-version">
+            <p>ver 1.0.0</p>
+        </div>
+    </div>
+</div>
+
+<!-- 詳細カード HTML -->
+<div id="hidecontents">
+
+    <!-- イベント詳細カード -->
+    <div class="event-detail-card" id="eventDetailCard">
+        <button class="close-card-btn" data-target="event">戻る</button>
+        <button class="edit-event-btn" data-target="edit-event">編集</button>
+        <div class="event-detail-card-title"></div>
+        <div class="event-detail-card-time">
+            <div class="event-detail-card-date"></div>
+            <div class="event-detail-card-time-text"></div>
+            <div class="event-detail-card-location"></div>
+        </div>
+        <div class="event-detail-card-responses">
+            <div class="response-btn-group">
+                <button class="response-btn yes">参加</button>
+                <button class="response-btn no">不参加</button>
+            </div>
+            <div class="event-detail-card-comment"></div>
+            <div class="response-section yes">
+                <button class="toggle-response-btn yes">参加者</button>
+                <ul class="response-list yes"></ul>
+            </div>
+            <div class="response-section no">
+                <button class="toggle-response-btn no">不参加者</button>
+                <ul class="response-list no"></ul>
+            </div>
+            <div class="response-section na">
+                <button class="toggle-response-btn na">未回答者</button>
+                <ul class="response-list na"></ul>
+            </div>
+            <button class="toggle-performances-btn">演目一覧</button>
+            <div class="performance-list"></div>
+        </div>
+    </div>
+
+    <!-- 練習詳細カード -->
+    <div class="practice-detail-card" id="practiceDetailCard">
+        <button class="close-card-btn" data-target="practice">戻る</button>
+        <div class="practice-detail-card-title"></div>
+        <div class="practice-detail-card-time">
+            <div class="practice-detail-card-date"></div>
+            <div class="practice-detail-card-time-text"></div>
+            <div class="practice-detail-card-location"></div>
+        </div>
+        <div class="practice-detail-card-responses">
+            <div class="response-btn-group">
+                <button class="response-btn absent">欠席</button>
+                <button class="response-btn late">遅れて参加</button>
+            </div>
+            <div class="practice-detail-card-comment"></div>
+            <div class="response-section absent">
+                <button class="toggle-response-btn absent">欠席</button>
+                <ul class="response-list absent"></ul>
+            </div>
+            <div class="response-section late">
+                <button class="toggle-response-btn late">遅れて参加</button>
+                <ul class="response-list late"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- イベント新規作成 -->
+    <div class="event-create-card" id="eventCreateCard">
+        <button class="close-card-btn" data-target="create">戻る</button>
+        <div class="event-create-card-type">
+            <label>イベントタイプ</label>
+            <div class="event-type-options">
+                <label><input type="radio" name="eventType" value="festival" /> 祭り</label>
+                <label><input type="radio" name="eventType" value="regular" /> イベント</label>
+            </div>
+        </div>
+        <div class="event-create-card-title">
+            <label for="eventTitle">タイトル</label>
+            <input type="text" id="eventTitle" placeholder="イベントタイトルを入力" />
+        </div>
+        <div class="event-create-card-time">
+            <label for="eventDate">日付</label>
+            <input type="date" id="eventDate" />
+            <label for="eventTime">時間</label>
+            <div class="time-input-wrap">
+                <input type="time" id="eventTime" />
+                <label class="undecided-label"><input type="checkbox" id="eventTimeUndecided"> 未定</label>
+            </div>
+        </div>
+        <div class="event-create-card-location">
+            <label for="eventLocation">場所</label>
+            <input type="text" id="eventLocation" placeholder="場所を入力" />
+        </div>
+        <div class="event-create-card-deadline">
+            <label for="eventDeadline">回答期限</label>
+            <input type="date" id="eventDeadline" />
+        </div>
+        <div class="event-create-card-comment">
+            <label for="eventComment">連絡事項</label>
+            <textarea id="eventComment" placeholder="連絡事項を入力"></textarea>
+        </div>
+        <div class="event-create-card-performances">
+            <label>演目</label>
+            <div id="performanceList"></div>
+            <button type="button" id="addPerformanceBtn">演目を追加</button>
+        </div>
+        <button class="save-event-btn">保存</button>
+    </div>
+
+    <!-- 練習日新規作成 -->
+    <div class="event-create-card" id="practiceCreateCard">
+        <button class="close-card-btn" data-target="practice-create">戻る</button>
+        <div class="event-create-card-title">
+            <label for="practiceTitle">タイトル</label>
+            <input type="text" id="practiceTitle" placeholder="練習" />
+        </div>
+        <div class="practice-mode-toggle">
+            <label><input type="checkbox" id="practiceRangeMode"> 期間指定（複数日まとめて登録）</label>
+        </div>
+        <div id="practiceSingleDate" class="event-create-card-time">
+            <label for="practiceDate">日付</label>
+            <input type="date" id="practiceDate" />
+        </div>
+        <div id="practiceRangeDates" class="event-create-card-time" style="display:none;">
+            <label for="practiceStartDate">開始日</label>
+            <input type="date" id="practiceStartDate" />
+            <label for="practiceEndDate">終了日</label>
+            <input type="date" id="practiceEndDate" />
+            <div class="weekday-select">
+                <label>曜日を選択</label>
+                <div class="weekday-checkboxes">
+                    <label><input type="checkbox" name="practiceWeekday" value="0"> 日</label>
+                    <label><input type="checkbox" name="practiceWeekday" value="1"> 月</label>
+                    <label><input type="checkbox" name="practiceWeekday" value="2"> 火</label>
+                    <label><input type="checkbox" name="practiceWeekday" value="3"> 水</label>
+                    <label><input type="checkbox" name="practiceWeekday" value="4"> 木</label>
+                    <label><input type="checkbox" name="practiceWeekday" value="5"> 金</label>
+                    <label><input type="checkbox" name="practiceWeekday" value="6"> 土</label>
+                </div>
+            </div>
+        </div>
+        <div class="event-create-card-time">
+            <label for="practiceStart">開始時間</label>
+            <input type="time" id="practiceStart" />
+            <label for="practiceEnd">終了時間</label>
+            <input type="time" id="practiceEnd" />
+        </div>
+        <div class="event-create-card-location">
+            <label for="practiceLocation">場所</label>
+            <input type="text" id="practiceLocation" placeholder="場所を入力" />
+        </div>
+        <div class="event-create-card-comment">
+            <label for="practiceComment">連絡事項</label>
+            <textarea id="practiceComment" placeholder="連絡事項を入力"></textarea>
+        </div>
+        <button class="save-practice-btn">保存</button>
+    </div>
+
+    <!-- メンバーカード（一般） -->
+    <div class="member-card" id="membersCardUser">
+        <div class="loading-overlay" style="display:none;">
+            <img src="images/鳥生獅子連_詳細ローディング.gif" alt="読み込み中…" />
+        </div>
+        <button class="close-card-btn" data-target="member">戻る</button>
+        <h2>メンバー一覧</h2>
+        <ul id="memberListUser"></ul>
+    </div>
+
+    <!-- メンバーカード（管理者） -->
+    <div class="member-card" id="membersCardAdmin">
+        <div class="loading-overlay" style="display:none;">
+            <img src="images/鳥生獅子連_詳細ローディング.gif" alt="読み込み中…" />
+        </div>
+        <button class="close-card-btn" data-target="member-management">戻る</button>
+        <h2>メンバー管理</h2>
+        <ul id="memberListAdmin"></ul>
+    </div>
+
+    <!-- お旅管理メインカード -->
+    <div class="member-card otabi-card" id="otabiCard">
+        <button class="close-card-btn" data-target="otabi">戻る</button>
+        <div class="otabi-card-title">お旅管理</div>
+        <div class="otabi-tab-bar">
+            <button class="otabi-tab-btn active" data-tab="places">訪問先</button>
+            <button class="otabi-tab-btn" data-tab="schedule">スケジュール</button>
+            <button class="otabi-tab-btn" data-tab="donations">お花代</button>
+        </div>
+        <div class="otabi-tab-pane active" data-tab="places">
+            <div class="otabi-controls">
+                <div class="otabi-group-toggle">
+                    <button class="otabi-place-filter-btn active" data-group="">すべて</button>
+                    <button class="otabi-place-filter-btn" data-group="上">上組</button>
+                    <button class="otabi-place-filter-btn" data-group="下">下組</button>
+                    <button class="otabi-place-filter-btn" data-group="合同">合同</button>
+                </div>
+            </div>
+            <div id="otabiPlacesList" class="otabi-list-area"></div>
+            <button class="otabi-add-btn" id="addPlaceBtn">＋ 訪問先を追加</button>
+        </div>
+        <div class="otabi-tab-pane" data-tab="schedule">
+            <div class="otabi-controls">
+                <div class="otabi-year-nav">
+                    <button class="otabi-year-btn" id="otabiSchedYearPrev">‹</button>
+                    <span id="otabiScheduleYear">2025</span>年
+                    <button class="otabi-year-btn" id="otabiSchedYearNext">›</button>
+                </div>
+            </div>
+            <div class="otabi-controls">
+                <div class="otabi-group-toggle">
+                    <button class="otabi-day-btn active" data-day="土曜">土曜</button>
+                    <button class="otabi-day-btn" data-day="日曜">日曜</button>
+                </div>
+            </div>
+            <div class="otabi-controls">
+                <div class="otabi-group-toggle">
+                    <button class="otabi-group-btn active" data-group="上組">上組</button>
+                    <button class="otabi-group-btn" data-group="下組">下組</button>
+                    <button class="otabi-group-btn" data-group="合同">合同</button>
+                </div>
+            </div>
+            <div class="otabi-action-row">
+                <button class="otabi-action-chip" id="copyScheduleBtn">前年コピー</button>
+                <button class="otabi-action-chip" id="otabiProgressBtn">進行状況</button>
+            </div>
+            <div id="otabiScheduleList" class="otabi-list-area"></div>
+            <button class="otabi-add-btn" id="addEntryBtn">＋ 一括入力</button>
+        </div>
+        <div class="otabi-tab-pane" data-tab="donations">
+            <div class="otabi-controls">
+                <div class="otabi-year-nav">
+                    <button class="otabi-year-btn" id="otabiDonYearPrev">‹</button>
+                    <span id="otabiDonYear">2025</span>年
+                    <button class="otabi-year-btn" id="otabiDonYearNext">›</button>
+                </div>
+            </div>
+            <div class="otabi-controls">
+                <div class="otabi-group-toggle">
+                    <button class="otabi-don-day-btn active" data-day="土曜">土曜</button>
+                    <button class="otabi-don-day-btn" data-day="日曜">日曜</button>
+                </div>
+            </div>
+            <div class="otabi-controls">
+                <div class="otabi-group-toggle">
+                    <button class="otabi-don-group-btn active" data-group="上組">上組</button>
+                    <button class="otabi-don-group-btn" data-group="下組">下組</button>
+                </div>
+            </div>
+            <div class="otabi-don-search-row">
+                <input type="search" id="otabiDonSearch" class="otabi-don-search" placeholder="訪問先を絞り込み…" />
+            </div>
+            <div id="otabiDonationTotal" class="otabi-don-total-bar"></div>
+            <div id="otabiDonationGrid" class="otabi-don-grid"></div>
+            <button class="save-event-btn" id="saveDonationsBtn" style="margin:8px 0 4px;">お花代を保存</button>
+        </div>
+    </div>
+
+    <!-- 訪問先フォームカード -->
+    <div class="member-card otabi-form-card" id="otabiPlaceFormCard">
+        <button class="close-card-btn" data-target="otabi-place-form">戻る</button>
+        <div class="otabi-form-card-title">訪問先</div>
+        <input type="hidden" id="placeFormId" />
+        <div class="otabi-form-body">
+            <div class="otabi-form-field">
+                <label>訪問先名 *</label>
+                <input type="text" id="placeFormName" placeholder="例：はち7" />
+            </div>
+            <div class="otabi-form-field">
+                <label>住所</label>
+                <input type="text" id="placeFormAddress" placeholder="愛媛県今治市..." />
+            </div>
+            <div class="otabi-form-field">
+                <label>TEL</label>
+                <input type="tel" id="placeFormTel" placeholder="0898-xx-xxxx" />
+            </div>
+            <div class="otabi-form-field">
+                <label>組</label>
+                <div class="otabi-radio-group">
+                    <label><input type="radio" name="placeGroup" value="上" checked> 上</label>
+                    <label><input type="radio" name="placeGroup" value="下"> 下</label>
+                    <label><input type="radio" name="placeGroup" value="合同"> 合同</label>
+                </div>
+            </div>
+        </div>
+        <button class="save-event-btn" id="savePlaceBtn">保存</button>
+        <button class="otabi-delete-btn" id="deletePlaceBtn" style="display:none;">削除</button>
+    </div>
+
+    <!-- スケジュールエントリフォームカード（編集用） -->
+    <div class="member-card otabi-form-card" id="otabiEntryFormCard">
+        <button class="close-card-btn" data-target="otabi-entry-form">戻る</button>
+        <div class="otabi-form-card-title">スケジュール編集</div>
+        <input type="hidden" id="entryFormId" />
+        <div class="otabi-form-body">
+            <div class="otabi-form-field">
+                <label>曜日</label>
+                <div class="otabi-radio-group">
+                    <label><input type="radio" name="entryDay" value="土曜" checked> 土曜</label>
+                    <label><input type="radio" name="entryDay" value="日曜"> 日曜</label>
+                </div>
+            </div>
+            <div class="otabi-form-field">
+                <label>組</label>
+                <div class="otabi-radio-group">
+                    <label><input type="radio" name="entryGroup" value="上組" checked> 上組</label>
+                    <label><input type="radio" name="entryGroup" value="下組"> 下組</label>
+                    <label><input type="radio" name="entryGroup" value="合同"> 合同</label>
+                </div>
+            </div>
+            <!-- 通常No.（合同以外） -->
+            <div class="otabi-form-row" id="entryFormNoRow">
+                <div class="otabi-form-field half">
+                    <label>No.</label>
+                    <input type="number" id="entryFormNo" min="1" />
+                </div>
+                <div class="otabi-form-field half">
+                    <label>時間</label>
+                    <input type="time" id="entryFormTime" />
+                </div>
+            </div>
+            <!-- 合同用No.（合同選択時） -->
+            <div class="otabi-form-row" id="entryFormJointNoRow" style="display:none;">
+                <div class="otabi-form-field half">
+                    <label>上組 No.</label>
+                    <input type="number" id="entryFormNoUe" min="1" />
+                </div>
+                <div class="otabi-form-field half">
+                    <label>下組 No.</label>
+                    <input type="number" id="entryFormNoShita" min="1" />
+                </div>
+            </div>
+            <div class="otabi-form-row" id="entryFormJointTimeRow" style="display:none;">
+                <div class="otabi-form-field half">
+                    <label>時間</label>
+                    <input type="time" id="entryFormTimeJoint" />
+                </div>
+            </div>
+            <div class="otabi-form-field">
+                <label>マスタから選択</label>
+                <select id="entryFormPlaceSelect"></select>
+            </div>
+            <div class="otabi-form-field">
+                <label>訪問先名 *</label>
+                <input type="text" id="entryFormPlaceName" placeholder="訪問先名" />
+            </div>
+            <div class="otabi-form-field">
+                <label>メモ</label>
+                <input type="text" id="entryFormMemo" placeholder="三継ぎ など" />
+            </div>
+            <div class="otabi-form-field">
+                <label>お花代 (¥)</label>
+                <input type="number" id="entryFormDonation" placeholder="0" min="0" step="500" />
+            </div>
+        </div>
+        <button class="save-event-btn" id="saveEntryBtn">保存</button>
+        <button class="otabi-delete-btn" id="deleteEntryBtn" style="display:none;">削除</button>
+    </div>
+
+    <!-- 進行状況オーバーレイ -->
+    <div id="otabiProgressOverlay" style="display:none;position:fixed;inset:0;background:#1a1a2e;color:#eee;z-index:300;overflow-y:auto;padding:20px;">
+        <div class="prog-overlay-header">
+            <button id="otabiProgressClose" style="padding:8px 16px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">✕ 閉じる</button>
+            <div class="prog-tab-bar" id="progTabBar"></div>
+        </div>
+        <div id="otabiProgressContent"></div>
+    </div>
+
+    <!-- スケジュール一括入力カード -->
+    <div class="member-card otabi-form-card" id="otabiBulkEntryCard">
+        <button class="close-card-btn" data-target="otabi-bulk-entry">戻る</button>
+        <div class="otabi-form-card-title">スケジュール一括入力</div>
+        <p style="font-size:.8rem;color:var(--text-3);padding:0 16px 4px;">⠿をドラッグで並び替え。訪問先名を入力して保存。時間・メモは後から編集できます。</p>
+        <div id="otabiBulkRows"></div>
+        <button class="otabi-add-btn" id="addBulkRowBtn" style="margin:4px 16px;">＋ 行を追加</button>
+        <button class="save-event-btn" id="saveBulkEntriesBtn" style="margin: 4px 16px 8px;">一括保存</button>
+    </div>
+
+    <!-- 衣装管理カード -->
+    <div class="member-card" id="gearCard">
+        <div class="loading-overlay" style="display:none;">
+            <img src="images/鳥生獅子連_詳細ローディング.gif" alt="読み込み中…" />
+        </div>
+        <button class="close-card-btn" data-target="gear-management">戻る</button>
+        <h2>衣装管理</h2>
+        <div class="gear-tab-bar">
+            <button class="gear-tab-btn active" data-gear-tab="members">メンバー</button>
+            <button class="gear-tab-btn" data-gear-tab="spare">未配布在庫</button>
+        </div>
+        <div class="gear-tab-pane active" id="gearMembersPane">
+            <div id="gearList"></div>
+        </div>
+        <div class="gear-tab-pane" id="gearSparePane">
+            <div id="gearSpareList"></div>
+            <div id="gearSpareAdminArea" style="display:none;">
+                <div class="gear-spare-add-form">
+                    <div class="gear-spare-add-title">在庫を追加・更新</div>
+                    <select id="gSpareType">
+                        <option value="Tシャツ">Tシャツ</option>
+                        <option value="手甲">手甲</option>
+                    </select>
+                    <input type="text" id="gSpareValue" placeholder="サイズ・コード（例：L、M21）">
+                    <div class="gear-spare-qty-row">
+                        <label>在庫数</label>
+                        <button class="gear-qty-btn" id="gSpareQtyMinus">－</button>
+                        <input type="number" id="gSpareQty" value="1" min="0" max="99">
+                        <button class="gear-qty-btn" id="gSpareQtyPlus">＋</button>
+                    </div>
+                    <button id="gSpareUpsertBtn">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 衣装編集カード（管理者） -->
+    <div class="member-card" id="gearEditCard">
+        <button class="close-card-btn" data-target="gear-edit">戻る</button>
+        <h2 id="gearEditTitle">衣装編集</h2>
+        <div class="gear-edit-body">
+            <div class="gear-edit-section">
+                <label class="gear-field-label">法被番号</label>
+                <input type="text" id="gEdit_happi_no" placeholder="例：10">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">Tシャツサイズ</label>
+                <input type="text" id="gEdit_tshirt_size" placeholder="例：L">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">手甲</label>
+                <input type="text" id="gEdit_tekkou" placeholder="例：M21">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">はかま</label>
+                <input type="text" id="gEdit_hakama" placeholder="">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">着物（上）</label>
+                <input type="text" id="gEdit_kimono_top" placeholder="">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">着物（下）</label>
+                <input type="text" id="gEdit_kimono_bottom" placeholder="">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">メモ</label>
+                <input type="text" id="gEdit_memo" placeholder="">
+            </div>
+        </div>
+        <div id="gearEditChildren"></div>
+        <button class="save-event-btn" id="gearSaveBtn" style="margin:8px 16px;">保存</button>
+    </div>
+
+    <!-- マイページカード -->
+    <div class="member-card" id="myPageCard">
+        <div class="loading-overlay" style="display:none;">
+            <img src="images/鳥生獅子連_詳細ローディング.gif" alt="読み込み中…" />
+        </div>
+        <button class="close-card-btn" data-target="mypage">戻る</button>
+        <h2 id="myPageTitle">マイページ</h2>
+        <div id="myPageContent"></div>
+    </div>
+
+    <!-- メンバー情報編集カード（管理者）-->
+    <div class="member-card" id="memberInfoEditCard">
+        <div class="loading-overlay" style="display:none;">
+            <img src="images/鳥生獅子連_詳細ローディング.gif" alt="読み込み中…" />
+        </div>
+        <button class="close-card-btn" data-target="member-info-edit">戻る</button>
+        <h2 id="memberInfoEditTitle">メンバー編集</h2>
+        <div class="gear-edit-body" style="padding-bottom:16px;">
+            <div class="gear-edit-section">
+                <label class="gear-field-label">名前</label>
+                <input type="text" id="mEdit_name" placeholder="名前">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">役職</label>
+                <input type="text" id="mEdit_position" placeholder="役職">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">電話番号</label>
+                <input type="tel" id="mEdit_phone" placeholder="電話番号">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">都道府県</label>
+                <input type="text" id="mEdit_prefecture" placeholder="都道府県">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">市区町村</label>
+                <input type="text" id="mEdit_city" placeholder="市区町村">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">番地以降</label>
+                <input type="text" id="mEdit_addressDetail" placeholder="番地以降">
+            </div>
+            <div class="gear-edit-section">
+                <label class="gear-field-label">生年月日</label>
+                <input type="date" id="mEdit_birthday">
+            </div>
+        </div>
+        <button class="save-event-btn" id="memberInfoSaveBtn" style="margin:8px 16px;">保存</button>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/main.js"></script>
+<script src="js/otabi.js"></script>
+<script src="js/gear.js"></script>
+<script src="js/mypage.js"></script>
+</body>
+</html>
