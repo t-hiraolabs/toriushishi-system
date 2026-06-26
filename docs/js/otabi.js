@@ -280,15 +280,26 @@ function renderProgressOverlay(groups) {
     }).join('');
 }
 
+function updateEntryFormGroupUI() {
+    const group = document.querySelector('input[name="entryGroup"]:checked')?.value;
+    const isJoint = group === "合同";
+    document.getElementById("entryFormNoRow").style.display = isJoint ? "none" : "";
+    document.getElementById("entryFormJointNoRow").style.display = isJoint ? "" : "none";
+    document.getElementById("entryFormJointTimeRow").style.display = isJoint ? "" : "none";
+}
+
 async function openEntryForm(entry = null) {
     if (!otabiPlaces.length) await loadOtabiPlaces();
     document.getElementById("entryFormId").value = entry?.entry_id || "";
     const entryDay = entry?.day || otabiDay;
     document.querySelectorAll('input[name="entryDay"]').forEach(r => { r.checked = r.value === entryDay; });
     const nextNo = otabiScheduleEntries.length > 0
-        ? Math.max(...otabiScheduleEntries.map(e => Number(e.no) || 0)) + 1 : 1;
+        ? Math.max(...otabiScheduleEntries.filter(e => e.group !== "合同").map(e => Number(e.no) || 0)) + 1 : 1;
     document.getElementById("entryFormNo").value = entry?.no ?? nextNo;
+    document.getElementById("entryFormNoUe").value = entry?.no_ue || "";
+    document.getElementById("entryFormNoShita").value = entry?.no_shita || "";
     document.getElementById("entryFormTime").value = entry?.time || "";
+    document.getElementById("entryFormTimeJoint").value = entry?.time || "";
     document.getElementById("entryFormPlaceName").value = entry?.place_name || "";
     document.getElementById("entryFormMemo").value = entry?.memo || "";
     document.getElementById("entryFormDonation").value = entry?.donation || "";
@@ -302,6 +313,10 @@ async function openEntryForm(entry = null) {
     };
     const entryGroup = entry?.group || otabiGroup;
     document.querySelectorAll('input[name="entryGroup"]').forEach(r => { r.checked = r.value === entryGroup; });
+    updateEntryFormGroupUI();
+    document.querySelectorAll('input[name="entryGroup"]').forEach(r =>
+        r.addEventListener("change", updateEntryFormGroupUI)
+    );
 
     document.getElementById("deleteEntryBtn").style.display = entry ? "block" : "none";
     document.getElementById("otabiEntryFormCard").classList.add("active");
@@ -311,13 +326,22 @@ async function saveEntryForm() {
     const placeName = document.getElementById("entryFormPlaceName").value.trim();
     if (!placeName) return alert("訪問先名を入力してください");
     const id = document.getElementById("entryFormId").value;
+    const group = document.querySelector('input[name="entryGroup"]:checked')?.value || otabiGroup;
+    const isJoint = group === "合同";
+    const no_ue = isJoint ? Number(document.getElementById("entryFormNoUe").value) || 0 : "";
+    const no_shita = isJoint ? Number(document.getElementById("entryFormNoShita").value) || 0 : "";
+    const time = isJoint
+        ? document.getElementById("entryFormTimeJoint").value
+        : document.getElementById("entryFormTime").value;
     const entry = {
         entry_id: id ? Number(id) : null,
         year: otabiYear,
-        group: document.querySelector('input[name="entryGroup"]:checked')?.value || otabiGroup,
+        group,
         day: document.querySelector('input[name="entryDay"]:checked')?.value || "土曜",
-        no: Number(document.getElementById("entryFormNo").value) || 0,
-        time: document.getElementById("entryFormTime").value,
+        no: isJoint ? (no_ue || no_shita) : Number(document.getElementById("entryFormNo").value) || 0,
+        no_ue,
+        no_shita,
+        time,
         place_id: document.getElementById("entryFormPlaceSelect").value || "",
         place_name: placeName,
         memo: document.getElementById("entryFormMemo").value.trim(),
