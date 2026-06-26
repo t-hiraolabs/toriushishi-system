@@ -731,3 +731,31 @@
 }
 .bulk-candidate:last-child { border-bottom: none; }
 .bulk-candidate:active { background: rgba(255,255,255,.08); }
+
+/* --- ドラッグ＆ドロップ --- */
+.otabi-drag-handle {
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+  color: var(--text-3);
+  font-size: 1.1rem;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.otabi-drag-ghost {
+  opacity: 0.4;
+}
+.otabi-save-order-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 4px 16px 8px;
+  padding: 12px;
+  background: var(--accent-teal);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+}

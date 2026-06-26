@@ -312,6 +312,31 @@ function copyOtabiScheduleGAS(fromYear, toYear, group) {
   return { success: true, count: src.length };
 }
 
+function reorderOtabiEntriesGAS(updates) {
+  // updates: [{entry_id, no}]
+  const { schedSheet } = ensureOtabiSheets();
+  const now = new Date();
+  const data = schedSheet.getDataRange().getValues();
+  const headers = data[0];
+  const P = {};
+  headers.forEach((h, i) => { P[h] = i + 1; });
+
+  const rowById = {};
+  for (let r = 2; r <= data.length; r++) {
+    const id = Number(data[r - 1][0]);
+    if (id > 0) rowById[id] = r;
+  }
+
+  (updates || []).forEach(u => {
+    const r = rowById[Number(u.entry_id)];
+    if (!r) return;
+    schedSheet.getRange(r, P["no"]).setValue(u.no);
+    schedSheet.getRange(r, P["updated_at"]).setValue(now);
+  });
+
+  return { success: true, count: updates.length };
+}
+
 function getOtabiDonationsGAS(year) {
   const { schedSheet } = ensureOtabiSheets();
   const data = schedSheet.getDataRange().getValues();

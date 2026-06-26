@@ -171,6 +171,10 @@ function doPost(e) {
         result = saveOtabiDonationsGAS(data.donations);
         break;
 
+      case "reorderOtabiEntries":
+        result = reorderOtabiEntriesGAS(data.updates);
+        break;
+
       case "markOtabiComplete":
         result = markOtabiCompleteGAS(data.entryId, data.actualTime);
         break;

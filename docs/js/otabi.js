@@ -152,6 +152,51 @@ function invalidateSchedCache() {
     otabiSchedCachedYear = null;
 }
 
+let otabiSortable = null;
+
+function initScheduleSortable() {
+    const list = document.getElementById("otabiScheduleList");
+    const saveBtn = document.getElementById("saveOrderBtn");
+    if (!list || typeof Sortable === "undefined") return;
+
+    if (otabiSortable) { otabiSortable.destroy(); otabiSortable = null; }
+
+    otabiSortable = new Sortable(list, {
+        animation: 150,
+        handle: ".otabi-drag-handle",
+        ghostClass: "otabi-drag-ghost",
+        onEnd() {
+            saveBtn.style.display = "block";
+        }
+    });
+}
+
+async function saveScheduleOrder() {
+    const saveBtn = document.getElementById("saveOrderBtn");
+    const items = document.querySelectorAll("#otabiScheduleList .otabi-entry-item");
+    const updates = [...items].map((el, i) => ({
+        entry_id: Number(el.dataset.entryId),
+        no: i + 1
+    }));
+    saveBtn.disabled = true;
+    saveBtn.textContent = "保存中…";
+    try {
+        const res = await callGasApi({ action: "reorderOtabiEntries", updates });
+        if (!res.success) throw new Error();
+        // ローカルキャッシュのnoも更新
+        updates.forEach(u => {
+            const e = otabiScheduleEntries.find(e => e.entry_id == u.entry_id);
+            if (e) e.no = u.no;
+        });
+        saveBtn.textContent = "保存しました ✓";
+        setTimeout(() => { saveBtn.style.display = "none"; saveBtn.disabled = false; saveBtn.textContent = "並び順を保存"; }, 1500);
+    } catch(e) {
+        alert("保存中にエラーが発生しました");
+        saveBtn.disabled = false;
+        saveBtn.textContent = "並び順を保存";
+    }
+}
+
 function timeDiff(planned, actual) {
     if (!planned || !actual) return "";
     const [ph, pm] = planned.split(":").map(Number);
@@ -183,6 +228,7 @@ function renderOtabiSchedule() {
             : `<button class="otabi-complete-btn" data-id="${e.entry_id}">完了</button>`;
         return `
         <div class="otabi-item otabi-entry-item${done ? ' otabi-entry-done' : ''}" data-entry-id="${e.entry_id}">
+            <div class="otabi-drag-handle" title="ドラッグで並び替え">⠿</div>
             <div class="otabi-entry-no">${e.no || '-'}</div>
             <div class="otabi-entry-time-col">
                 <div class="otabi-entry-time">${e.time || '--:--'}</div>
@@ -209,6 +255,10 @@ function renderOtabiSchedule() {
             markEntryComplete(Number(btn.dataset.id));
         });
     });
+
+    const saveBtn = document.getElementById("saveOrderBtn");
+    if (saveBtn) saveBtn.style.display = "none";
+    initScheduleSortable();
 }
 
 async function markEntryComplete(entryId) {
@@ -699,6 +749,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("addPlaceBtn")?.addEventListener("click", () => openPlaceForm());
     document.getElementById("addEntryBtn")?.addEventListener("click", () => openBulkEntryForm());
     document.getElementById("saveBulkEntriesBtn")?.addEventListener("click", saveBulkEntries);
+    document.getElementById("saveOrderBtn")?.addEventListener("click", saveScheduleOrder);
     document.getElementById("copyScheduleBtn")?.addEventListener("click", copyOtabiSchedule);
     document.getElementById("shareScheduleBtn")?.addEventListener("click", printOtabiSchedule);
     document.getElementById("otabiPrintClose")?.addEventListener("click", () => {
