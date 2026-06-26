@@ -621,7 +621,12 @@ function renderOtabiDonations() {
         updateDonationTotal();
         return;
     }
-    grid.innerHTML = otabiDonEntries.map((e, i) => {
+    const query = (document.getElementById("otabiDonSearch")?.value || "").trim();
+    const filtered = query
+        ? otabiDonEntries.filter(e => (e.place_name || "").includes(query))
+        : otabiDonEntries;
+    grid.innerHTML = filtered.map((e) => {
+        const i = otabiDonEntries.indexOf(e);
         const isJoint = e.group === "合同";
         const jointBadge = isJoint ? '<span class="otabi-joint-badge">合同</span>' : '';
         return `
@@ -642,7 +647,8 @@ function renderOtabiDonations() {
     const inputs = [...grid.querySelectorAll(".dg-input")];
     inputs.forEach((input, idx) => {
         input.addEventListener("input", () => {
-            otabiDonEntries[idx].donation = Number(input.value) || 0;
+            const entryIdx = Number(input.dataset.idx);
+            otabiDonEntries[entryIdx].donation = Number(input.value) || 0;
             updateDonationTotal();
         });
         input.addEventListener("keydown", ev => {
@@ -718,6 +724,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".otabi-don-day-btn").forEach(btn =>
         btn.addEventListener("click", () => { otabiDonDay = btn.dataset.day; loadOtabiDonations(); })
     );
+    document.getElementById("otabiDonSearch")?.addEventListener("input", () => renderOtabiDonations());
     document.getElementById("saveDonationsBtn")?.addEventListener("click", saveOtabiDonations);
     document.getElementById("addPlaceBtn")?.addEventListener("click", () => openPlaceForm());
     document.getElementById("addEntryBtn")?.addEventListener("click", () => openBulkEntryForm());
