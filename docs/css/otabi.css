@@ -472,27 +472,19 @@
 
 .otabi-don-group-btn,
 .otabi-don-day-btn {
-  background: var(--surface-3);
-  border: 1px solid var(--border);
-  color: var(--text-2);
   padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-2);
   font-size: .85rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: var(--transition);
+  -webkit-tap-highlight-color: transparent;
 }
-.otabi-don-group-btn:first-child,
-.otabi-don-day-btn:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
-.otabi-don-group-btn:last-child,
-.otabi-don-day-btn:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; }
-.otabi-don-group-btn.active {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-.otabi-don-day-btn.active {
-  background: var(--accent-teal, #0d9488);
-  color: #fff;
-  border-color: var(--accent-teal, #0d9488);
-}
+.otabi-don-group-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.otabi-don-day-btn.active { background: var(--accent-teal, #0d9488); border-color: var(--accent-teal, #0d9488); color: #fff; }
 
 /* --- フォームカード --- */
 .otabi-form-card {
