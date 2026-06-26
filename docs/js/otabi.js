@@ -217,9 +217,9 @@ function renderOtabiSchedule() {
             </div>
             <div class="otabi-item-body">
                 <div class="otabi-item-title">${e.place_name || '未設定'}</div>
-                ${e.is_joint ? '<span class="otabi-joint-badge-row">合同</span>' : ''}
                 ${e.memo ? `<div class="otabi-item-sub">${e.memo}</div>` : ''}
             </div>
+            ${e.is_joint ? '<span class="otabi-joint-badge">合同</span>' : ''}
             ${mapBtn}
             ${completeBtn}
         </div>`;
@@ -315,7 +315,7 @@ function renderProgressOverlay(groups) {
         return `<div class="prog-row${isDone ? ' prog-done' : ''}${e.is_joint ? ' prog-joint' : ''}">
             <span class="prog-no">${e.no}</span>
             <span class="prog-time">${e.time || '--:--'}</span>
-            <span class="prog-name">${e.place_name}${donationHtml}${jointBadge ? `<br>${jointBadge}` : ''}</span>
+            <span class="prog-name">${e.place_name}${donationHtml}${jointBadge}</span>
             <span class="prog-actual">${e.actual_time || ''}</span>
             ${diff ? `<span class="otabi-diff ${diffClass}">${diff}</span>` : '<span></span>'}
         </div>`;
