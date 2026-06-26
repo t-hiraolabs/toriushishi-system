@@ -98,175 +98,143 @@ async function savePlaceForm() {
         document.getElementById("otabiPlaceFormCard").classList.remove("active");
         otabiPlaces = [];
         await loadOtabiPlaces();
-    } catch(e) { alert("保存中にエラーが発生しました"); }
-    finally { loadingOverlay.style.display = "none"; }
+    } catch(e) {
+        alert("保存に失敗しました");
+    } finally {
+        loadingOverlay.style.display = "none";
+    }
 }
 
 async function deletePlaceForm() {
-    if (!confirm("この訪問先を削除しますか？")) return;
     const id = document.getElementById("placeFormId").value;
+    if (!id) return;
+    if (!confirm("この訪問先を削除しますか？")) return;
     loadingOverlay.style.display = "flex";
     try {
-        await callGasApi({ action: "deleteOtabiPlace", placeId: Number(id) });
+        const res = await callGasApi({ action: "deleteOtabiPlace", place_id: Number(id) });
+        if (!res.success) throw new Error();
         document.getElementById("otabiPlaceFormCard").classList.remove("active");
         otabiPlaces = [];
         await loadOtabiPlaces();
-    } finally { loadingOverlay.style.display = "none"; }
+    } catch(e) {
+        alert("削除に失敗しました");
+    } finally {
+        loadingOverlay.style.display = "none";
+    }
 }
 
 // ===== スケジュール =====
 
-// キー: "year_group_day" → entries[]
-const otabiSchedCache = {};
-let otabiSchedCachedYear = null;
-
 async function loadOtabiSchedule(forceReload = false) {
-    document.getElementById("otabiScheduleYear").textContent = otabiYear;
-    document.querySelectorAll(".otabi-group-btn").forEach(b => b.classList.toggle("active", b.dataset.group === otabiGroup));
-    document.querySelectorAll(".otabi-day-btn").forEach(b => b.classList.toggle("active", b.dataset.day === otabiDay));
-
-    const cacheKey = `${otabiYear}_${otabiGroup}_${otabiDay}`;
-    const yearChanged = otabiSchedCachedYear !== otabiYear;
-
-    if (forceReload || yearChanged || !otabiSchedCache[cacheKey]) {
-        const list = document.getElementById("otabiScheduleList");
-        list.innerHTML = [1,2,3].map(() => '<div class="skeleton skeleton-card"></div>').join('');
-        if (yearChanged) {
-            // 年変更時はキャッシュ全クリア
-            Object.keys(otabiSchedCache).forEach(k => delete otabiSchedCache[k]);
-            otabiSchedCachedYear = otabiYear;
-        }
-        const fetches = [callGasApi({ action: "getOtabiSchedule", year: otabiYear, group: otabiGroup, day: otabiDay })];
-        if (!otabiPlaces.length) fetches.push(callGasApi({ action: "getOtabiPlaces" }));
-        const [schedRes, placesRes] = await Promise.all(fetches);
-        otabiSchedCache[cacheKey] = schedRes.entries || [];
-        if (placesRes) otabiPlaces = placesRes.places || [];
-    }
-
-    otabiScheduleEntries = otabiSchedCache[cacheKey];
+    if (!forceReload && otabiScheduleEntries.length) { renderOtabiSchedule(); return; }
+    const list = document.getElementById("otabiScheduleList");
+    list.innerHTML = '<div class="skeleton skeleton-card"></div>';
+    const res = await callGasApi({ action: "getOtabiSchedule", year: otabiYear, day: otabiDay });
+    otabiScheduleEntries = res.entries || [];
     renderOtabiSchedule();
-}
-
-// 保存・削除後にキャッシュをローカルで更新して再描画（GAS再取得なし）
-function _updateSchedCacheLocally(entry, isDelete) {
-    Object.keys(otabiSchedCache).forEach(cacheKey => {
-        const entries = otabiSchedCache[cacheKey];
-        const idx = entries.findIndex(e => e.entry_id === entry.entry_id);
-        if (isDelete) {
-            if (idx >= 0) entries.splice(idx, 1);
-        } else {
-            if (idx >= 0) {
-                entries[idx] = entry;
-            } else {
-                // 新規エントリは関連するキャッシュに追加
-                const [year, group, day] = cacheKey.split("_");
-                if (Number(year) === entry.year && entry.day === day
-                    && (entry.group === group || entry.group === "合同")) {
-                    entries.push(entry);
-                    entries.sort((a, b) => Number(a.no) - Number(b.no));
-                }
-            }
-        }
-    });
-    otabiScheduleEntries = otabiSchedCache[`${otabiYear}_${otabiGroup}_${otabiDay}`] || [];
-    renderOtabiSchedule();
-}
-
-function invalidateSchedCache() {
-    Object.keys(otabiSchedCache).forEach(k => delete otabiSchedCache[k]);
-    otabiSchedCachedYear = null;
-}
-
-let otabiBulkSortable = null;
-
-function timeDiff(planned, actual) {
-    if (!planned || !actual) return "";
-    const [ph, pm] = planned.split(":").map(Number);
-    const [ah, am] = actual.split(":").map(Number);
-    const diff = (ah * 60 + am) - (ph * 60 + pm);
-    if (diff === 0) return "±0分";
-    return diff > 0 ? `+${diff}分` : `${diff}分`;
 }
 
 function renderOtabiSchedule() {
     const list = document.getElementById("otabiScheduleList");
-    if (!otabiScheduleEntries.length) {
+    const filtered = otabiScheduleEntries.filter(e =>
+        e.group === otabiGroup || e.group === "合同"
+    );
+    if (!filtered.length) {
         list.innerHTML = '<p class="no-event">スケジュールが登録されていません</p>';
         return;
     }
-    list.innerHTML = otabiScheduleEntries.map(e => {
-        const place = otabiPlaces.find(p => p.place_id == e.place_id);
-        const mapBtn = place?.address
-            ? `<a class="otabi-map-icon" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.address)}" target="_blank" rel="noopener" title="地図を見る"><i class="fas fa-map-marker-alt"></i></a>`
+    list.innerHTML = filtered.map(e => {
+        const mapBtn = e.address
+            ? `<a class="otabi-map-icon" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.address)}" target="_blank" rel="noopener">📍</a>`
             : '';
-        const done = !!e.actual_time;
-        const diff = timeDiff(e.time, e.actual_time);
-        const diffClass = diff.startsWith("+") ? "otabi-diff-late" : diff.startsWith("-") ? "otabi-diff-early" : "otabi-diff-zero";
-        const actualHtml = done
-            ? `<div class="otabi-actual-wrap"><span class="otabi-actual-time">${e.actual_time}</span><span class="otabi-diff ${diffClass}">${diff}</span></div>`
-            : '';
-        const completeBtn = done
-            ? `<button class="otabi-complete-btn done" data-id="${e.entry_id}">完了済</button>`
-            : `<button class="otabi-complete-btn" data-id="${e.entry_id}">完了</button>`;
+        const completeBtn = `<button class="otabi-complete-btn${e.actual_time ? ' done' : ''}" data-id="${e.entry_id}">${e.actual_time ? e.actual_time : '完了'}</button>`;
         return `
-        <div class="otabi-item otabi-entry-item${done ? ' otabi-entry-done' : ''}" data-entry-id="${e.entry_id}">
-            <div class="otabi-entry-no">${e.no || '-'}</div>
+        <div class="otabi-item otabi-entry-item" data-id="${e.entry_id}">
+            <div class="otabi-entry-no">${e.no}</div>
             <div class="otabi-entry-time-col">
-                <div class="otabi-entry-time">${e.time || '--:--'}</div>
-                ${actualHtml}
+                <span class="otabi-entry-time">${e.time || '--:--'}</span>
+                ${e.actual_time ? `<div class="otabi-actual-wrap"><span class="otabi-actual-time">${e.actual_time}</span>${timeDiff(e.time, e.actual_time) ? `<span class="otabi-diff ${timeDiff(e.time,e.actual_time).startsWith('+') ? 'otabi-diff-late' : timeDiff(e.time,e.actual_time).startsWith('-') ? 'otabi-diff-early' : 'otabi-diff-zero'}">${timeDiff(e.time,e.actual_time)}</span>` : ''}</div>` : ''}
             </div>
             <div class="otabi-item-body">
                 <div class="otabi-item-title">${e.place_name || '未設定'}</div>
+                ${e.is_joint ? '<span class="otabi-joint-badge-row">合同</span>' : ''}
                 ${e.memo ? `<div class="otabi-item-sub">${e.memo}</div>` : ''}
             </div>
             ${mapBtn}
-            ${e.donation ? `<div class="otabi-donation-badge">￥${Number(e.donation).toLocaleString()}</div>` : ''}
             ${completeBtn}
         </div>`;
     }).join('');
-    list.querySelectorAll(".otabi-entry-item").forEach(item => {
-        item.addEventListener("click", e => {
-            if (e.target.closest(".otabi-map-icon") || e.target.closest(".otabi-complete-btn")) return;
-            openEntryForm(otabiScheduleEntries.find(en => en.entry_id == item.dataset.entryId));
+    // 完了ボタン
+    list.querySelectorAll(".otabi-complete-btn:not(.done)").forEach(btn => {
+        btn.addEventListener("click", e => { e.stopPropagation(); markEntryComplete(btn.dataset.id); });
+    });
+    // 行タップで編集
+    list.querySelectorAll(".otabi-entry-item").forEach(row => {
+        row.addEventListener("click", () => {
+            const entry = otabiScheduleEntries.find(e => e.entry_id == row.dataset.id);
+            if (entry) openEntryForm(entry);
         });
     });
-    list.querySelectorAll(".otabi-complete-btn").forEach(btn => {
-        btn.addEventListener("click", e => {
-            e.stopPropagation();
-            markEntryComplete(Number(btn.dataset.id));
-        });
-    });
+}
 
+function timeDiff(scheduled, actual) {
+    if (!scheduled || !actual) return "";
+    const toMin = t => { const [h,m] = t.split(':').map(Number); return h*60+m; };
+    const diff = toMin(actual) - toMin(scheduled);
+    if (diff === 0) return "±0";
+    return (diff > 0 ? '+' : '') + diff + '分';
 }
 
 async function markEntryComplete(entryId) {
-    const entry = otabiScheduleEntries.find(e => e.entry_id == entryId);
-    if (!entry) return;
     const now = new Date();
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
-    const defaultTime = `${hh}:${mm}`;
-    const input = prompt(`「${entry.place_name}」の到着時間を入力してください`, defaultTime);
-    if (input === null) return;
-    const timeVal = input.trim() || defaultTime;
+    const hh = String(now.getHours()).padStart(2,'0');
+    const mm = String(now.getMinutes()).padStart(2,'0');
+    const actual_time = `${hh}:${mm}`;
     loadingOverlay.style.display = "flex";
     try {
-        const res = await callGasApi({ action: "markOtabiComplete", entryId, actualTime: timeVal });
-        if (!res.success) throw new Error(res.msg || "失敗");
-        entry.actual_time = timeVal;
-        const cacheKey = `${otabiYear}_${otabiGroup}_${otabiDay}`;
-        if (otabiSchedCache[cacheKey]) {
-            const cached = otabiSchedCache[cacheKey].find(e => e.entry_id == entryId);
-            if (cached) cached.actual_time = timeVal;
+        const res = await callGasApi({ action: "updateActualTime", entry_id: Number(entryId), actual_time });
+        if (!res.success) throw new Error();
+        const entry = otabiScheduleEntries.find(e => e.entry_id == entryId);
+        if (entry) {
+            entry.actual_time = actual_time;
+            _updateSchedCacheLocally(entry, false);
         }
         renderOtabiSchedule();
-    } catch(err) { alert("保存中にエラーが発生しました"); }
-    finally { loadingOverlay.style.display = "none"; }
+    } catch(e) {
+        alert("更新に失敗しました");
+    } finally {
+        loadingOverlay.style.display = "none";
+    }
 }
+
+function _updateSchedCacheLocally(entry, isDelete) {
+    const idx = otabiScheduleEntries.findIndex(e => e.entry_id === entry.entry_id);
+    if (isDelete) {
+        if (idx >= 0) otabiScheduleEntries.splice(idx, 1);
+    } else {
+        if (idx >= 0) otabiScheduleEntries[idx] = entry;
+        else otabiScheduleEntries.push(entry);
+    }
+    // 進行状況キャッシュも更新
+    if (_progGroups && Object.keys(_progGroups).length) {
+        for (const grp of Object.keys(_progGroups)) {
+            const arr = _progGroups[grp];
+            const i2 = arr.findIndex(e => e.entry_id === entry.entry_id);
+            if (isDelete) {
+                if (i2 >= 0) arr.splice(i2, 1);
+            } else {
+                if (i2 >= 0) arr[i2] = entry;
+            }
+        }
+        renderProgressOverlay(_progGroups);
+    }
+}
+
+// ===== 進行状況オーバーレイ =====
 
 async function openProgressOverlay() {
     const overlay = document.getElementById("otabiProgressOverlay");
-    overlay.style.display = "block";
+    overlay.classList.add("active");
     overlay.querySelector("#otabiProgressContent").innerHTML = '<div class="skeleton skeleton-card"></div>';
     try {
         const res = await callGasApi({ action: "getOtabiAllProgress", year: otabiYear, day: otabiDay });
@@ -284,19 +252,18 @@ function renderProgressOverlay(groups) {
     _progGroups = groups;
     const groupKeys = Object.keys(groups).sort();
     if (!groupKeys.length) {
-        document.getElementById("otabiProgressContent").innerHTML = '<p style="color:#aaa;">データがありません</p>';
-        document.getElementById("progTabBar").innerHTML = '';
+        document.getElementById("otabiProgressContent").innerHTML = '<p style="color:#aaa;padding:16px">データがありません</p>';
         return;
     }
     if (!_progActiveGroup || !groupKeys.includes(_progActiveGroup)) {
         _progActiveGroup = groupKeys[0];
     }
-    // タブを描画
+    // タブバー描画
     const tabBar = document.getElementById("progTabBar");
     tabBar.innerHTML = groupKeys.map(g => {
         const entries = groups[g] || [];
-        const done = entries.filter(e => e.actual_time).length;
-        return `<button class="prog-tab-btn${g === _progActiveGroup ? ' active' : ''}" data-group="${g}">${g} <span class="prog-tab-count">${done}/${entries.length}</span></button>`;
+        const doneCount = entries.filter(e => !!e.actual_time).length;
+        return `<button class="prog-tab-btn${g === _progActiveGroup ? ' active' : ''}" data-group="${g}">${g}<span class="prog-tab-count">${doneCount}/${entries.length}</span></button>`;
     }).join('');
     tabBar.querySelectorAll(".prog-tab-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -311,10 +278,11 @@ function renderProgressOverlay(groups) {
         const diff = timeDiff(e.time, e.actual_time);
         const diffClass = diff.startsWith("+") ? "otabi-diff-late" : diff.startsWith("-") ? "otabi-diff-early" : "otabi-diff-zero";
         const jointBadge = e.is_joint ? '<span class="prog-joint-badge">合同</span>' : '';
+        const donationHtml = e.donation ? `<span class="prog-donation">￥${Number(e.donation).toLocaleString()}</span>` : '';
         return `<div class="prog-row${isDone ? ' prog-done' : ''}${e.is_joint ? ' prog-joint' : ''}">
             <span class="prog-no">${e.no}</span>
             <span class="prog-time">${e.time || '--:--'}</span>
-            <span class="prog-name">${e.place_name}${jointBadge}</span>
+            <span class="prog-name">${e.place_name}${donationHtml}${jointBadge ? `<br>${jointBadge}` : ''}</span>
             <span class="prog-actual">${e.actual_time || ''}</span>
             ${diff ? `<span class="otabi-diff ${diffClass}">${diff}</span>` : '<span></span>'}
         </div>`;
@@ -325,306 +293,114 @@ function renderProgressOverlay(groups) {
 
 function updateEntryFormGroupUI() {
     const group = document.querySelector('input[name="entryGroup"]:checked')?.value;
-    const isJoint = group === "合同";
-    document.getElementById("entryFormNoRow").style.display = isJoint ? "none" : "";
-    document.getElementById("entryFormJointNoRow").style.display = isJoint ? "" : "none";
-    document.getElementById("entryFormJointTimeRow").style.display = isJoint ? "" : "none";
+    document.getElementById("entryFormGroupLabel").textContent =
+        group === "上" ? "上組" : group === "下" ? "下組" : "合同";
 }
 
-async function openEntryForm(entry = null) {
-    if (!otabiPlaces.length) await loadOtabiPlaces();
+function openEntryForm(entry = null) {
     document.getElementById("entryFormId").value = entry?.entry_id || "";
-    const entryDay = entry?.day || otabiDay;
-    document.querySelectorAll('input[name="entryDay"]').forEach(r => { r.checked = r.value === entryDay; });
-    const nextNo = otabiScheduleEntries.length > 0
-        ? Math.max(...otabiScheduleEntries.filter(e => e.group !== "合同").map(e => Number(e.no) || 0)) + 1 : 1;
-    document.getElementById("entryFormNo").value = entry?.no ?? nextNo;
-    document.getElementById("entryFormNoUe").value = entry?.no_ue || "";
-    document.getElementById("entryFormNoShita").value = entry?.no_shita || "";
+    document.getElementById("entryFormNo").value = entry?.no || "";
     document.getElementById("entryFormTime").value = entry?.time || "";
-    document.getElementById("entryFormTimeJoint").value = entry?.time || "";
-    document.getElementById("entryFormPlaceName").value = entry?.place_name || "";
+    document.getElementById("entryFormActual").value = entry?.actual_time || "";
     document.getElementById("entryFormMemo").value = entry?.memo || "";
     document.getElementById("entryFormDonation").value = entry?.donation || "";
+    document.getElementById("entryFormIsJoint").checked = !!entry?.is_joint;
 
-    const select = document.getElementById("entryFormPlaceSelect");
-    select.innerHTML = '<option value="">― マスタから選択 ―</option>' +
-        otabiPlaces.map(p => `<option value="${p.place_id}" ${entry?.place_id == p.place_id ? 'selected' : ''}>${p.name}（${p.group}）</option>`).join('');
-    select.onchange = () => {
-        const p = otabiPlaces.find(pl => pl.place_id == select.value);
-        if (p) document.getElementById("entryFormPlaceName").value = p.name;
-    };
-    const entryGroup = entry?.group || otabiGroup;
-    document.querySelectorAll('input[name="entryGroup"]').forEach(r => { r.checked = r.value === entryGroup; });
+    // 訪問先セレクト
+    const sel = document.getElementById("entryFormPlace");
+    sel.innerHTML = '<option value="">訪問先を選択</option>' +
+        otabiPlaces.map(p => `<option value="${p.place_id}"${entry?.place_id == p.place_id ? ' selected' : ''}>${p.name}</option>`).join('');
+
+    // グループラジオ
+    const g = entry?.group || "上";
+    const radio = document.querySelector(`input[name="entryGroup"][value="${g}"]`);
+    if (radio) radio.checked = true;
     updateEntryFormGroupUI();
-    document.querySelectorAll('input[name="entryGroup"]').forEach(r =>
-        r.addEventListener("change", updateEntryFormGroupUI)
-    );
 
     document.getElementById("deleteEntryBtn").style.display = entry ? "block" : "none";
     document.getElementById("otabiEntryFormCard").classList.add("active");
 }
 
 async function saveEntryForm() {
-    const placeName = document.getElementById("entryFormPlaceName").value.trim();
-    if (!placeName) return alert("訪問先名を入力してください");
+    const placeId = document.getElementById("entryFormPlace").value;
+    if (!placeId) return alert("訪問先を選択してください");
     const id = document.getElementById("entryFormId").value;
-    const group = document.querySelector('input[name="entryGroup"]:checked')?.value || otabiGroup;
-    const isJoint = group === "合同";
-    const no_ue = isJoint ? Number(document.getElementById("entryFormNoUe").value) || 0 : "";
-    const no_shita = isJoint ? Number(document.getElementById("entryFormNoShita").value) || 0 : "";
-    const time = isJoint
-        ? document.getElementById("entryFormTimeJoint").value
-        : document.getElementById("entryFormTime").value;
     const entry = {
         entry_id: id ? Number(id) : null,
         year: otabiYear,
-        group,
-        day: document.querySelector('input[name="entryDay"]:checked')?.value || "土曜",
-        no: isJoint ? (no_ue || no_shita) : Number(document.getElementById("entryFormNo").value) || 0,
-        no_ue,
-        no_shita,
-        time,
-        place_id: document.getElementById("entryFormPlaceSelect").value || "",
-        place_name: placeName,
+        day: otabiDay,
+        no: document.getElementById("entryFormNo").value.trim(),
+        time: document.getElementById("entryFormTime").value,
+        actual_time: document.getElementById("entryFormActual").value,
         memo: document.getElementById("entryFormMemo").value.trim(),
-        donation: Number(document.getElementById("entryFormDonation").value) || 0
+        donation: document.getElementById("entryFormDonation").value,
+        place_id: Number(placeId),
+        group: document.querySelector('input[name="entryGroup"]:checked')?.value || "上",
+        is_joint: document.getElementById("entryFormIsJoint").checked
     };
     loadingOverlay.style.display = "flex";
     try {
         const res = await callGasApi({ action: "saveOtabiEntry", entry });
-        if (!res.success) throw new Error("保存失敗");
+        if (!res.success) throw new Error();
         document.getElementById("otabiEntryFormCard").classList.remove("active");
-        // キャッシュをローカル更新して再描画（GAS再取得なし）
-        const savedEntry = Object.assign({}, entry, { entry_id: res.entry_id || entry.entry_id });
-        _updateSchedCacheLocally(savedEntry, false);
-    } catch(e) { alert("保存中にエラーが発生しました"); }
-    finally { loadingOverlay.style.display = "none"; }
+        const saved = res.entry || entry;
+        _updateSchedCacheLocally(saved, false);
+        renderOtabiSchedule();
+    } catch(e) {
+        alert("保存に失敗しました");
+    } finally {
+        loadingOverlay.style.display = "none";
+    }
 }
 
 async function deleteEntryForm() {
-    if (!confirm("このエントリを削除しますか？")) return;
     const id = document.getElementById("entryFormId").value;
+    if (!id) return;
+    if (!confirm("このスケジュールを削除しますか？")) return;
     loadingOverlay.style.display = "flex";
     try {
-        await callGasApi({ action: "deleteOtabiEntry", entryId: Number(id) });
+        const res = await callGasApi({ action: "deleteOtabiEntry", entry_id: Number(id) });
+        if (!res.success) throw new Error();
         document.getElementById("otabiEntryFormCard").classList.remove("active");
-        // キャッシュから削除して再描画（GAS再取得なし）
         _updateSchedCacheLocally({ entry_id: Number(id) }, true);
-    } finally { loadingOverlay.style.display = "none"; }
-}
-
-// ===== 一括入力 =====
-
-async function openBulkEntryForm() {
-    if (!otabiPlaces.length) await loadOtabiPlaces();
-    renderBulkForm();
-    document.getElementById("otabiBulkEntryCard").classList.add("active");
-}
-
-function renderBulkForm() {
-    const container = document.getElementById("otabiBulkRows");
-    container.innerHTML = "";
-
-    // 既存エントリをドラッグ可能な表示行として追加
-    const sorted = [...otabiScheduleEntries].sort((a, b) => Number(a.no) - Number(b.no));
-    sorted.forEach(e => {
-        const row = document.createElement("div");
-        row.className = "bulk-existing-row";
-        row.dataset.entryId = e.entry_id;
-        const isJoint = e.group === "合同";
-        row.innerHTML = `
-            <div class="otabi-drag-handle">⠿</div>
-            <span class="bulk-exist-no">${e.no}</span>
-            ${isJoint ? '<span class="bulk-joint-badge">合同</span>' : ''}
-            <span class="bulk-exist-name">${e.place_name}</span>
-            <span class="bulk-exist-time">${e.time || '--:--'}</span>
-        `;
-        container.appendChild(row);
-    });
-
-    // 既存なければ空行3つ
-    if (sorted.length === 0) {
-        for (let i = 0; i < 3; i++) container.appendChild(createBulkNewRow());
-    }
-
-    // Sortable初期化
-    if (otabiBulkSortable) { otabiBulkSortable.destroy(); otabiBulkSortable = null; }
-    if (typeof Sortable !== "undefined") {
-        otabiBulkSortable = new Sortable(container, {
-            animation: 150,
-            handle: ".otabi-drag-handle",
-            ghostClass: "otabi-drag-ghost"
-        });
+        renderOtabiSchedule();
+    } catch(e) {
+        alert("削除に失敗しました");
+    } finally {
+        loadingOverlay.style.display = "none";
     }
 }
 
-function createBulkNewRow() {
-    const div = document.createElement("div");
-    div.className = "otabi-bulk-row";
+// ===== お花代 =====
 
-    div.innerHTML = `
-        <div class="otabi-bulk-top">
-            <div class="otabi-drag-handle">⠿</div>
-            <button class="otabi-bulk-remove" type="button">✕</button>
-        </div>
-        <input type="text" class="bulk-place-search" placeholder="訪問先を検索…" autocomplete="off" />
-        <div class="bulk-place-candidates" style="display:none;"></div>
-        <input type="hidden" class="bulk-place-id" />
-        <input type="text" class="bulk-place-name" placeholder="訪問先名 *" />
-    `;
-
-    div.querySelector(".otabi-bulk-remove").addEventListener("click", () => div.remove());
-
-    const searchInput = div.querySelector(".bulk-place-search");
-    const candidates = div.querySelector(".bulk-place-candidates");
-    const nameInput = div.querySelector(".bulk-place-name");
-    const idInput = div.querySelector(".bulk-place-id");
-
-    const updateCandidates = () => {
-        const q = searchInput.value.trim().toLowerCase();
-        const filtered = q
-            ? otabiPlaces.filter(p => p.name.toLowerCase().includes(q) || (p.group || "").includes(q))
-            : otabiPlaces;
-        if (!filtered.length) { candidates.style.display = "none"; return; }
-        candidates.innerHTML = filtered.map(p =>
-            `<div class="bulk-candidate" data-id="${p.place_id}" data-name="${p.name}">${p.name}（${p.group || '-'}）</div>`
-        ).join('');
-        candidates.style.display = "";
-        candidates.querySelectorAll(".bulk-candidate").forEach(c => {
-            c.addEventListener("click", () => {
-                idInput.value = c.dataset.id;
-                nameInput.value = c.dataset.name;
-                searchInput.value = c.dataset.name;
-                candidates.style.display = "none";
-            });
-        });
-    };
-
-    searchInput.addEventListener("input", updateCandidates);
-    searchInput.addEventListener("focus", updateCandidates);
-    searchInput.addEventListener("blur", () => {
-        setTimeout(() => {
-            candidates.style.display = "none";
-            // 候補選択なしでも入力テキストを訪問先名にフォールバック
-            if (!nameInput.value.trim() && searchInput.value.trim()) {
-                nameInput.value = searchInput.value.trim();
-            }
-        }, 150);
-    });
-
-    return div;
-}
-
-async function saveBulkEntries() {
-    const allRows = [...document.querySelectorAll("#otabiBulkRows .bulk-existing-row, #otabiBulkRows .otabi-bulk-row")];
-    const newEntries = [];
-    const reorderUpdates = [];
-    let no = 1;
-
-    allRows.forEach(row => {
-        if (row.classList.contains("bulk-existing-row")) {
-            // 既存エントリ → no更新
-            reorderUpdates.push({ entry_id: Number(row.dataset.entryId), no });
-        } else {
-            // 新規行 → 訪問先名があれば保存（検索フィールドもフォールバック）
-            const name = row.querySelector(".bulk-place-name").value.trim()
-                || row.querySelector(".bulk-place-search").value.trim();
-            if (name) {
-                newEntries.push({
-                    entry_id: null,
-                    year: otabiYear,
-                    group: otabiGroup,
-                    day: otabiDay,
-                    no,
-                    no_ue: "",
-                    no_shita: "",
-                    time: "",
-                    place_id: row.querySelector(".bulk-place-id").value || "",
-                    place_name: name,
-                    memo: "",
-                    donation: 0
-                });
-            } else {
-                no--; // 空行はnoをカウントしない
-            }
-        }
-        no++;
-    });
-
-    if (!newEntries.length && reorderUpdates.length === 0) return alert("変更がありません");
-    if (!confirm(`新規${newEntries.length}件を保存し、並び順を更新します。よろしいですか？`)) return;
-    loadingOverlay.style.display = "flex";
-    try {
-        // GASタイムアウト防止のため順次実行
-        for (const entry of newEntries) {
-            await callGasApi({ action: "saveOtabiEntry", entry });
-        }
-        if (reorderUpdates.length) {
-            await callGasApi({ action: "reorderOtabiEntries", updates: reorderUpdates });
-        }
-        document.getElementById("otabiBulkEntryCard").classList.remove("active");
-        invalidateSchedCache(); await loadOtabiSchedule();
-    } catch(e) { alert("保存中にエラーが発生しました"); }
-    finally { loadingOverlay.style.display = "none"; }
-}
-
-async function copyOtabiSchedule() {
-    if (otabiScheduleEntries.length > 0) {
-        alert("すでにスケジュールが登録されています。\n前年コピーはデータが空の場合のみ使用できます。");
-        return;
-    }
-    const fromYear = otabiYear - 1;
-    const groupLabel = otabiGroup;
-    if (!confirm(`${fromYear}年の${groupLabel}スケジュールを${otabiYear}年にコピーしますか？\n(お花代はリセットされます)`)) return;
-    loadingOverlay.style.display = "flex";
-    try {
-        const res = await callGasApi({ action: "copyOtabiSchedule", fromYear, toYear: otabiYear, group: otabiGroup });
-        if (!res.success) return alert(res.msg || "コピー失敗");
-        alert(`${res.count}件コピーしました`);
-        invalidateSchedCache(); await loadOtabiSchedule();
-    } finally { loadingOverlay.style.display = "none"; }
-}
-
-// ===== お花代（Excel風一括入力） =====
-
-let otabiDonEntries = [];   // 現在表示中（グループ＋曜日でフィルタ済み）
-let otabiDonAllCache = [];  // その年の全エントリキャッシュ
-let otabiDonCachedYear = null;
+let otabiDonEntries = [];
+let otabiDonSearch = "";
 
 async function loadOtabiDonations(forceReload = false) {
-    document.getElementById("otabiDonYear").textContent = otabiYear;
-    document.querySelectorAll(".otabi-don-group-btn").forEach(b =>
-        b.classList.toggle("active", b.dataset.group === otabiDonGroup));
-    document.querySelectorAll(".otabi-don-day-btn").forEach(b =>
-        b.classList.toggle("active", b.dataset.day === otabiDonDay));
-
-    // 年が変わった場合・強制リロード時のみAPIコール
-    if (forceReload || otabiDonCachedYear !== otabiYear) {
-        const grid = document.getElementById("otabiDonationGrid");
-        grid.innerHTML = '<div class="skeleton skeleton-card"></div>';
-        const res = await callGasApi({ action: "getOtabiDonations", year: otabiYear });
-        otabiDonAllCache = (res.success && res.entries) ? res.entries : [];
-        otabiDonCachedYear = otabiYear;
-    }
-
-    otabiDonEntries = otabiDonAllCache
-        .filter(e => (e.group === otabiDonGroup || e.group === "合同") && e.day === otabiDonDay)
-        .sort((a, b) => Number(a.no) - Number(b.no));
-    renderOtabiDonations();
+    if (!forceReload && otabiDonEntries.length) { renderOtabiDonGrid(); return; }
+    const grid = document.getElementById("otabiDonGrid");
+    grid.innerHTML = '<div class="skeleton skeleton-card"></div>';
+    const res = await callGasApi({ action: "getOtabiSchedule", year: otabiYear, day: otabiDonDay });
+    otabiDonEntries = res.entries || [];
+    renderOtabiDonGrid();
 }
 
-function renderOtabiDonations() {
-    const grid = document.getElementById("otabiDonationGrid");
-    if (!otabiDonEntries.length) {
-        grid.innerHTML = '<p class="no-event">スケジュールが登録されていません</p>';
-        updateDonationTotal();
+function renderOtabiDonGrid() {
+    const grid = document.getElementById("otabiDonGrid");
+    let filtered = otabiDonEntries.filter(e =>
+        e.group === otabiDonGroup || e.group === "合同"
+    );
+    if (otabiDonSearch) {
+        const q = otabiDonSearch.toLowerCase();
+        filtered = filtered.filter(e => (e.place_name || "").toLowerCase().includes(q));
+    }
+    if (!filtered.length) {
+        grid.innerHTML = '<p class="no-event">データがありません</p>';
         return;
     }
-    const query = (document.getElementById("otabiDonSearch")?.value || "").trim();
-    const filtered = query
-        ? otabiDonEntries.filter(e => (e.place_name || "").includes(query))
-        : otabiDonEntries;
+    let total = 0;
+    filtered.forEach(e => { total += Number(e.donation) || 0; });
+    document.getElementById("otabiDonTotal").textContent = `￥${total.toLocaleString()}`;
     grid.innerHTML = filtered.map((e) => {
         const i = otabiDonEntries.indexOf(e);
         const isJoint = e.group === "合同";
@@ -637,111 +413,164 @@ function renderOtabiDonations() {
             </div>
             <div class="dg-amount-col">
                 <input type="number" inputmode="numeric" class="dg-input"
-                       data-idx="${i}" value="${e.donation || ''}"
-                       placeholder="0" min="0" step="500" />
+                    value="${e.donation || ''}" placeholder="0"
+                    data-idx="${i}"
+                    onblur="saveDonationInline(this)"
+                    onfocus="this.select()">
                 <span class="dg-unit">円</span>
             </div>
         </div>`;
     }).join('');
+}
 
-    const inputs = [...grid.querySelectorAll(".dg-input")];
-    inputs.forEach((input, idx) => {
-        input.addEventListener("input", () => {
-            const entryIdx = Number(input.dataset.idx);
-            otabiDonEntries[entryIdx].donation = Number(input.value) || 0;
-            updateDonationTotal();
+async function saveDonationInline(input) {
+    const idx = Number(input.dataset.idx);
+    const entry = otabiDonEntries[idx];
+    if (!entry) return;
+    const donation = input.value.trim();
+    if (String(entry.donation || '') === donation) return;
+    try {
+        const res = await callGasApi({
+            action: "saveOtabiEntry",
+            entry: { ...entry, donation }
         });
-        input.addEventListener("keydown", ev => {
-            if (ev.key === "Enter" || ev.key === "ArrowDown") {
-                ev.preventDefault();
-                (inputs[idx + 1] || inputs[0])?.focus();
-            } else if (ev.key === "ArrowUp") {
-                ev.preventDefault();
-                (inputs[idx - 1] || inputs[inputs.length - 1])?.focus();
+        if (res.success) {
+            entry.donation = donation;
+            // 合計更新
+            let total = 0;
+            otabiDonEntries
+                .filter(e => e.group === otabiDonGroup || e.group === "合同")
+                .forEach(e => { total += Number(e.donation) || 0; });
+            document.getElementById("otabiDonTotal").textContent = `￥${total.toLocaleString()}`;
+        }
+    } catch(err) { /* silent */ }
+}
+
+// ===== 一括入力 =====
+
+let bulkRows = [];
+
+function openBulkForm() {
+    bulkRows = [];
+    renderBulkRows();
+    document.getElementById("otabiBulkFormCard").classList.add("active");
+    loadOtabiPlaces();
+}
+
+function addBulkRow() {
+    bulkRows.push({ no: '', place_id: '', place_name: '', time: '', memo: '', donation: '', is_joint: false });
+    renderBulkRows();
+}
+
+function removeBulkRow(idx) {
+    bulkRows.splice(idx, 1);
+    renderBulkRows();
+}
+
+function renderBulkRows() {
+    const container = document.getElementById("otabiBulkRows");
+    // 既存エントリ表示
+    const existingHtml = otabiScheduleEntries
+        .filter(e => e.group === otabiGroup || e.group === "合同")
+        .map(e => {
+            const jointBadge = e.group === '合同' ? '<span class="bulk-joint-badge">合同</span>' : '';
+            return `<div class="bulk-existing-row">
+                <span class="bulk-exist-no">${e.no}</span>
+                <span class="bulk-exist-name">${e.place_name || '-'}${jointBadge}</span>
+                <span class="bulk-exist-time">${e.time || ''}</span>
+            </div>`;
+        }).join('');
+    const newRowsHtml = bulkRows.map((row, idx) => `
+        <div class="otabi-bulk-row" data-idx="${idx}">
+            <div class="otabi-bulk-top">
+                <span class="otabi-drag-handle">⠿</span>
+                <input type="text" inputmode="numeric" class="bulk-no" placeholder="番号" value="${row.no}" data-field="no" data-idx="${idx}">
+                <input type="time" class="bulk-time" value="${row.time}" data-field="time" data-idx="${idx}">
+                <button class="otabi-bulk-remove" onclick="removeBulkRow(${idx})">✕</button>
+            </div>
+            <input type="text" class="bulk-place-search" placeholder="訪問先を検索..." value="${row.place_name}" data-idx="${idx}">
+            ${row.place_id ? '' : `<div class="bulk-place-candidates" data-idx="${idx}"></div>`}
+            ${row.place_id ? `<input type="text" class="bulk-place-name" value="${row.place_name}" readonly data-idx="${idx}">` : ''}
+            <div class="otabi-bulk-bottom">
+                <input type="text" class="bulk-memo" placeholder="メモ" value="${row.memo}" data-field="memo" data-idx="${idx}">
+                <input type="number" inputmode="numeric" class="bulk-donation" placeholder="お花代" value="${row.donation}" data-field="donation" data-idx="${idx}">
+                <label class="otabi-checkbox-label"><input type="checkbox" ${row.is_joint ? 'checked' : ''} data-field="is_joint" data-idx="${idx}"> 合同</label>
+            </div>
+        </div>
+    `).join('');
+    container.innerHTML = existingHtml + newRowsHtml;
+
+    // イベント登録
+    container.querySelectorAll("input[data-field]").forEach(inp => {
+        inp.addEventListener("change", () => {
+            const idx2 = Number(inp.dataset.idx);
+            const field = inp.dataset.field;
+            bulkRows[idx2][field] = inp.type === "checkbox" ? inp.checked : inp.value;
+        });
+    });
+    // 訪問先検索
+    container.querySelectorAll(".bulk-place-search").forEach(inp => {
+        inp.addEventListener("input", () => {
+            const idx2 = Number(inp.dataset.idx);
+            const q = inp.value.toLowerCase();
+            bulkRows[idx2].place_name = inp.value;
+            bulkRows[idx2].place_id = '';
+            const cands = document.querySelector(`.bulk-place-candidates[data-idx="${idx2}"]`);
+            if (!cands) return;
+            if (!q) { cands.innerHTML = ''; return; }
+            const matches = otabiPlaces.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
+            cands.innerHTML = matches.map(p =>
+                `<div class="bulk-candidate" data-place-id="${p.place_id}" data-name="${p.name}">${p.name}</div>`
+            ).join('');
+            cands.querySelectorAll(".bulk-candidate").forEach(c => {
+                c.addEventListener("click", () => {
+                    bulkRows[idx2].place_id = c.dataset.placeId;
+                    bulkRows[idx2].place_name = c.dataset.name;
+                    renderBulkRows();
+                });
+            });
+        });
+    });
+
+    // Sortable.js
+    if (window.Sortable && container) {
+        Sortable.create(container, {
+            handle: '.otabi-drag-handle',
+            animation: 150,
+            ghostClass: 'otabi-drag-ghost',
+            onEnd(evt) {
+                const moved = bulkRows.splice(evt.oldIndex, 1)[0];
+                bulkRows.splice(evt.newIndex, 0, moved);
             }
         });
-        input.addEventListener("focus", () => input.select());
-    });
-    updateDonationTotal();
-}
-
-function updateDonationTotal() {
-    const total = otabiDonEntries.reduce((s, e) => s + (Number(e.donation) || 0), 0);
-    document.getElementById("otabiDonationTotal").innerHTML =
-        `${otabiDonGroup}・${otabiDonDay} 合計 <span>￥${total.toLocaleString()}</span>`;
-}
-
-async function saveOtabiDonations() {
-    if (!otabiDonEntries.length) return;
-    const donations = otabiDonEntries.map(e => ({ entry_id: e.entry_id, donation: Number(e.donation) || 0 }));
-    const btn = document.getElementById("saveDonationsBtn");
-    btn.disabled = true; btn.textContent = "保存中…";
-    try {
-        const res = await callGasApi({ action: "saveOtabiDonations", donations });
-        if (!res.success) throw new Error();
-        // キャッシュ内の該当エントリの金額を更新
-        donations.forEach(d => {
-            const cached = otabiDonAllCache.find(e => e.entry_id == d.entry_id);
-            if (cached) cached.donation = d.donation;
-        });
-        btn.textContent = "保存しました ✓";
-        setTimeout(() => { btn.textContent = "お花代を保存"; btn.disabled = false; }, 1500);
-    } catch (e) {
-        alert("保存中にエラーが発生しました");
-        btn.textContent = "お花代を保存"; btn.disabled = false;
     }
 }
 
-// ===== 初期化 =====
-document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".otabi-tab-btn").forEach(btn =>
-        btn.addEventListener("click", () => switchOtabiTab(btn.dataset.tab))
-    );
-    // 訪問先フィルタ
-    document.querySelectorAll(".otabi-place-filter-btn").forEach(btn =>
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".otabi-place-filter-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            otabiPlaceFilter = btn.dataset.group;
-            renderOtabiPlaces();
-        })
-    );
-    // スケジュール
-    document.querySelectorAll(".otabi-group-btn").forEach(btn =>
-        btn.addEventListener("click", () => { otabiGroup = btn.dataset.group; invalidateSchedCache(); loadOtabiSchedule(); })
-    );
-    document.querySelectorAll(".otabi-day-btn").forEach(btn =>
-        btn.addEventListener("click", () => { otabiDay = btn.dataset.day; loadOtabiSchedule(); })
-    );
-    document.getElementById("otabiSchedYearPrev")?.addEventListener("click", () => { otabiYear--; loadOtabiSchedule(); });
-    document.getElementById("otabiSchedYearNext")?.addEventListener("click", () => { otabiYear++; loadOtabiSchedule(); });
-    // お花代
-    document.getElementById("otabiDonYearPrev")?.addEventListener("click",  () => { otabiYear--; loadOtabiDonations(); });
-    document.getElementById("otabiDonYearNext")?.addEventListener("click",  () => { otabiYear++; loadOtabiDonations(); });
-    document.querySelectorAll(".otabi-don-group-btn").forEach(btn =>
-        btn.addEventListener("click", () => { otabiDonGroup = btn.dataset.group; loadOtabiDonations(); })
-    );
-    document.querySelectorAll(".otabi-don-day-btn").forEach(btn =>
-        btn.addEventListener("click", () => { otabiDonDay = btn.dataset.day; loadOtabiDonations(); })
-    );
-    document.getElementById("otabiDonSearch")?.addEventListener("input", () => renderOtabiDonations());
-    document.getElementById("saveDonationsBtn")?.addEventListener("click", saveOtabiDonations);
-    document.getElementById("addPlaceBtn")?.addEventListener("click", () => openPlaceForm());
-    document.getElementById("addEntryBtn")?.addEventListener("click", () => openBulkEntryForm());
-    document.getElementById("saveBulkEntriesBtn")?.addEventListener("click", saveBulkEntries);
-    document.getElementById("addBulkRowBtn")?.addEventListener("click", () => {
-        const container = document.getElementById("otabiBulkRows");
-        const row = createBulkNewRow();
-        container.appendChild(row);
-        row.querySelector(".bulk-place-search").focus();
-    });
-    document.getElementById("copyScheduleBtn")?.addEventListener("click", copyOtabiSchedule);
-    document.getElementById("otabiProgressBtn")?.addEventListener("click", openProgressOverlay);
-    document.getElementById("otabiProgressClose")?.addEventListener("click", () => {
-        document.getElementById("otabiProgressOverlay").style.display = "none";
-    });
-    document.getElementById("savePlaceBtn")?.addEventListener("click", savePlaceForm);
-    document.getElementById("deletePlaceBtn")?.addEventListener("click", deletePlaceForm);
-    document.getElementById("saveEntryBtn")?.addEventListener("click", saveEntryForm);
-    document.getElementById("deleteEntryBtn")?.addEventListener("click", deleteEntryForm);
-});
+async function saveBulkForm() {
+    const valid = bulkRows.filter(r => r.place_id);
+    if (!valid.length) return alert("訪問先が選択されていない行があります");
+    const entries = valid.map(r => ({
+        entry_id: null,
+        year: otabiYear,
+        day: otabiDay,
+        no: r.no,
+        time: r.time,
+        memo: r.memo,
+        donation: r.donation,
+        place_id: Number(r.place_id),
+        group: otabiGroup === "合同" ? "合同" : otabiGroup.replace("組",""),
+        is_joint: r.is_joint
+    }));
+    loadingOverlay.style.display = "flex";
+    try {
+        const res = await callGasApi({ action: "bulkSaveOtabiEntries", entries });
+        if (!res.success) throw new Error();
+        document.getElementById("otabiBulkFormCard").classList.remove("active");
+        otabiScheduleEntries = [];
+        await loadOtabiSchedule(true);
+    } catch(e) {
+        alert("保存に失敗しました");
+    } finally {
+        loadingOverlay.style.display = "none";
+    }
+}
