@@ -1175,11 +1175,10 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  width: 100%;
   padding: 12px 14px 10px;
-  border: none;
   background: transparent;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   text-align: left;
 }
 .haru-widget-title {
