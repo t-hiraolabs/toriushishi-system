@@ -197,9 +197,9 @@
                     <button class="haru-day-btn" data-day="日曜">日曜</button>
                 </div>
             </div>
-            <div class="haru-group-toggle">
-                <button class="haru-group-btn active" data-group="上組">上組</button>
-                <button class="haru-group-btn" data-group="下組">下組</button>
+            <div class="haru-tab-bar">
+                <button class="haru-tab-btn active" data-group="上組">上組</button>
+                <button class="haru-tab-btn" data-group="下組">下組</button>
             </div>
             <div id="haruProgressList" class="haru-progress-list"></div>
         </div>
@@ -658,7 +658,10 @@
 
     <!-- 進行状況オーバーレイ -->
     <div id="otabiProgressOverlay" style="display:none;position:fixed;inset:0;background:#1a1a2e;color:#eee;z-index:300;overflow-y:auto;padding:20px;">
-        <button id="otabiProgressClose" style="position:sticky;top:0;display:block;margin-bottom:16px;padding:10px 20px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">✕ 閉じる</button>
+        <div class="prog-overlay-header">
+            <button id="otabiProgressClose" style="padding:8px 16px;background:#e63946;color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:700;cursor:pointer;">✕ 閉じる</button>
+            <div class="prog-tab-bar" id="progTabBar"></div>
+        </div>
         <div id="otabiProgressContent"></div>
     </div>
 

@@ -883,10 +883,10 @@ function initHaruWidget() {
             loadHaruProgress();
         });
     });
-    document.querySelectorAll(".haru-group-btn").forEach(btn => {
+    document.querySelectorAll(".haru-tab-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             haruGroup = btn.dataset.group;
-            document.querySelectorAll(".haru-group-btn").forEach(b => b.classList.toggle("active", b.dataset.group === haruGroup));
+            document.querySelectorAll(".haru-tab-btn").forEach(b => b.classList.toggle("active", b.dataset.group === haruGroup));
             renderHaruProgress(haruAllGroups);
         });
     });

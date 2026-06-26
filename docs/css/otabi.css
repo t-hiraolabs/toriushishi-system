@@ -151,6 +151,26 @@
 }
 
 /* --- 進行状況オーバーレイ --- */
+.prog-overlay-header {
+  position: sticky; top: 0; background: #1a1a2e;
+  display: flex; align-items: center; gap: 12px;
+  padding-bottom: 12px; margin-bottom: 8px; z-index: 1;
+}
+.prog-tab-bar {
+  display: flex; gap: 0; flex: 1;
+  border-bottom: 2px solid rgba(255,255,255,.2);
+}
+.prog-tab-btn {
+  flex: 1; padding: 8px 0;
+  border: none; border-bottom: 3px solid transparent;
+  background: transparent; color: rgba(255,255,255,.4);
+  font-size: .9rem; font-weight: 700; cursor: pointer;
+  margin-bottom: -2px;
+}
+.prog-tab-btn.active {
+  color: #fff; border-bottom-color: #e63946;
+}
+.prog-tab-count { font-size: .8rem; font-weight: 400; margin-left: 4px; }
 .prog-group { margin-bottom: 20px; }
 .prog-group-title {
   font-size: 1rem; font-weight: 800; margin-bottom: 8px;
