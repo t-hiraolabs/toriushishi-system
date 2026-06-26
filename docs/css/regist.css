@@ -76,7 +76,7 @@ body::before {
 input,
 select {
   padding: 11px 14px;
-  font-size: .95rem;
+  font-size: 16px;
   border-radius: 10px;
   border: 1px solid #333;
   background: #111;
