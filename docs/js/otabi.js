@@ -461,7 +461,13 @@ function createBulkNewRow() {
     searchInput.addEventListener("input", updateCandidates);
     searchInput.addEventListener("focus", updateCandidates);
     searchInput.addEventListener("blur", () => {
-        setTimeout(() => { candidates.style.display = "none"; }, 150);
+        setTimeout(() => {
+            candidates.style.display = "none";
+            // 候補選択なしでも入力テキストを訪問先名にフォールバック
+            if (!nameInput.value.trim() && searchInput.value.trim()) {
+                nameInput.value = searchInput.value.trim();
+            }
+        }, 150);
     });
 
     return div;
@@ -478,8 +484,9 @@ async function saveBulkEntries() {
             // 既存エントリ → no更新
             reorderUpdates.push({ entry_id: Number(row.dataset.entryId), no });
         } else {
-            // 新規行 → 訪問先名があれば保存
-            const name = row.querySelector(".bulk-place-name").value.trim();
+            // 新規行 → 訪問先名があれば保存（検索フィールドもフォールバック）
+            const name = row.querySelector(".bulk-place-name").value.trim()
+                || row.querySelector(".bulk-place-search").value.trim();
             if (name) {
                 newEntries.push({
                     entry_id: null,
@@ -506,10 +513,13 @@ async function saveBulkEntries() {
     if (!confirm(`新規${newEntries.length}件を保存し、並び順を更新します。よろしいですか？`)) return;
     loadingOverlay.style.display = "flex";
     try {
-        const tasks = [];
-        if (newEntries.length) tasks.push(...newEntries.map(e => callGasApi({ action: "saveOtabiEntry", entry: e })));
-        if (reorderUpdates.length) tasks.push(callGasApi({ action: "reorderOtabiEntries", updates: reorderUpdates }));
-        await Promise.all(tasks);
+        // GASタイムアウト防止のため順次実行
+        for (const entry of newEntries) {
+            await callGasApi({ action: "saveOtabiEntry", entry });
+        }
+        if (reorderUpdates.length) {
+            await callGasApi({ action: "reorderOtabiEntries", updates: reorderUpdates });
+        }
         document.getElementById("otabiBulkEntryCard").classList.remove("active");
         invalidateSchedCache(); await loadOtabiSchedule();
     } catch(e) { alert("保存中にエラーが発生しました"); }
