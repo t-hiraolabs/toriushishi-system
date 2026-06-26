@@ -526,7 +526,6 @@
                 <button class="otabi-action-chip" id="otabiProgressBtn">進行状況</button>
             </div>
             <div id="otabiScheduleList" class="otabi-list-area"></div>
-            <button class="otabi-save-order-btn" id="saveOrderBtn" style="display:none;">並び順を保存</button>
             <button class="otabi-add-btn" id="addEntryBtn">＋ 一括入力</button>
         </div>
         <div class="otabi-tab-pane" data-tab="donations">
@@ -670,9 +669,10 @@
     <div class="member-card otabi-form-card" id="otabiBulkEntryCard">
         <button class="close-card-btn" data-target="otabi-bulk-entry">戻る</button>
         <div class="otabi-form-card-title">スケジュール一括入力</div>
-        <p style="font-size:.8rem;color:var(--text-3);padding:0 16px 4px;">「＋ここに追加」で行を挿入。訪問先名を入力して保存。時間・メモは後から編集できます。</p>
+        <p style="font-size:.8rem;color:var(--text-3);padding:0 16px 4px;">⠿をドラッグで並び替え。訪問先名を入力して保存。時間・メモは後から編集できます。</p>
         <div id="otabiBulkRows"></div>
-        <button class="save-event-btn" id="saveBulkEntriesBtn" style="margin: 8px 16px;">一括保存</button>
+        <button class="otabi-add-btn" id="addBulkRowBtn" style="margin:4px 16px;">＋ 行を追加</button>
+        <button class="save-event-btn" id="saveBulkEntriesBtn" style="margin: 4px 16px 8px;">一括保存</button>
     </div>
 
     <!-- 衣装管理カード -->

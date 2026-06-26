@@ -152,50 +152,7 @@ function invalidateSchedCache() {
     otabiSchedCachedYear = null;
 }
 
-let otabiSortable = null;
-
-function initScheduleSortable() {
-    const list = document.getElementById("otabiScheduleList");
-    const saveBtn = document.getElementById("saveOrderBtn");
-    if (!list || typeof Sortable === "undefined") return;
-
-    if (otabiSortable) { otabiSortable.destroy(); otabiSortable = null; }
-
-    otabiSortable = new Sortable(list, {
-        animation: 150,
-        handle: ".otabi-drag-handle",
-        ghostClass: "otabi-drag-ghost",
-        onEnd() {
-            saveBtn.style.display = "block";
-        }
-    });
-}
-
-async function saveScheduleOrder() {
-    const saveBtn = document.getElementById("saveOrderBtn");
-    const items = document.querySelectorAll("#otabiScheduleList .otabi-entry-item");
-    const updates = [...items].map((el, i) => ({
-        entry_id: Number(el.dataset.entryId),
-        no: i + 1
-    }));
-    saveBtn.disabled = true;
-    saveBtn.textContent = "保存中…";
-    try {
-        const res = await callGasApi({ action: "reorderOtabiEntries", updates });
-        if (!res.success) throw new Error();
-        // ローカルキャッシュのnoも更新
-        updates.forEach(u => {
-            const e = otabiScheduleEntries.find(e => e.entry_id == u.entry_id);
-            if (e) e.no = u.no;
-        });
-        saveBtn.textContent = "保存しました ✓";
-        setTimeout(() => { saveBtn.style.display = "none"; saveBtn.disabled = false; saveBtn.textContent = "並び順を保存"; }, 1500);
-    } catch(e) {
-        alert("保存中にエラーが発生しました");
-        saveBtn.disabled = false;
-        saveBtn.textContent = "並び順を保存";
-    }
-}
+let otabiBulkSortable = null;
 
 function timeDiff(planned, actual) {
     if (!planned || !actual) return "";
@@ -228,7 +185,6 @@ function renderOtabiSchedule() {
             : `<button class="otabi-complete-btn" data-id="${e.entry_id}">完了</button>`;
         return `
         <div class="otabi-item otabi-entry-item${done ? ' otabi-entry-done' : ''}" data-entry-id="${e.entry_id}">
-            <div class="otabi-drag-handle" title="ドラッグで並び替え">⠿</div>
             <div class="otabi-entry-no">${e.no || '-'}</div>
             <div class="otabi-entry-time-col">
                 <div class="otabi-entry-time">${e.time || '--:--'}</div>
@@ -256,9 +212,6 @@ function renderOtabiSchedule() {
         });
     });
 
-    const saveBtn = document.getElementById("saveOrderBtn");
-    if (saveBtn) saveBtn.style.display = "none";
-    initScheduleSortable();
 }
 
 async function markEntryComplete(entryId) {
@@ -430,58 +383,46 @@ function renderBulkForm() {
     const container = document.getElementById("otabiBulkRows");
     container.innerHTML = "";
 
-    // 既存エントリを表示（新規行追加ボタン付き）
+    // 既存エントリをドラッグ可能な表示行として追加
     const sorted = [...otabiScheduleEntries].sort((a, b) => Number(a.no) - Number(b.no));
-
-    const addNewRowBtn = (afterNo) => {
-        const btn = document.createElement("button");
-        btn.className = "bulk-insert-btn";
-        btn.textContent = "＋ ここに追加";
-        btn.addEventListener("click", () => {
-            const newRow = createBulkNewRow(afterNo + 0.5);
-            btn.replaceWith(newRow);
-            newRow.querySelector(".bulk-place-search").focus();
-        });
-        return btn;
-    };
-
-    // 先頭に追加ボタン
-    const firstNo = sorted.length > 0 ? Number(sorted[0].no) - 1 : 0;
-    container.appendChild(addNewRowBtn(firstNo));
-
-    sorted.forEach((e, i) => {
-        // 既存エントリ行
-        const existing = document.createElement("div");
-        existing.className = "bulk-existing-row";
+    sorted.forEach(e => {
+        const row = document.createElement("div");
+        row.className = "bulk-existing-row";
+        row.dataset.entryId = e.entry_id;
         const isJoint = e.group === "合同";
-        existing.innerHTML = `
+        row.innerHTML = `
+            <div class="otabi-drag-handle">⠿</div>
             <span class="bulk-exist-no">${e.no}</span>
             ${isJoint ? '<span class="bulk-joint-badge">合同</span>' : ''}
             <span class="bulk-exist-name">${e.place_name}</span>
             <span class="bulk-exist-time">${e.time || '--:--'}</span>
         `;
-        container.appendChild(existing);
-
-        // 各エントリの後に追加ボタン
-        container.appendChild(addNewRowBtn(Number(e.no)));
+        container.appendChild(row);
     });
 
-    // 既存エントリがない場合は空の入力行を3つ追加
+    // 既存なければ空行3つ
     if (sorted.length === 0) {
-        for (let i = 0; i < 3; i++) {
-            container.appendChild(createBulkNewRow(i + 1));
-        }
+        for (let i = 0; i < 3; i++) container.appendChild(createBulkNewRow());
+    }
+
+    // Sortable初期化
+    if (otabiBulkSortable) { otabiBulkSortable.destroy(); otabiBulkSortable = null; }
+    if (typeof Sortable !== "undefined") {
+        otabiBulkSortable = new Sortable(container, {
+            animation: 150,
+            handle: ".otabi-drag-handle",
+            ghostClass: "otabi-drag-ghost"
+        });
     }
 }
 
-function createBulkNewRow(suggestedNo) {
+function createBulkNewRow() {
     const div = document.createElement("div");
     div.className = "otabi-bulk-row";
-    div.dataset.suggestedNo = suggestedNo;
 
     div.innerHTML = `
         <div class="otabi-bulk-top">
-            <input type="number" class="bulk-no" placeholder="No." value="${suggestedNo}" min="1" step="0.5" />
+            <div class="otabi-drag-handle">⠿</div>
             <button class="otabi-bulk-remove" type="button">✕</button>
         </div>
         <input type="text" class="bulk-place-search" placeholder="訪問先を検索…" autocomplete="off" />
@@ -527,31 +468,48 @@ function createBulkNewRow(suggestedNo) {
 }
 
 async function saveBulkEntries() {
-    const rows = document.querySelectorAll("#otabiBulkRows .otabi-bulk-row");
-    const entries = [];
-    rows.forEach(row => {
-        const name = row.querySelector(".bulk-place-name").value.trim();
-        if (!name) return;
-        entries.push({
-            entry_id: null,
-            year: otabiYear,
-            group: otabiGroup,
-            day: otabiDay,
-            no: Number(row.querySelector(".bulk-no").value) || 0,
-            no_ue: "",
-            no_shita: "",
-            time: "",
-            place_id: row.querySelector(".bulk-place-id").value || "",
-            place_name: name,
-            memo: "",
-            donation: 0
-        });
+    const allRows = [...document.querySelectorAll("#otabiBulkRows .bulk-existing-row, #otabiBulkRows .otabi-bulk-row")];
+    const newEntries = [];
+    const reorderUpdates = [];
+    let no = 1;
+
+    allRows.forEach(row => {
+        if (row.classList.contains("bulk-existing-row")) {
+            // 既存エントリ → no更新
+            reorderUpdates.push({ entry_id: Number(row.dataset.entryId), no });
+        } else {
+            // 新規行 → 訪問先名があれば保存
+            const name = row.querySelector(".bulk-place-name").value.trim();
+            if (name) {
+                newEntries.push({
+                    entry_id: null,
+                    year: otabiYear,
+                    group: otabiGroup,
+                    day: otabiDay,
+                    no,
+                    no_ue: "",
+                    no_shita: "",
+                    time: "",
+                    place_id: row.querySelector(".bulk-place-id").value || "",
+                    place_name: name,
+                    memo: "",
+                    donation: 0
+                });
+            } else {
+                no--; // 空行はnoをカウントしない
+            }
+        }
+        no++;
     });
-    if (!entries.length) return alert("訪問先名を1件以上入力してください");
-    if (!confirm(`${entries.length}件のスケジュールを保存しますか？`)) return;
+
+    if (!newEntries.length && reorderUpdates.length === 0) return alert("変更がありません");
+    if (!confirm(`新規${newEntries.length}件を保存し、並び順を更新します。よろしいですか？`)) return;
     loadingOverlay.style.display = "flex";
     try {
-        await Promise.all(entries.map(entry => callGasApi({ action: "saveOtabiEntry", entry })));
+        const tasks = [];
+        if (newEntries.length) tasks.push(...newEntries.map(e => callGasApi({ action: "saveOtabiEntry", entry: e })));
+        if (reorderUpdates.length) tasks.push(callGasApi({ action: "reorderOtabiEntries", updates: reorderUpdates }));
+        await Promise.all(tasks);
         document.getElementById("otabiBulkEntryCard").classList.remove("active");
         invalidateSchedCache(); await loadOtabiSchedule();
     } catch(e) { alert("保存中にエラーが発生しました"); }
@@ -749,7 +707,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("addPlaceBtn")?.addEventListener("click", () => openPlaceForm());
     document.getElementById("addEntryBtn")?.addEventListener("click", () => openBulkEntryForm());
     document.getElementById("saveBulkEntriesBtn")?.addEventListener("click", saveBulkEntries);
-    document.getElementById("saveOrderBtn")?.addEventListener("click", saveScheduleOrder);
+    document.getElementById("addBulkRowBtn")?.addEventListener("click", () => {
+        const container = document.getElementById("otabiBulkRows");
+        const row = createBulkNewRow();
+        container.appendChild(row);
+        row.querySelector(".bulk-place-search").focus();
+    });
     document.getElementById("copyScheduleBtn")?.addEventListener("click", copyOtabiSchedule);
     document.getElementById("shareScheduleBtn")?.addEventListener("click", printOtabiSchedule);
     document.getElementById("otabiPrintClose")?.addEventListener("click", () => {
