@@ -604,7 +604,8 @@
                     <label><input type="radio" name="entryGroup" value="合同"> 合同</label>
                 </div>
             </div>
-            <div class="otabi-form-row">
+            <!-- 通常No.（合同以外） -->
+            <div class="otabi-form-row" id="entryFormNoRow">
                 <div class="otabi-form-field half">
                     <label>No.</label>
                     <input type="number" id="entryFormNo" min="1" />
@@ -612,6 +613,23 @@
                 <div class="otabi-form-field half">
                     <label>時間</label>
                     <input type="time" id="entryFormTime" />
+                </div>
+            </div>
+            <!-- 合同用No.（合同選択時） -->
+            <div class="otabi-form-row" id="entryFormJointNoRow" style="display:none;">
+                <div class="otabi-form-field half">
+                    <label>上組 No.</label>
+                    <input type="number" id="entryFormNoUe" min="1" />
+                </div>
+                <div class="otabi-form-field half">
+                    <label>下組 No.</label>
+                    <input type="number" id="entryFormNoShita" min="1" />
+                </div>
+            </div>
+            <div class="otabi-form-row" id="entryFormJointTimeRow" style="display:none;">
+                <div class="otabi-form-field half">
+                    <label>時間</label>
+                    <input type="time" id="entryFormTimeJoint" />
                 </div>
             </div>
             <div class="otabi-form-field">

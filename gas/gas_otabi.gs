@@ -12,7 +12,7 @@ function ensureOtabiSheets() {
   let schedSheet = ss.getSheetByName("otabi_schedules");
   if (!schedSheet) {
     schedSheet = ss.insertSheet("otabi_schedules");
-    schedSheet.appendRow(["entry_id", "year", "group", "day", "no", "time", "place_id", "place_name", "memo", "donation", "actual_time", "created_at", "updated_at"]);
+    schedSheet.appendRow(["entry_id", "year", "group", "day", "no", "no_ue", "no_shita", "time", "place_id", "place_name", "memo", "donation", "actual_time", "created_at", "updated_at"]);
   } else {
     const headers = schedSheet.getRange(1, 1, 1, schedSheet.getLastColumn()).getValues()[0];
     if (!headers.includes("day")) {
@@ -24,6 +24,15 @@ function ensureOtabiSheets() {
       const donIdx = headers.indexOf("donation");
       schedSheet.insertColumnAfter(donIdx + 1);
       schedSheet.getRange(1, donIdx + 2).setValue("actual_time");
+    }
+    // no_ue / no_shita カラム追加マイグレーション
+    const h2 = schedSheet.getRange(1, 1, 1, schedSheet.getLastColumn()).getValues()[0];
+    if (!h2.includes("no_ue")) {
+      const noIdx = h2.indexOf("no");
+      schedSheet.insertColumnAfter(noIdx + 1);
+      schedSheet.insertColumnAfter(noIdx + 2);
+      schedSheet.getRange(1, noIdx + 2).setValue("no_ue");
+      schedSheet.getRange(1, noIdx + 3).setValue("no_shita");
     }
   }
   return { placesSheet, schedSheet };
@@ -105,12 +114,24 @@ function getOtabiScheduleGAS(year, group, day) {
       const timeStr = timeVal instanceof Date
         ? Utilities.formatDate(timeVal, "Asia/Tokyo", "HH:mm")
         : String(timeVal || "");
+      const rowGroup = row[P["group"]];
+      // 合同エントリは閲覧グループに応じてnoを切り替え
+      let displayNo = row[P["no"]];
+      if (rowGroup === "合同") {
+        if (group === "上組" && P["no_ue"] !== undefined && row[P["no_ue"]] !== "") {
+          displayNo = row[P["no_ue"]];
+        } else if (group === "下組" && P["no_shita"] !== undefined && row[P["no_shita"]] !== "") {
+          displayNo = row[P["no_shita"]];
+        }
+      }
       return {
         entry_id: row[P["entry_id"]],
         year: row[P["year"]],
-        group: row[P["group"]],
+        group: rowGroup,
         day: P["day"] !== undefined ? (row[P["day"]] || "土曜") : "土曜",
-        no: row[P["no"]],
+        no: displayNo,
+        no_ue: P["no_ue"] !== undefined ? row[P["no_ue"]] : "",
+        no_shita: P["no_shita"] !== undefined ? row[P["no_shita"]] : "",
         time: timeStr,
         place_id: row[P["place_id"]],
         place_name: row[P["place_name"]],
@@ -141,6 +162,8 @@ function saveOtabiEntryGAS(entry) {
       if (Number(data[r-1][0]) === Number(entry.entry_id)) {
         if (P["day"]) schedSheet.getRange(r, P["day"]).setValue(entry.day || "土曜");
         schedSheet.getRange(r, P["no"]).setValue(entry.no || "");
+        if (P["no_ue"]) schedSheet.getRange(r, P["no_ue"]).setValue(entry.no_ue || "");
+        if (P["no_shita"]) schedSheet.getRange(r, P["no_shita"]).setValue(entry.no_shita || "");
         schedSheet.getRange(r, P["time"]).setValue(entry.time || "");
         schedSheet.getRange(r, P["place_id"]).setValue(entry.place_id || "");
         schedSheet.getRange(r, P["place_name"]).setValue(entry.place_name || "");
@@ -156,7 +179,8 @@ function saveOtabiEntryGAS(entry) {
   const newId = ids.length > 0 ? Math.max(...ids) + 1 : 1;
   schedSheet.appendRow([
     newId, entry.year, entry.group, entry.day || "土曜",
-    entry.no || "", entry.time || "",
+    entry.no || "", entry.no_ue || "", entry.no_shita || "",
+    entry.time || "",
     entry.place_id || "", entry.place_name || "",
     entry.memo || "", Number(entry.donation) || 0,
     "", now, now
@@ -207,6 +231,8 @@ function getOtabiAllProgressGAS(year, day) {
     const entry = {
       entry_id: row[P["entry_id"]],
       no: row[P["no"]],
+      no_ue: P["no_ue"] !== undefined ? row[P["no_ue"]] : "",
+      no_shita: P["no_shita"] !== undefined ? row[P["no_shita"]] : "",
       time: timeStr,
       place_name: row[P["place_name"]],
       actual_time: actualStr,
@@ -224,7 +250,13 @@ function getOtabiAllProgressGAS(year, day) {
   const result = {};
   if (Object.keys(rawGroups).length > 0) {
     Object.keys(rawGroups).forEach(g => {
-      result[g] = rawGroups[g].concat(jointEntries);
+      const joints = jointEntries.map(e => {
+        const displayNo = g === "上組" && e.no_ue !== "" ? e.no_ue
+                        : g === "下組" && e.no_shita !== "" ? e.no_shita
+                        : e.no;
+        return Object.assign({}, e, { no: displayNo });
+      });
+      result[g] = rawGroups[g].concat(joints);
       result[g].sort((a, b) => Number(a.no) - Number(b.no));
     });
   } else if (jointEntries.length > 0) {
