@@ -876,13 +876,30 @@ let haruGroup = "上組";
 let haruAllGroups = {};
 
 function initHaruWidget() {
+    // トグル（開閉）
+    const toggleBtn = document.getElementById("haruWidgetToggle");
+    const body = document.getElementById("haruWidgetBody");
+    const icon = toggleBtn?.querySelector(".haru-toggle-icon");
+    toggleBtn?.addEventListener("click", (e) => {
+        // 日曜/土曜ボタンのクリックはトグルに伝播させない
+        if (e.target.closest(".haru-day-btn")) return;
+        const isOpen = body.style.display !== "none";
+        body.style.display = isOpen ? "none" : "block";
+        if (icon) icon.textContent = isOpen ? "▼" : "▲";
+        if (!isOpen && !Object.keys(haruAllGroups).length) loadHaruProgress();
+    });
+
+    // 土曜/日曜切り替え
     document.querySelectorAll(".haru-day-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
             haruDay = btn.dataset.day;
             document.querySelectorAll(".haru-day-btn").forEach(b => b.classList.toggle("active", b.dataset.day === haruDay));
-            loadHaruProgress();
+            if (body.style.display !== "none") loadHaruProgress();
         });
     });
+
+    // 上組/下組タブ
     document.querySelectorAll(".haru-tab-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             haruGroup = btn.dataset.group;
@@ -890,7 +907,6 @@ function initHaruWidget() {
             renderHaruProgress(haruAllGroups);
         });
     });
-    loadHaruProgress();
 }
 
 async function loadHaruProgress() {

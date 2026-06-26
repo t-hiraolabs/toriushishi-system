@@ -1154,17 +1154,31 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   border-radius: 14px;
   overflow: hidden;
 }
-.haru-widget-header {
+.haru-widget-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px 8px;
-  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
 }
 .haru-widget-title {
   font-size: .95rem;
   font-weight: 800;
   color: var(--text-1);
+  flex: 1;
+}
+.haru-toggle-icon {
+  font-size: .75rem;
+  color: var(--text-3);
+}
+.haru-widget-body {
+  border-top: 1px solid var(--border);
+  padding: 0 0 4px;
 }
 .haru-day-toggle { display: flex; gap: 6px; }
 .haru-day-btn {

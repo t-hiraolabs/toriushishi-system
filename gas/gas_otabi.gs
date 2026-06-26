@@ -247,24 +247,21 @@ function getOtabiAllProgressGAS(year, day) {
     }
   });
 
-  // 個別グループがある場合は合同エントリをそれぞれにマージ
+  // 合同エントリを上組・下組両方にマージ（個別エントリがなくても展開する）
   const result = {};
-  if (Object.keys(rawGroups).length > 0) {
-    Object.keys(rawGroups).forEach(g => {
-      const joints = jointEntries.map(e => {
-        const displayNo = g === "上組" && e.no_ue !== "" ? e.no_ue
-                        : g === "下組" && e.no_shita !== "" ? e.no_shita
-                        : e.no;
-        return Object.assign({}, e, { no: displayNo });
-      });
-      result[g] = rawGroups[g].concat(joints);
-      result[g].sort((a, b) => Number(a.no) - Number(b.no));
+  const targetGroups = Object.keys(rawGroups).length > 0
+    ? Object.keys(rawGroups)
+    : (jointEntries.length > 0 ? ["上組", "下組"] : []);
+  targetGroups.forEach(g => {
+    const joints = jointEntries.map(e => {
+      const displayNo = g === "上組" && e.no_ue !== "" ? e.no_ue
+                      : g === "下組" && e.no_shita !== "" ? e.no_shita
+                      : e.no;
+      return Object.assign({}, e, { no: displayNo });
     });
-  } else if (jointEntries.length > 0) {
-    // 合同エントリのみの場合はそのまま表示
-    result["合同"] = jointEntries;
-    result["合同"].sort((a, b) => Number(a.no) - Number(b.no));
-  }
+    result[g] = (rawGroups[g] || []).concat(joints);
+    result[g].sort((a, b) => Number(a.no) - Number(b.no));
+  });
 
   return { success: true, groups: result };
 }
