@@ -147,6 +147,31 @@ async function loadOtabiSchedule(forceReload = false) {
     renderOtabiSchedule();
 }
 
+// 保存・削除後にキャッシュをローカルで更新して再描画（GAS再取得なし）
+function _updateSchedCacheLocally(entry, isDelete) {
+    Object.keys(otabiSchedCache).forEach(cacheKey => {
+        const entries = otabiSchedCache[cacheKey];
+        const idx = entries.findIndex(e => e.entry_id === entry.entry_id);
+        if (isDelete) {
+            if (idx >= 0) entries.splice(idx, 1);
+        } else {
+            if (idx >= 0) {
+                entries[idx] = entry;
+            } else {
+                // 新規エントリは関連するキャッシュに追加
+                const [year, group, day] = cacheKey.split("_");
+                if (Number(year) === entry.year && entry.day === day
+                    && (entry.group === group || entry.group === "合同")) {
+                    entries.push(entry);
+                    entries.sort((a, b) => Number(a.no) - Number(b.no));
+                }
+            }
+        }
+    });
+    otabiScheduleEntries = otabiSchedCache[`${otabiYear}_${otabiGroup}_${otabiDay}`] || [];
+    renderOtabiSchedule();
+}
+
 function invalidateSchedCache() {
     Object.keys(otabiSchedCache).forEach(k => delete otabiSchedCache[k]);
     otabiSchedCachedYear = null;
@@ -355,7 +380,9 @@ async function saveEntryForm() {
         const res = await callGasApi({ action: "saveOtabiEntry", entry });
         if (!res.success) throw new Error("保存失敗");
         document.getElementById("otabiEntryFormCard").classList.remove("active");
-        invalidateSchedCache(); await loadOtabiSchedule();
+        // キャッシュをローカル更新して再描画（GAS再取得なし）
+        const savedEntry = Object.assign({}, entry, { entry_id: res.entry_id || entry.entry_id });
+        _updateSchedCacheLocally(savedEntry, false);
     } catch(e) { alert("保存中にエラーが発生しました"); }
     finally { loadingOverlay.style.display = "none"; }
 }
@@ -367,7 +394,8 @@ async function deleteEntryForm() {
     try {
         await callGasApi({ action: "deleteOtabiEntry", entryId: Number(id) });
         document.getElementById("otabiEntryFormCard").classList.remove("active");
-        invalidateSchedCache(); await loadOtabiSchedule();
+        // キャッシュから削除して再描画（GAS再取得なし）
+        _updateSchedCacheLocally({ entry_id: Number(id) }, true);
     } finally { loadingOverlay.style.display = "none"; }
 }
 
