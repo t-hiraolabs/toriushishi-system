@@ -372,44 +372,108 @@ async function deleteEntryForm() {
 
 async function openBulkEntryForm() {
     if (!otabiPlaces.length) await loadOtabiPlaces();
-    const container = document.getElementById("otabiBulkRows");
-    container.innerHTML = "";
-    const nextNo = otabiScheduleEntries.length > 0
-        ? Math.max(...otabiScheduleEntries.map(e => Number(e.no) || 0)) + 1 : 1;
-    for (let i = 0; i < 3; i++) addBulkRow(nextNo + i);
+    renderBulkForm();
     document.getElementById("otabiBulkEntryCard").classList.add("active");
 }
 
-function addBulkRow(no) {
+function renderBulkForm() {
     const container = document.getElementById("otabiBulkRows");
-    if (no == null) {
-        const rows = container.querySelectorAll(".otabi-bulk-row");
-        const nums = [...rows].map(r => Number(r.querySelector(".bulk-no").value) || 0);
-        no = nums.length ? Math.max(...nums) + 1 : 1;
+    container.innerHTML = "";
+
+    // 既存エントリを表示（新規行追加ボタン付き）
+    const sorted = [...otabiScheduleEntries].sort((a, b) => Number(a.no) - Number(b.no));
+
+    const addNewRowBtn = (afterNo) => {
+        const btn = document.createElement("button");
+        btn.className = "bulk-insert-btn";
+        btn.textContent = "＋ ここに追加";
+        btn.addEventListener("click", () => {
+            const newRow = createBulkNewRow(afterNo + 0.5);
+            btn.replaceWith(newRow);
+            newRow.querySelector(".bulk-place-search").focus();
+        });
+        return btn;
+    };
+
+    // 先頭に追加ボタン
+    const firstNo = sorted.length > 0 ? Number(sorted[0].no) - 1 : 0;
+    container.appendChild(addNewRowBtn(firstNo));
+
+    sorted.forEach((e, i) => {
+        // 既存エントリ行
+        const existing = document.createElement("div");
+        existing.className = "bulk-existing-row";
+        const isJoint = e.group === "合同";
+        existing.innerHTML = `
+            <span class="bulk-exist-no">${e.no}</span>
+            ${isJoint ? '<span class="bulk-joint-badge">合同</span>' : ''}
+            <span class="bulk-exist-name">${e.place_name}</span>
+            <span class="bulk-exist-time">${e.time || '--:--'}</span>
+        `;
+        container.appendChild(existing);
+
+        // 各エントリの後に追加ボタン
+        container.appendChild(addNewRowBtn(Number(e.no)));
+    });
+
+    // 既存エントリがない場合は空の入力行を3つ追加
+    if (sorted.length === 0) {
+        for (let i = 0; i < 3; i++) {
+            container.appendChild(createBulkNewRow(i + 1));
+        }
     }
-    const selectOptions = '<option value="">― マスタから選択 ―</option>' +
-        otabiPlaces.map(p => `<option value="${p.place_id}">${p.name}（${p.group}）</option>`).join('');
+}
+
+function createBulkNewRow(suggestedNo) {
     const div = document.createElement("div");
     div.className = "otabi-bulk-row";
+    div.dataset.suggestedNo = suggestedNo;
+
     div.innerHTML = `
         <div class="otabi-bulk-top">
-            <input type="number" class="bulk-no" placeholder="No." value="${no}" min="1" />
-            <input type="time" class="bulk-time" />
+            <input type="number" class="bulk-no" placeholder="No." value="${suggestedNo}" min="1" step="0.5" />
             <button class="otabi-bulk-remove" type="button">✕</button>
         </div>
-        <select class="bulk-place-select">${selectOptions}</select>
+        <input type="text" class="bulk-place-search" placeholder="訪問先を検索…" autocomplete="off" />
+        <div class="bulk-place-candidates" style="display:none;"></div>
+        <input type="hidden" class="bulk-place-id" />
         <input type="text" class="bulk-place-name" placeholder="訪問先名 *" />
-        <div class="otabi-bulk-bottom">
-            <input type="text" class="bulk-memo" placeholder="メモ" />
-            <input type="number" class="bulk-donation" placeholder="¥0" min="0" step="500" />
-        </div>
     `;
+
     div.querySelector(".otabi-bulk-remove").addEventListener("click", () => div.remove());
-    div.querySelector(".bulk-place-select").addEventListener("change", e => {
-        const p = otabiPlaces.find(pl => pl.place_id == e.target.value);
-        if (p) div.querySelector(".bulk-place-name").value = p.name;
+
+    const searchInput = div.querySelector(".bulk-place-search");
+    const candidates = div.querySelector(".bulk-place-candidates");
+    const nameInput = div.querySelector(".bulk-place-name");
+    const idInput = div.querySelector(".bulk-place-id");
+
+    const updateCandidates = () => {
+        const q = searchInput.value.trim().toLowerCase();
+        const filtered = q
+            ? otabiPlaces.filter(p => p.name.toLowerCase().includes(q) || (p.group || "").includes(q))
+            : otabiPlaces;
+        if (!filtered.length) { candidates.style.display = "none"; return; }
+        candidates.innerHTML = filtered.map(p =>
+            `<div class="bulk-candidate" data-id="${p.place_id}" data-name="${p.name}">${p.name}（${p.group || '-'}）</div>`
+        ).join('');
+        candidates.style.display = "";
+        candidates.querySelectorAll(".bulk-candidate").forEach(c => {
+            c.addEventListener("click", () => {
+                idInput.value = c.dataset.id;
+                nameInput.value = c.dataset.name;
+                searchInput.value = c.dataset.name;
+                candidates.style.display = "none";
+            });
+        });
+    };
+
+    searchInput.addEventListener("input", updateCandidates);
+    searchInput.addEventListener("focus", updateCandidates);
+    searchInput.addEventListener("blur", () => {
+        setTimeout(() => { candidates.style.display = "none"; }, 150);
     });
-    container.appendChild(div);
+
+    return div;
 }
 
 async function saveBulkEntries() {
@@ -424,11 +488,13 @@ async function saveBulkEntries() {
             group: otabiGroup,
             day: otabiDay,
             no: Number(row.querySelector(".bulk-no").value) || 0,
-            time: row.querySelector(".bulk-time").value,
-            place_id: row.querySelector(".bulk-place-select").value || "",
+            no_ue: "",
+            no_shita: "",
+            time: "",
+            place_id: row.querySelector(".bulk-place-id").value || "",
             place_name: name,
-            memo: row.querySelector(".bulk-memo").value.trim(),
-            donation: Number(row.querySelector(".bulk-donation").value) || 0
+            memo: "",
+            donation: 0
         });
     });
     if (!entries.length) return alert("訪問先名を1件以上入力してください");
@@ -632,7 +698,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("saveDonationsBtn")?.addEventListener("click", saveOtabiDonations);
     document.getElementById("addPlaceBtn")?.addEventListener("click", () => openPlaceForm());
     document.getElementById("addEntryBtn")?.addEventListener("click", () => openBulkEntryForm());
-    document.getElementById("addBulkRowBtn")?.addEventListener("click", () => addBulkRow());
     document.getElementById("saveBulkEntriesBtn")?.addEventListener("click", saveBulkEntries);
     document.getElementById("copyScheduleBtn")?.addEventListener("click", copyOtabiSchedule);
     document.getElementById("shareScheduleBtn")?.addEventListener("click", printOtabiSchedule);
