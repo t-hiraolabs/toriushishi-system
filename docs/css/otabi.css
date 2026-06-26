@@ -189,7 +189,7 @@
 .prog-done { opacity: .65; }
 .prog-no   { text-align: center; color: #aaa; font-size: .78rem; }
 .prog-time { color: #06d6a0; font-weight: 700; }
-.prog-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prog-name { overflow: hidden; text-overflow: ellipsis; }
 .prog-actual { font-weight: 700; color: #ffd166; }
 .otabi-donation-badge {
   flex-shrink: 0;
@@ -458,6 +458,19 @@
   color: var(--text-3);
   white-space: nowrap;
 }
+
+.otabi-joint-badge-row {
+  display: block;
+  margin-top: 3px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f0a500;
+  color: #fff;
+  font-size: .7rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
 .otabi-joint-badge {
   display: inline-block;
   margin-left: 6px;
@@ -690,6 +703,15 @@
   border-radius: 4px;
   padding: 1px 5px;
   margin-left: 4px;
+  vertical-align: middle;
+}
+
+.prog-donation {
+  display: inline-block;
+  font-size: .72rem;
+  color: #e63946;
+  font-weight: 600;
+  margin-left: 6px;
   vertical-align: middle;
 }
 
