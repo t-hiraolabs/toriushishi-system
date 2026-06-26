@@ -420,6 +420,23 @@
   border-color: var(--accent);
   background: var(--surface-3);
 }
+.otabi-don-search-row {
+  padding: 8px 16px 4px;
+}
+.otabi-don-search {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-size: .9rem;
+}
+.otabi-don-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
 .otabi-don-item {
   display: flex;
   align-items: center;
