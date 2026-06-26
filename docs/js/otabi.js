@@ -277,35 +277,50 @@ async function openProgressOverlay() {
     }
 }
 
+let _progGroups = {};
+let _progActiveGroup = "";
+
 function renderProgressOverlay(groups) {
-    const content = document.getElementById("otabiProgressContent");
+    _progGroups = groups;
     const groupKeys = Object.keys(groups).sort();
     if (!groupKeys.length) {
-        content.innerHTML = '<p style="color:#555;">データがありません</p>';
+        document.getElementById("otabiProgressContent").innerHTML = '<p style="color:#aaa;">データがありません</p>';
+        document.getElementById("progTabBar").innerHTML = '';
         return;
     }
-    content.innerHTML = groupKeys.map(g => {
-        const entries = groups[g];
-        const total = entries.length;
+    if (!_progActiveGroup || !groupKeys.includes(_progActiveGroup)) {
+        _progActiveGroup = groupKeys[0];
+    }
+    // タブを描画
+    const tabBar = document.getElementById("progTabBar");
+    tabBar.innerHTML = groupKeys.map(g => {
+        const entries = groups[g] || [];
         const done = entries.filter(e => e.actual_time).length;
-        const rows = entries.map(e => {
-            const done = !!e.actual_time;
-            const diff = timeDiff(e.time, e.actual_time);
-            const diffClass = diff.startsWith("+") ? "otabi-diff-late" : diff.startsWith("-") ? "otabi-diff-early" : "otabi-diff-zero";
-            const jointBadge = e.is_joint ? '<span class="prog-joint-badge">合同</span>' : '';
-            return `<div class="prog-row${done ? ' prog-done' : ''}${e.is_joint ? ' prog-joint' : ''}">
-                <span class="prog-no">${e.no}</span>
-                <span class="prog-time">${e.time || '--:--'}</span>
-                <span class="prog-name">${e.place_name}${jointBadge}</span>
-                <span class="prog-actual">${e.actual_time || ''}</span>
-                ${diff ? `<span class="otabi-diff ${diffClass}">${diff}</span>` : '<span></span>'}
-            </div>`;
-        }).join('');
-        return `<div class="prog-group">
-            <div class="prog-group-title">${g} <span class="prog-count">${done}/${total}</span></div>
-            ${rows}
+        return `<button class="prog-tab-btn${g === _progActiveGroup ? ' active' : ''}" data-group="${g}">${g} <span class="prog-tab-count">${done}/${entries.length}</span></button>`;
+    }).join('');
+    tabBar.querySelectorAll(".prog-tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            _progActiveGroup = btn.dataset.group;
+            renderProgressOverlay(_progGroups);
+        });
+    });
+    // 選択中グループのコンテンツを描画
+    const entries = groups[_progActiveGroup] || [];
+    const rows = entries.map(e => {
+        const isDone = !!e.actual_time;
+        const diff = timeDiff(e.time, e.actual_time);
+        const diffClass = diff.startsWith("+") ? "otabi-diff-late" : diff.startsWith("-") ? "otabi-diff-early" : "otabi-diff-zero";
+        const jointBadge = e.is_joint ? '<span class="prog-joint-badge">合同</span>' : '';
+        return `<div class="prog-row${isDone ? ' prog-done' : ''}${e.is_joint ? ' prog-joint' : ''}">
+            <span class="prog-no">${e.no}</span>
+            <span class="prog-time">${e.time || '--:--'}</span>
+            <span class="prog-name">${e.place_name}${jointBadge}</span>
+            <span class="prog-actual">${e.actual_time || ''}</span>
+            ${diff ? `<span class="otabi-diff ${diffClass}">${diff}</span>` : '<span></span>'}
         </div>`;
     }).join('');
+    document.getElementById("otabiProgressContent").innerHTML =
+        `<div class="prog-group">${rows}</div>`;
 }
 
 function updateEntryFormGroupUI() {
