@@ -94,7 +94,9 @@ function getOtabiScheduleGAS(year, group, day) {
     .filter(row => {
       if (!row[0]) return false;
       if (String(row[P["year"]]) !== String(year)) return false;
-      if (row[P["group"]] !== group) return false;
+      // 個別グループ取得時は合同エントリも含める
+      const rowGroup = row[P["group"]];
+      if (rowGroup !== group && rowGroup !== "合同") return false;
       if (day && P["day"] !== undefined && row[P["day"]] !== day) return false;
       return true;
     })
@@ -186,13 +188,14 @@ function getOtabiAllProgressGAS(year, day) {
   const P = {};
   headers.forEach((h, i) => { P[h] = i; });
 
-  const result = {};
+  const rawGroups = {};
+  const jointEntries = [];
+
   data.slice(1).forEach(row => {
     if (!row[0]) return;
     if (String(row[P["year"]]) !== String(year)) return;
     if (day && row[P["day"]] !== day) return;
     const group = row[P["group"]];
-    if (!result[group]) result[group] = [];
     const timeVal = row[P["time"]];
     const timeStr = timeVal instanceof Date
       ? Utilities.formatDate(timeVal, "Asia/Tokyo", "HH:mm")
@@ -201,15 +204,35 @@ function getOtabiAllProgressGAS(year, day) {
     const actualStr = actualVal instanceof Date
       ? Utilities.formatDate(actualVal, "Asia/Tokyo", "HH:mm")
       : String(actualVal || "");
-    result[group].push({
+    const entry = {
       entry_id: row[P["entry_id"]],
       no: row[P["no"]],
       time: timeStr,
       place_name: row[P["place_name"]],
-      actual_time: actualStr
-    });
+      actual_time: actualStr,
+      is_joint: group === "合同"
+    };
+    if (group === "合同") {
+      jointEntries.push(entry);
+    } else {
+      if (!rawGroups[group]) rawGroups[group] = [];
+      rawGroups[group].push(entry);
+    }
   });
-  Object.keys(result).forEach(g => result[g].sort((a, b) => Number(a.no) - Number(b.no)));
+
+  // 個別グループがある場合は合同エントリをそれぞれにマージ
+  const result = {};
+  if (Object.keys(rawGroups).length > 0) {
+    Object.keys(rawGroups).forEach(g => {
+      result[g] = rawGroups[g].concat(jointEntries);
+      result[g].sort((a, b) => Number(a.no) - Number(b.no));
+    });
+  } else if (jointEntries.length > 0) {
+    // 合同エントリのみの場合はそのまま表示
+    result["合同"] = jointEntries;
+    result["合同"].sort((a, b) => Number(a.no) - Number(b.no));
+  }
+
   return { success: true, groups: result };
 }
 

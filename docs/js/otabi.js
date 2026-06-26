@@ -284,10 +284,11 @@ function renderProgressOverlay(groups) {
             const done = !!e.actual_time;
             const diff = timeDiff(e.time, e.actual_time);
             const diffClass = diff.startsWith("+") ? "otabi-diff-late" : diff.startsWith("-") ? "otabi-diff-early" : "otabi-diff-zero";
-            return `<div class="prog-row${done ? ' prog-done' : ''}">
+            const jointBadge = e.is_joint ? '<span class="prog-joint-badge">合同</span>' : '';
+            return `<div class="prog-row${done ? ' prog-done' : ''}${e.is_joint ? ' prog-joint' : ''}">
                 <span class="prog-no">${e.no}</span>
                 <span class="prog-time">${e.time || '--:--'}</span>
-                <span class="prog-name">${e.place_name}</span>
+                <span class="prog-name">${e.place_name}${jointBadge}</span>
                 <span class="prog-actual">${e.actual_time || ''}</span>
                 ${diff ? `<span class="otabi-diff ${diffClass}">${diff}</span>` : '<span></span>'}
             </div>`;
@@ -319,6 +320,14 @@ async function openEntryForm(entry = null) {
         const p = otabiPlaces.find(pl => pl.place_id == select.value);
         if (p) document.getElementById("entryFormPlaceName").value = p.name;
     };
+    // 個別モードのみ合同チェックボックスを表示
+    const jointWrap = document.getElementById("entryFormJointWrap");
+    if (jointWrap) {
+        jointWrap.style.display = otabiMode === "個別" ? "" : "none";
+        const jointChk = document.getElementById("entryFormJoint");
+        if (jointChk) jointChk.checked = entry?.group === "合同";
+    }
+
     document.getElementById("deleteEntryBtn").style.display = entry ? "block" : "none";
     document.getElementById("otabiEntryFormCard").classList.add("active");
 }
@@ -327,10 +336,11 @@ async function saveEntryForm() {
     const placeName = document.getElementById("entryFormPlaceName").value.trim();
     if (!placeName) return alert("訪問先名を入力してください");
     const id = document.getElementById("entryFormId").value;
+    const isJoint = otabiMode === "個別" && document.getElementById("entryFormJoint")?.checked;
     const entry = {
         entry_id: id ? Number(id) : null,
         year: otabiYear,
-        group: getEffectiveGroup(),
+        group: isJoint ? "合同" : getEffectiveGroup(),
         day: document.querySelector('input[name="entryDay"]:checked')?.value || "土曜",
         no: Number(document.getElementById("entryFormNo").value) || 0,
         time: document.getElementById("entryFormTime").value,
