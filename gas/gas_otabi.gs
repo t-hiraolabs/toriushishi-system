@@ -160,6 +160,7 @@ function saveOtabiEntryGAS(entry) {
   if (entry.entry_id) {
     for (let r = 2; r <= data.length; r++) {
       if (Number(data[r-1][0]) === Number(entry.entry_id)) {
+        schedSheet.getRange(r, P["group"]).setValue(entry.group || "");
         if (P["day"]) schedSheet.getRange(r, P["day"]).setValue(entry.day || "土曜");
         schedSheet.getRange(r, P["no"]).setValue(entry.no || "");
         if (P["no_ue"]) schedSheet.getRange(r, P["no_ue"]).setValue(entry.no_ue || "");
