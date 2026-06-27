@@ -394,6 +394,7 @@ function initEventDelegation() {
                 case "otabi-entry-form":   document.getElementById("otabiEntryFormCard")?.classList.remove("active"); break;
                 case "otabi-bulk-entry":   document.getElementById("otabiBulkEntryCard")?.classList.remove("active"); break;
                 case "gear-management":    document.getElementById("gearCard")?.classList.remove("active"); break;
+                case "app-settings":       document.getElementById("appSettingsCard")?.classList.remove("active"); break;
                 case "gear-edit":          document.getElementById("gearEditCard")?.classList.remove("active"); break;
                 case "mypage":             document.getElementById("myPageCard")?.classList.remove("active"); break;
                 case "member-info-edit":   document.getElementById("memberInfoEditCard")?.classList.remove("active"); break;
@@ -419,6 +420,7 @@ document.querySelectorAll(".tab-item").forEach(tab => {
         if (targetTab === "practice-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openPracticeCreateForm(); return; }
         if (targetTab === "otabi-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openOtabiCard(); return; }
         if (targetTab === "gear-management") { if (userRole !== "admin") { alert("管理者のみアクセスできます。"); return; } openGearCard(); return; }
+        if (targetTab === "app-settings") { if (userRole !== "admin") { alert("管理者のみアクセスできます。"); return; } openAppSettings(); return; }
         if (targetTab === "mypage") { openMyPage(); return; }
     });
 });
@@ -853,17 +855,26 @@ async function applyHaruWidgetVisibility(visible) {
     if (sw) sw.checked = visible;
 }
 
+function openAppSettings() {
+    document.getElementById("appSettingsCard").classList.add("active");
+    initHaruWidgetVisibility();
+}
+
+let haruWidgetSwitchListenerAttached = false;
 async function initHaruWidgetVisibility() {
     const res = await callGasApi({ action: "getSetting", key: "haruWidgetVisible" });
     const visible = res.value === null ? true : res.value === "true";
     applyHaruWidgetVisibility(visible);
 
-    const sw = document.getElementById("haruWidgetToggleSwitch");
-    sw?.addEventListener("change", async () => {
-        const v = sw.checked;
-        applyHaruWidgetVisibility(v);
-        await callGasApi({ action: "saveSetting", key: "haruWidgetVisible", value: String(v), userId: localStorage.getItem("sessionId") });
-    });
+    if (!haruWidgetSwitchListenerAttached) {
+        const sw = document.getElementById("haruWidgetToggleSwitch");
+        sw?.addEventListener("change", async () => {
+            const v = sw.checked;
+            applyHaruWidgetVisibility(v);
+            await callGasApi({ action: "saveSetting", key: "haruWidgetVisible", value: String(v), userId: localStorage.getItem("sessionId") });
+        });
+        haruWidgetSwitchListenerAttached = true;
+    }
 }
 
 function initHaruWidget() {

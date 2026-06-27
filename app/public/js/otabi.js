@@ -12,9 +12,6 @@ let otabiDonDay = "土曜";
 
 function openOtabiCard() {
     otabiYear = new Date().getFullYear();
-    // 管理者のみ設定タブを表示
-    const settingsTabBtn = document.getElementById("otabiSettingsTabBtn");
-    if (settingsTabBtn) settingsTabBtn.style.display = (typeof userRole !== "undefined" && userRole === "admin") ? "" : "none";
     document.getElementById("otabiCard").classList.add("active");
     switchOtabiTab("places");
 }
