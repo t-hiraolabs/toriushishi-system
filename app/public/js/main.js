@@ -874,6 +874,7 @@ function escHtml(str) {
 let haruDay = "土曜";
 let haruGroup = "上組";
 let haruAllGroups = {};
+let haruYear = new Date().getFullYear();
 
 function initHaruWidgetVisibility() {
     const widget = document.getElementById("haruWidget");
@@ -904,7 +905,10 @@ function initHaruWidget() {
         const isOpen = body.style.display !== "none";
         body.style.display = isOpen ? "none" : "block";
         if (icon) icon.textContent = isOpen ? "▼" : "▲";
-        if (!isOpen && !Object.keys(haruAllGroups).length) loadHaruProgress();
+        if (!isOpen) {
+            renderHaruYearChips();
+            if (!Object.keys(haruAllGroups).length) loadHaruProgress();
+        }
     });
 
     // 土曜/日曜切り替え
@@ -927,12 +931,31 @@ function initHaruWidget() {
     });
 }
 
+function renderHaruYearChips() {
+    const container = document.getElementById("haruYearChips");
+    if (!container) return;
+    const cy = new Date().getFullYear();
+    const years = [cy - 1, cy, cy + 1];
+    container.innerHTML = years.map(y =>
+        `<button class="haru-year-chip${y === haruYear ? " active" : ""}" data-year="${y}">${y}年</button>`
+    ).join("");
+    container.querySelectorAll(".haru-year-chip").forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            haruYear = Number(btn.dataset.year);
+            haruAllGroups = {};
+            renderHaruYearChips();
+            loadHaruProgress();
+        });
+    });
+}
+
 async function loadHaruProgress() {
+    renderHaruYearChips();
     const list = document.getElementById("haruProgressList");
     list.innerHTML = '<div class="skeleton skeleton-card" style="height:60px;"></div>';
     try {
-        const year = new Date().getFullYear();
-        const res = await callGasApi({ action: "getOtabiAllProgress", year, day: haruDay });
+        const res = await callGasApi({ action: "getOtabiAllProgress", year: haruYear, day: haruDay });
         if (!res.success) throw new Error();
         haruAllGroups = res.groups || {};
         renderHaruProgress(haruAllGroups);

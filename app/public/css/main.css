@@ -1328,3 +1328,27 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
 }
 .toggle-switch input:checked + .toggle-slider { background: var(--accent); }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+
+/* 春例大祭 年チップ */
+.haru-year-chips {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 4px;
+}
+.haru-year-chip {
+  padding: 5px 14px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: transparent;
+  color: var(--text-2);
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, color .15s;
+}
+.haru-year-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
