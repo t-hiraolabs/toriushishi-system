@@ -3,6 +3,15 @@ const loginBtn = document.getElementById("loginBtn");
 const gotoRegist = document.getElementById("gotoRegist");
 const message = document.getElementById("message");
 
+// 保存済みの認証情報を自動入力
+const savedUsername = localStorage.getItem("savedUsername");
+const savedPassword = localStorage.getItem("savedPassword");
+if (savedUsername && savedPassword) {
+    const form = document.getElementById("loginForm");
+    form.username.value = savedUsername;
+    form.password.value = savedPassword;
+}
+
 
 if (loginBtn) {
     loginBtn.addEventListener("click", async () => {
@@ -29,6 +38,8 @@ if (loginBtn) {
 
             if (data.success) {
                 localStorage.setItem("sessionId", data.sessionId);
+                localStorage.setItem("savedUsername", username);
+                localStorage.setItem("savedPassword", password);
                 location.href = "main.html";
             } else {
                 message.textContent = data.msg;
