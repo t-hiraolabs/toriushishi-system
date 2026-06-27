@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="css/otabi.css">
 <link rel="stylesheet" href="css/gear.css">
 <link rel="stylesheet" href="css/mypage.css">
+<link rel="stylesheet" href="css/shishigame.css">
 <style>
 .practice-mode-toggle { margin: 8px 0; }
 .weekday-select { margin-top: 8px; }
@@ -306,6 +307,7 @@
                     <li class="tab-item" data-target="mypage">マイページ</li>
                     <li class="tab-item" data-target="member">メンバー</li>
                     <li class="tab-item" data-target="app-settings">設定</li>
+                    <li class="tab-item" data-target="game">🦁 ゲーム</li>
                 </ul>
             </section>
         </div>
@@ -774,6 +776,36 @@
         </div>
     </div>
 
+    <!-- ゲームカード -->
+    <div class="member-card" id="gameCard">
+        <button class="close-card-btn" data-target="game">戻る</button>
+        <h2>🦁 獅子、町を行く</h2>
+        <div class="card-body">
+            <div class="sg-tabs">
+                <button class="sg-tab-btn active" id="sgTabGame" onclick="showGameTab('game')">ゲーム</button>
+                <button class="sg-tab-btn" id="sgTabRanking" onclick="showGameTab('ranking')">ランキング</button>
+            </div>
+            <div id="sgGamePane">
+                <div class="sg-canvas-wrap">
+                    <canvas id="sgCanvas"></canvas>
+                    <div class="sg-result-overlay" id="sgResultOverlay">
+                        <div class="sg-result-box">
+                            <div class="sg-result-title">GAME OVER</div>
+                            <div class="sg-highscore-badge" id="sgHighScoreBadge">🏆 ハイスコア更新！</div>
+                            <div class="sg-result-score" id="sgFinalScore">0</div>
+                            <div class="sg-result-bites">噛み <span id="sgFinalBites">0</span>回</div>
+                            <button class="sg-retry-btn" onclick="sgRetry()">もう一度</button>
+                        </div>
+                    </div>
+                </div>
+                <p class="sg-hint">タップ or スペース でジャンプ　🚗 障害物を避け　🧒 子供の頭を噛もう！</p>
+            </div>
+            <div id="sgRankingPane" style="display:none;">
+                <div id="sgRankingList"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- マイページカード -->
     <div class="member-card" id="myPageCard">
         <div class="loading-overlay" style="display:none;">
@@ -831,6 +863,7 @@
 <script src="js/otabi.js"></script>
 <script src="js/gear.js"></script>
 <script src="js/mypage.js"></script>
+<script src="js/shishigame.js"></script>
 <script src="js/main.js"></script>
 <script>
 if ('serviceWorker' in navigator) {

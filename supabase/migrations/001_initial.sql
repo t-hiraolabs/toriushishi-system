@@ -227,3 +227,15 @@ CREATE INDEX IF NOT EXISTS idx_answers_pracs_uid    ON answers_practices(user_id
 CREATE INDEX IF NOT EXISTS idx_answers_pracs_pid    ON answers_practices(practice_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires     ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_otabi_sched_year_grp ON otabi_schedules(year, "group");
+
+-- -------------------------------------------------------
+-- game_scores  (ゲームランキング)
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS game_scores (
+  id         SERIAL PRIMARY KEY,
+  user_id    TEXT NOT NULL UNIQUE,
+  user_name  TEXT NOT NULL,
+  score      INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);

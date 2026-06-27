@@ -235,6 +235,12 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'getMyPage':
       return getMyPage(data.userId as string);
 
+    case 'saveGameScore':
+      return saveGameScore(data.userId as string, Number(data.score));
+
+    case 'getGameRanking':
+      return getGameRanking();
+
     case 'getSetting':
       return getSetting(data.key as string);
 
@@ -244,6 +250,29 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     default:
       return { success: false, msg: 'unknown action' };
   }
+}
+
+// -------------------------------------------------------
+// Game scores
+// Table: game_scores (user_id TEXT UNIQUE, user_name TEXT, score INT, created_at TIMESTAMP)
+// -------------------------------------------------------
+
+async function saveGameScore(userId: string, score: number) {
+  const session = await validateSession(userId);
+  if (!session.valid) return { success: false, msg: '未認証' };
+  const { data: userRow } = await supabase.from('users').select('name').eq('id', session.userId).single();
+  const userName = (userRow?.name as string) || 'Unknown';
+  const { data: existing } = await supabase.from('game_scores').select('score').eq('user_id', userId).single();
+  const isHighScore = !existing || score > (existing.score as number);
+  if (isHighScore) {
+    await supabase.from('game_scores').upsert({ user_id: userId, user_name: userName, score }, { onConflict: 'user_id' });
+  }
+  return { success: true, isHighScore };
+}
+
+async function getGameRanking() {
+  const { data } = await supabase.from('game_scores').select('user_id, user_name, score').order('score', { ascending: false }).limit(20);
+  return { success: true, ranking: data || [] };
 }
 
 async function getSetting(key: string) {

@@ -395,6 +395,7 @@ function initEventDelegation() {
                 case "otabi-bulk-entry":   document.getElementById("otabiBulkEntryCard")?.classList.remove("active"); break;
                 case "gear-management":    document.getElementById("gearCard")?.classList.remove("active"); break;
                 case "app-settings":       document.getElementById("appSettingsCard")?.classList.remove("active"); break;
+                case "game":               document.getElementById("gameCard")?.classList.remove("active"); break;
                 case "gear-edit":          document.getElementById("gearEditCard")?.classList.remove("active"); break;
                 case "mypage":             document.getElementById("myPageCard")?.classList.remove("active"); break;
                 case "member-info-edit":   document.getElementById("memberInfoEditCard")?.classList.remove("active"); break;
@@ -421,6 +422,7 @@ document.querySelectorAll(".tab-item").forEach(tab => {
         if (targetTab === "otabi-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openOtabiCard(); return; }
         if (targetTab === "gear-management") { if (userRole !== "admin") { alert("管理者のみアクセスできます。"); return; } openGearCard(); return; }
         if (targetTab === "app-settings") { openAppSettings(); return; }
+        if (targetTab === "game") { openGameCard(); return; }
         if (targetTab === "mypage") { openMyPage(); return; }
     });
 });
