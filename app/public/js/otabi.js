@@ -796,6 +796,128 @@ async function saveOtabiDonations() {
     }
 }
 
+async function openDonationBoard() {
+    // キャッシュがなければ取得
+    if (!otabiDonAllCache.length) {
+        const res = await callGasApi({ action: "getOtabiDonations", year: otabiYear });
+        otabiDonAllCache = (res.success && res.entries) ? res.entries : [];
+        otabiDonCachedYear = otabiYear;
+    }
+
+    // 重複排除（訪問先名でユニーク化）、金額0も含む
+    const seen = new Set();
+    const names = [];
+    otabiDonAllCache.forEach(e => {
+        const name = (e.place_name || "").trim();
+        if (name && !seen.has(name)) { seen.add(name); names.push(name); }
+    });
+
+    // 令和変換
+    const reiwa = otabiYear - 2018;
+    const yearLabel = `令和${reiwa}年度`;
+
+    const html = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>${yearLabel} 春例大祭 御花御礼</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #fff; }
+  body {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: '游明朝', 'YuMincho', 'Hiragino Mincho ProN', serif;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    padding: 24px 20px;
+    min-height: 100vh;
+    gap: 0;
+  }
+  .board-title {
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: .2em;
+    padding-right: 16px;
+    border-right: 2px solid #000;
+    margin-right: 20px;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .board-title .year { font-size: 1.1rem; display: block; margin-bottom: .4em; }
+  .board-names {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0 4px;
+    flex: 1;
+    max-height: calc(100vh - 48px);
+  }
+  .board-name {
+    font-size: 1rem;
+    letter-spacing: .12em;
+    line-height: 1.8;
+    padding: 0 6px;
+    white-space: nowrap;
+  }
+  .board-footer {
+    font-size: .8rem;
+    letter-spacing: .1em;
+    border-left: 2px solid #000;
+    padding-left: 16px;
+    margin-left: 20px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .board-footer .message { font-size: .75rem; line-height: 2; }
+  .board-footer .org { font-size: 1rem; font-weight: 700; margin-top: 1em; }
+  @media print {
+    body { padding: 10mm; }
+    @page { size: A3 landscape; margin: 10mm; }
+  }
+  .print-btn {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 20px;
+    background: #c8a84b;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+    z-index: 999;
+    writing-mode: horizontal-tb;
+  }
+  @media print { .print-btn { display: none; } }
+</style>
+</head>
+<body>
+<button class="print-btn" onclick="window.print()">印刷</button>
+<div class="board-title">
+  <span class="year">${yearLabel}</span>
+  春例大祭　御花御礼
+</div>
+<div class="board-names">
+  ${names.map(n => `<div class="board-name">${n}</div>`).join('')}
+</div>
+<div class="board-footer">
+  <div class="message">昨年も御花、諸々のご理解ご協力に<br>心より感謝申し上げます<br>本年も変わらず宜しくお願い申し上げます</div>
+  <div class="org">鳥生獅子連中</div>
+</div>
+</body>
+</html>`;
+
+    const w = window.open("", "_blank");
+    w.document.write(html);
+    w.document.close();
+}
+
 // ===== 初期化 =====
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".otabi-tab-btn").forEach(btn =>
@@ -829,6 +951,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     document.getElementById("otabiDonSearch")?.addEventListener("input", () => renderOtabiDonations());
     document.getElementById("saveDonationsBtn")?.addEventListener("click", saveOtabiDonations);
+    document.getElementById("donationBoardBtn")?.addEventListener("click", openDonationBoard);
     document.getElementById("addPlaceBtn")?.addEventListener("click", () => openPlaceForm());
     document.getElementById("addEntryBtn")?.addEventListener("click", () => openBulkEntryForm());
     document.getElementById("saveBulkEntriesBtn")?.addEventListener("click", saveBulkEntries);
