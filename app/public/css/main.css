@@ -1445,3 +1445,35 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   cursor: pointer;
 }
 .pw-reset-btn:active { opacity: .8; }
+
+/* パスワード変更（設定画面） */
+.pw-change-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 2px;
+}
+.pw-change-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 8px;
+  font-size: 15px;
+}
+.pw-change-btn {
+  background: var(--accent, #c8a84b);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pw-change-btn:disabled { opacity: .6; }
+.pw-change-btn:active { opacity: .85; }
+#pwChangeMessage {
+  font-size: 13px;
+  min-height: 16px;
+}

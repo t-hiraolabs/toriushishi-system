@@ -912,6 +912,44 @@ function openAppSettings() {
     const adminSection = document.getElementById("appSettingsAdminSection");
     if (adminSection) adminSection.style.display = (userRole === "admin") ? "" : "none";
     if (userRole === "admin") initHaruWidgetVisibility();
+    initPasswordChange();
+}
+
+let pwChangeListenerAttached = false;
+function initPasswordChange() {
+    if (pwChangeListenerAttached) return;
+    const btn = document.getElementById("pwChangeBtn");
+    const msg = document.getElementById("pwChangeMessage");
+    const cur = document.getElementById("pwChangeCurrent");
+    const next = document.getElementById("pwChangeNew");
+    const conf = document.getElementById("pwChangeConfirm");
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+        const setMsg = (text, ok) => { msg.style.color = ok ? "green" : "red"; msg.textContent = text; };
+        const c = cur.value.trim(), n = next.value.trim(), cf = conf.value.trim();
+        if (!c || !n || !cf) { setMsg("すべて入力してください", false); return; }
+        if (n.length < 4) { setMsg("新しいパスワードは4文字以上にしてください", false); return; }
+        if (n !== cf) { setMsg("新しいパスワード（確認）が一致しません", false); return; }
+        btn.disabled = true; btn.textContent = "変更中...";
+        const res = await callGasApi({
+            action: "changePassword",
+            sessionId: localStorage.getItem("sessionId"),
+            currentPassword: c,
+            newPassword: n,
+        });
+        btn.disabled = false; btn.textContent = "パスワードを変更";
+        if (res?.success) {
+            setMsg("パスワードを変更しました", true);
+            cur.value = ""; next.value = ""; conf.value = "";
+            // 自動ログイン用に保存されたパスワードも更新
+            if (localStorage.getItem("savedPassword") !== null) {
+                localStorage.setItem("savedPassword", n);
+            }
+        } else {
+            setMsg(res?.msg || "変更に失敗しました", false);
+        }
+    });
+    pwChangeListenerAttached = true;
 }
 
 let haruWidgetSwitchListenerAttached = false;

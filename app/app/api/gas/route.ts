@@ -80,6 +80,9 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'resetMemberPassword':
       return resetMemberPassword(data.sessionId as string, Number(data.targetUserId), data.newPassword as string, data.requestId as number | undefined);
 
+    case 'changePassword':
+      return changePassword(data.sessionId as string, data.currentPassword as string, data.newPassword as string);
+
     // ===== Events =====
     case 'getEventsWithStats':
       return { success: true, events: await getEventsWithStats(data.userId as string) };
@@ -424,6 +427,34 @@ async function resetMemberPassword(sessionId: string, targetUserId: number, newP
   } else {
     await supabase.from('password_reset_requests').update({ status: 'done', updated_at: new Date().toISOString() }).eq('user_id', targetUserId).eq('status', 'pending');
   }
+
+  return { success: true };
+}
+
+async function changePassword(sessionId: string, currentPassword: string, newPassword: string) {
+  const session = await validateSession(sessionId);
+  if (!session.valid) return { success: false, msg: 'ログインし直してください' };
+
+  const cur = String(currentPassword || '');
+  const next = String(newPassword || '').trim();
+  if (next.length < 4) return { success: false, msg: '新しいパスワードは4文字以上にしてください' };
+
+  const { data: row } = await supabase
+    .from('users')
+    .select('user_id, stored_hash')
+    .eq('user_id', session.userId)
+    .single();
+  if (!row) return { success: false, msg: 'ユーザーが見つかりません' };
+
+  if (row.stored_hash !== hashPassword(cur)) {
+    return { success: false, msg: '現在のパスワードが違います' };
+  }
+
+  const { error } = await supabase
+    .from('users')
+    .update({ stored_hash: hashPassword(next), updated_at: new Date().toISOString() })
+    .eq('user_id', session.userId);
+  if (error) return { success: false, msg: error.message };
 
   return { success: true };
 }
