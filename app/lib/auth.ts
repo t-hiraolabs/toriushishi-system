@@ -18,7 +18,7 @@ export async function saveSession(user: {
   children: unknown[];
 }): Promise<string> {
   const sessionId = crypto.randomUUID();
-  const expiresAt = new Date(Date.now() + 6 * 60 * 60 * 1000); // 6 hours
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
 
   const { error } = await supabase.from('sessions').insert({
     session_id: sessionId,
@@ -54,6 +54,13 @@ export async function validateSession(
   if (requiredRole && data.role !== requiredRole) {
     return { valid: false, msg: '権限がありません' };
   }
+
+  // Extend session expiry on each access (sliding session)
+  const newExpiry = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+  await supabase
+    .from('sessions')
+    .update({ expires_at: newExpiry.toISOString() })
+    .eq('session_id', sessionId);
 
   return { valid: true, userId: data.user_id, role: data.role };
 }
