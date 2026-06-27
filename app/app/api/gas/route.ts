@@ -389,7 +389,8 @@ async function requestPasswordReset(username: string) {
     });
   }
 
-  await sendLineNotification(`【パスワード再発行申請】\n${row.stored_name} さんからパスワード再発行の申請がありました。管理者画面から再設定してください。`);
+  // 注: LINE_GROUP_ID は全員のグループのため、申請内容はLINE通知しない。
+  // 管理者はメンバー画面の「パスワード再発行申請」一覧で確認する。
 
   return { success: true };
 }
