@@ -22,6 +22,7 @@ async function callGasApi(payload) {
 ======================================================= */
 let userId;   // ページ内で一時的に保持
 let userRole; // ページ内で一時的に保持
+let userName; // ページ内で一時的に保持
 
 async function checkSessionAndGetUserId() {
     try {
@@ -41,6 +42,7 @@ async function checkSessionAndGetUserId() {
 
         userId = res.userId;
         userRole = res.role;
+        userName = res.name;
         return true;
 
     } catch (err) {
@@ -69,6 +71,7 @@ async function checkAdminAccess() {
 
         userId = res.userId;
         userRole = res.role;
+        userName = res.name;
         return true;
 
     } catch (err) {

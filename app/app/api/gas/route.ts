@@ -69,7 +69,7 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
       return registUserAPI(data as Record<string, unknown>);
 
     case 'validateSession':
-      return validateSession(data.sessionId as string, data.requiredRole as string | undefined);
+      return validateSessionWithName(data.sessionId as string, data.requiredRole as string | undefined);
 
     // ===== Events =====
     case 'getEventsWithStats':
@@ -256,6 +256,13 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
 // Game scores
 // Table: game_scores (user_id TEXT UNIQUE, user_name TEXT, score INT, created_at TIMESTAMP)
 // -------------------------------------------------------
+
+async function validateSessionWithName(sessionId: string, requiredRole?: string) {
+  const session = await validateSession(sessionId, requiredRole);
+  if (!session.valid) return session;
+  const { data: userRow } = await supabase.from('users').select('name').eq('id', session.userId).single();
+  return { ...session, name: (userRow?.name as string) || '' };
+}
 
 async function saveGameScore(userId: string, score: number) {
   const session = await validateSession(userId);

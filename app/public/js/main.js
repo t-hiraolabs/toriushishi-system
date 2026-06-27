@@ -31,7 +31,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     initCalendar();
     loadMembersUser();
     initHaruWidget();
+    initGameTabVisibility();
 });
+
+// ゲームタブは平尾大雅のみ表示
+function initGameTabVisibility() {
+    const tab = document.getElementById("gameTabItem");
+    if (!tab) return;
+    const name = (userName || "").replace(/\s/g, "");
+    tab.style.display = name === "平尾大雅" ? "" : "none";
+}
 
 /* =======================================================
 共通関数
