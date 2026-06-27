@@ -593,11 +593,10 @@ async function copyOtabiSchedule() {
         return;
     }
     const fromYear = otabiYear - 1;
-    const groupLabel = otabiGroup;
-    if (!confirm(`${fromYear}年の${groupLabel}スケジュールを${otabiYear}年にコピーしますか？\n(お花代はリセットされます)`)) return;
+    if (!confirm(`${fromYear}年の${otabiGroup}・${otabiDay}スケジュールを${otabiYear}年にコピーしますか？\n(お花代はリセットされます)`)) return;
     loadingOverlay.style.display = "flex";
     try {
-        const res = await callGasApi({ action: "copyOtabiSchedule", fromYear, toYear: otabiYear, group: otabiGroup });
+        const res = await callGasApi({ action: "copyOtabiSchedule", fromYear, toYear: otabiYear, group: otabiGroup, day: otabiDay });
         if (!res.success) return alert(res.msg || "コピー失敗");
         alert(`${res.count}件コピーしました`);
         invalidateSchedCache(); await loadOtabiSchedule();

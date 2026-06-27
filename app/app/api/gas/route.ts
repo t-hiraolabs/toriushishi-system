@@ -171,7 +171,7 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
       return deleteOtabiEntry(data.entryId as string);
 
     case 'copyOtabiSchedule':
-      return copyOtabiSchedule(data.fromYear as string, data.toYear as string, data.group as string);
+      return copyOtabiSchedule(data.fromYear as string, data.toYear as string, data.group as string, data.day as string);
 
     case 'getOtabiDonations':
       return getOtabiDonations(data.year as string);
@@ -952,15 +952,16 @@ async function deleteOtabiEntry(entryId: string) {
   return { success: true };
 }
 
-async function copyOtabiSchedule(fromYear: string, toYear: string, group: string) {
+async function copyOtabiSchedule(fromYear: string, toYear: string, group: string, day: string) {
   const { data: src } = await supabase
     .from('otabi_schedules')
     .select('*')
     .eq('year', fromYear)
-    .eq('group', group);
+    .eq('group', group)
+    .eq('day', day);
 
   if (!src || src.length === 0) {
-    return { success: false, msg: `${fromYear}年の${group}スケジュールが見つかりません` };
+    return { success: false, msg: `${fromYear}年の${group}・${day}スケジュールが見つかりません` };
   }
 
   const { data: last } = await supabase.from('otabi_schedules').select('entry_id').order('entry_id', { ascending: false }).limit(1);
