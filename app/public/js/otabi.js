@@ -633,16 +633,24 @@ async function loadOtabiDonations(forceReload = false) {
 
 function renderOtabiDonations() {
     const grid = document.getElementById("otabiDonationGrid");
-    if (!otabiDonEntries.length) {
+    const regularEntries = otabiDonEntries.filter(e => !e.extra);
+    const extraEntries   = otabiDonEntries.filter(e => e.extra);
+
+    if (!regularEntries.length && !extraEntries.length) {
         grid.innerHTML = '<p class="no-event">スケジュールが登録されていません</p>';
+        appendExtraAddForm(grid);
         updateDonationTotal();
         return;
     }
     const query = (document.getElementById("otabiDonSearch")?.value || "").trim();
-    const filtered = query
-        ? otabiDonEntries.filter(e => (e.place_name || "").includes(query))
-        : otabiDonEntries;
-    grid.innerHTML = filtered.map((e) => {
+    const filteredReg = query
+        ? regularEntries.filter(e => (e.place_name || "").includes(query))
+        : regularEntries;
+    const filteredExt = query
+        ? extraEntries.filter(e => (e.place_name || "").includes(query))
+        : extraEntries;
+
+    grid.innerHTML = filteredReg.map((e) => {
         const i = otabiDonEntries.indexOf(e);
         const isJoint = e.group === "合同";
         const jointBadge = isJoint ? '<span class="otabi-joint-badge">合同</span>' : '';
@@ -660,6 +668,29 @@ function renderOtabiDonations() {
             </div>
         </div>`;
     }).join('');
+
+    if (filteredExt.length) {
+        grid.innerHTML += `<div class="otabi-extra-label">スケジュール外</div>`;
+        grid.innerHTML += filteredExt.map((e) => {
+            const i = otabiDonEntries.indexOf(e);
+            return `
+            <div class="otabi-item otabi-don-item otabi-extra-item">
+                <div class="otabi-entry-no extra-badge">外</div>
+                <div class="otabi-item-body">
+                    <div class="otabi-item-title">${e.place_name || ''}</div>
+                </div>
+                <div class="dg-amount-col">
+                    <input type="number" inputmode="numeric" class="dg-input"
+                           data-idx="${i}" value="${e.donation || ''}"
+                           placeholder="0" min="0" step="500" />
+                    <span class="dg-unit">円</span>
+                    <button class="dg-extra-del" data-extra-id="${e.extra_id}" title="削除">✕</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    appendExtraAddForm(grid);
 
     const inputs = [...grid.querySelectorAll(".dg-input")];
     inputs.forEach((input, idx) => {
@@ -679,7 +710,48 @@ function renderOtabiDonations() {
         });
         input.addEventListener("focus", () => input.select());
     });
+
+    grid.querySelectorAll(".dg-extra-del").forEach(btn => {
+        btn.addEventListener("click", async () => {
+            if (!confirm("削除しますか？")) return;
+            const extraId = Number(btn.dataset.extraId);
+            const res = await callGasApi({ action: "deleteOtabiExtraDonation", id: extraId });
+            if (!res.success) return alert("削除失敗");
+            const idx = otabiDonEntries.findIndex(e => e.extra && e.extra_id === extraId);
+            if (idx !== -1) otabiDonEntries.splice(idx, 1);
+            const cached = otabiDonAllCache.findIndex(e => e.extra && e.extra_id === extraId);
+            if (cached !== -1) otabiDonAllCache.splice(cached, 1);
+            renderOtabiDonations();
+        });
+    });
+
     updateDonationTotal();
+}
+
+function appendExtraAddForm(grid) {
+    const form = document.createElement("div");
+    form.className = "otabi-extra-add-form";
+    form.innerHTML = `
+        <input type="text" class="extra-place-input" placeholder="訪問先名">
+        <input type="number" inputmode="numeric" class="extra-amount-input" placeholder="金額" min="0" step="500">
+        <span class="dg-unit">円</span>
+        <button class="extra-add-btn">追加</button>`;
+    grid.appendChild(form);
+
+    form.querySelector(".extra-add-btn").addEventListener("click", async () => {
+        const name = form.querySelector(".extra-place-input").value.trim();
+        const amount = Number(form.querySelector(".extra-amount-input").value) || 0;
+        if (!name) { form.querySelector(".extra-place-input").focus(); return; }
+        const res = await callGasApi({
+            action: "addOtabiExtraDonation",
+            year: otabiYear, group: otabiDonGroup, day: otabiDonDay,
+            place_name: name, donation: amount
+        });
+        if (!res.success) return alert("追加失敗");
+        otabiDonAllCache.push(res.entry);
+        otabiDonEntries.push(res.entry);
+        renderOtabiDonations();
+    });
 }
 
 function updateDonationTotal() {
@@ -690,7 +762,9 @@ function updateDonationTotal() {
 
 async function saveOtabiDonations() {
     if (!otabiDonEntries.length) return;
-    const donations = otabiDonEntries.map(e => ({ entry_id: e.entry_id, donation: Number(e.donation) || 0 }));
+    const donations = otabiDonEntries.map(e => e.extra
+        ? { extra: true, extra_id: e.extra_id, donation: Number(e.donation) || 0 }
+        : { entry_id: e.entry_id, donation: Number(e.donation) || 0 });
     const btn = document.getElementById("saveDonationsBtn");
     btn.disabled = true; btn.textContent = "保存中…";
     try {

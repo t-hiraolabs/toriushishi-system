@@ -867,3 +867,74 @@
   border-color: var(--accent);
   color: #fff;
 }
+
+/* スケジュール外お花代 */
+.otabi-extra-label {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: .04em;
+  padding: 10px 4px 4px;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+}
+.otabi-extra-item { background: color-mix(in srgb, var(--accent) 6%, var(--surface-2)); }
+.extra-badge {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 4px;
+  font-size: .7rem;
+  font-weight: 800;
+  min-width: 24px;
+  text-align: center;
+  padding: 2px 4px;
+}
+.dg-extra-del {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  font-size: .85rem;
+  cursor: pointer;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.otabi-extra-add-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 4px 4px;
+  border-top: 1px dashed var(--border);
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.extra-place-input {
+  flex: 1;
+  min-width: 100px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  font-size: .88rem;
+}
+.extra-amount-input {
+  width: 80px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-1);
+  font-size: .88rem;
+  text-align: right;
+}
+.extra-add-btn {
+  padding: 8px 14px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}

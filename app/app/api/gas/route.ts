@@ -179,6 +179,15 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'saveOtabiDonations':
       return saveOtabiDonations(data.donations as Array<Record<string, unknown>>);
 
+    case 'addOtabiExtraDonation':
+      return addOtabiExtraDonation(data.year as string, data.group as string, data.day as string, data.place_name as string, Number(data.donation) || 0);
+
+    case 'updateOtabiExtraDonation':
+      return updateOtabiExtraDonation(Number(data.id), Number(data.donation) || 0);
+
+    case 'deleteOtabiExtraDonation':
+      return deleteOtabiExtraDonation(Number(data.id));
+
     case 'reorderOtabiEntries':
       return reorderOtabiEntries(data.updates as Array<Record<string, unknown>>);
 
@@ -1050,13 +1059,18 @@ async function getOtabiAllProgress(year: string, day?: string) {
 }
 
 async function getOtabiDonations(year: string) {
-  const { data, error } = await supabase
-    .from('otabi_schedules')
-    .select('entry_id,group,day,no,time,place_name,memo,donation')
-    .eq('year', year)
-    .order('group')
-    .order('day')
-    .order('no');
+  const [{ data, error }, { data: extraData }] = await Promise.all([
+    supabase
+      .from('otabi_schedules')
+      .select('entry_id,group,day,no,time,place_name,memo,donation')
+      .eq('year', year)
+      .order('group').order('day').order('no'),
+    supabase
+      .from('otabi_extra_donations')
+      .select('id,group,day,place_name,donation')
+      .eq('year', year)
+      .order('id'),
+  ]);
 
   if (error) return { success: false, msg: error.message };
 
@@ -1069,24 +1083,72 @@ async function getOtabiDonations(year: string) {
     place_name: row.place_name,
     memo: row.memo,
     donation: Number(row.donation) || 0,
+    extra: false,
   }));
 
-  const total = entries.reduce((s, e) => s + e.donation, 0);
-  const byGroup: Record<string, number> = {};
-  entries.forEach((e) => { byGroup[e.group] = (byGroup[e.group] || 0) + e.donation; });
+  const extras = (extraData || []).map((row) => ({
+    extra_id: row.id,
+    group: row.group,
+    day: row.day || '土曜',
+    no: '',
+    time: '',
+    place_name: row.place_name,
+    memo: '',
+    donation: Number(row.donation) || 0,
+    extra: true,
+  }));
 
-  return { success: true, entries, total, byGroup };
+  const allEntries = [...entries, ...extras];
+  const total = allEntries.reduce((s, e) => s + e.donation, 0);
+  const byGroup: Record<string, number> = {};
+  allEntries.forEach((e) => { byGroup[e.group] = (byGroup[e.group] || 0) + e.donation; });
+
+  return { success: true, entries: allEntries, total, byGroup };
+}
+
+async function addOtabiExtraDonation(year: string, group: string, day: string, place_name: string, donation: number) {
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('otabi_extra_donations')
+    .insert({ year, group, day, place_name, donation, created_at: now, updated_at: now })
+    .select()
+    .single();
+  if (error) return { success: false, msg: error.message };
+  return { success: true, entry: { extra_id: data.id, group: data.group, day: data.day, no: '', time: '', place_name: data.place_name, memo: '', donation: data.donation, extra: true } };
+}
+
+async function updateOtabiExtraDonation(id: number, donation: number) {
+  const { error } = await supabase
+    .from('otabi_extra_donations')
+    .update({ donation, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) return { success: false, msg: error.message };
+  return { success: true };
+}
+
+async function deleteOtabiExtraDonation(id: number) {
+  const { error } = await supabase.from('otabi_extra_donations').delete().eq('id', id);
+  if (error) return { success: false, msg: error.message };
+  return { success: true };
 }
 
 async function saveOtabiDonations(donations: Array<Record<string, unknown>>) {
   const now = new Date().toISOString();
   let count = 0;
   for (const d of donations || []) {
-    const { error } = await supabase
-      .from('otabi_schedules')
-      .update({ donation: Number(d.donation) || 0, updated_at: now })
-      .eq('entry_id', Number(d.entry_id));
-    if (!error) count++;
+    if (d.extra) {
+      const { error } = await supabase
+        .from('otabi_extra_donations')
+        .update({ donation: Number(d.donation) || 0, updated_at: now })
+        .eq('id', Number(d.extra_id));
+      if (!error) count++;
+    } else {
+      const { error } = await supabase
+        .from('otabi_schedules')
+        .update({ donation: Number(d.donation) || 0, updated_at: now })
+        .eq('entry_id', Number(d.entry_id));
+      if (!error) count++;
+    }
   }
   return { success: true, count };
 }
