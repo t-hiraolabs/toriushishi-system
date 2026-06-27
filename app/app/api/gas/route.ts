@@ -71,6 +71,15 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'validateSession':
       return validateSessionWithName(data.sessionId as string, data.requiredRole as string | undefined);
 
+    case 'requestPasswordReset':
+      return requestPasswordReset(data.username as string);
+
+    case 'getPasswordResetRequests':
+      return getPasswordResetRequests(data.sessionId as string);
+
+    case 'resetMemberPassword':
+      return resetMemberPassword(data.sessionId as string, Number(data.targetUserId), data.newPassword as string, data.requestId as number | undefined);
+
     // ===== Events =====
     case 'getEventsWithStats':
       return { success: true, events: await getEventsWithStats(data.userId as string) };
@@ -346,6 +355,76 @@ async function loginAPI(username: string, password: string) {
   }
 
   return { success: false, msg: 'ユーザー名またはパスワードが違います' };
+}
+
+// -------------------------------------------------------
+// Password reset
+// -------------------------------------------------------
+
+async function requestPasswordReset(username: string) {
+  const name = String(username || '').trim();
+  if (!name) return { success: false, msg: 'ユーザー名を入力してください' };
+
+  const { data: users } = await supabase.from('users').select('*');
+  const row = (users || []).find(
+    (u) => normalize(u.stored_name) === normalize(name) && u.status !== 'deleted'
+  );
+  if (!row) return { success: false, msg: 'そのユーザー名は登録されていません' };
+
+  // 既に未処理の申請があれば重複作成しない
+  const { data: existing } = await supabase
+    .from('password_reset_requests')
+    .select('id')
+    .eq('user_id', row.user_id)
+    .eq('status', 'pending');
+
+  if (!existing || existing.length === 0) {
+    const now = new Date().toISOString();
+    await supabase.from('password_reset_requests').insert({
+      user_id: row.user_id,
+      user_name: row.stored_name,
+      status: 'pending',
+      created_at: now,
+      updated_at: now,
+    });
+  }
+
+  await sendLineNotification(`【パスワード再発行申請】\n${row.stored_name} さんからパスワード再発行の申請がありました。管理者画面から再設定してください。`);
+
+  return { success: true };
+}
+
+async function getPasswordResetRequests(sessionId: string) {
+  const session = await validateSession(sessionId);
+  if (!session.valid || session.role !== 'admin') return { success: false, msg: '権限がありません' };
+  const { data } = await supabase
+    .from('password_reset_requests')
+    .select('id, user_id, user_name, created_at')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
+  return { success: true, requests: data || [] };
+}
+
+async function resetMemberPassword(sessionId: string, targetUserId: number, newPassword: string, requestId?: number) {
+  const session = await validateSession(sessionId);
+  if (!session.valid || session.role !== 'admin') return { success: false, msg: '権限がありません' };
+  const pw = String(newPassword || '').trim();
+  if (pw.length < 4) return { success: false, msg: 'パスワードは4文字以上にしてください' };
+
+  const { error } = await supabase
+    .from('users')
+    .update({ stored_hash: hashPassword(pw), updated_at: new Date().toISOString() })
+    .eq('user_id', targetUserId);
+  if (error) return { success: false, msg: error.message };
+
+  // 申請を処理済みに
+  if (requestId) {
+    await supabase.from('password_reset_requests').update({ status: 'done', updated_at: new Date().toISOString() }).eq('id', requestId);
+  } else {
+    await supabase.from('password_reset_requests').update({ status: 'done', updated_at: new Date().toISOString() }).eq('user_id', targetUserId).eq('status', 'pending');
+  }
+
+  return { success: true };
 }
 
 async function registUserAPI(form: Record<string, unknown>) {

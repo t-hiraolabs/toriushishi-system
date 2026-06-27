@@ -446,6 +446,7 @@ async function loadMembersUser() {
         const res = await callGasApi({ action: "getMembers", role });
         list.innerHTML = "";
         if (userRole === "admin") {
+            await renderPasswordResetRequests(list);
             const hold = res.members.filter(m => m.status === "hold");
             const active = res.members.filter(m => m.status === "active");
             if (hold.length) { list.appendChild(makeTitle("承認待ちメンバー")); hold.forEach(m => list.appendChild(buildMemberItemUser(m, true))); }
@@ -488,6 +489,46 @@ function appendChildren(li, member, isAdmin) {
     details.appendChild(ul); li.appendChild(details);
 }
 function makeTitle(text) { const p = document.createElement("p"); p.textContent = text; p.classList.add("list-title"); return p; }
+
+// パスワード再発行申請（管理者）
+async function renderPasswordResetRequests(list) {
+    const res = await callGasApi({ action: "getPasswordResetRequests", sessionId: localStorage.getItem("sessionId") });
+    if (!res?.success || !res.requests?.length) return;
+    list.appendChild(makeTitle("パスワード再発行申請"));
+    res.requests.forEach(req => {
+        const li = document.createElement("li");
+        li.classList.add("member-item", "pw-reset-item");
+        const n = document.createElement("span");
+        n.classList.add("member-name");
+        n.textContent = req.user_name;
+        li.appendChild(n);
+        const btn = document.createElement("button");
+        btn.classList.add("pw-reset-btn");
+        btn.textContent = "パスワード再設定";
+        btn.addEventListener("click", () => resetMemberPassword(req.user_id, req.user_name, req.id));
+        li.appendChild(btn);
+        list.appendChild(li);
+    });
+}
+
+async function resetMemberPassword(targetUserId, name, requestId) {
+    const newPassword = prompt(`「${name}」さんの新しいパスワードを入力してください（4文字以上）`);
+    if (newPassword === null) return;
+    if (newPassword.trim().length < 4) { alert("パスワードは4文字以上にしてください"); return; }
+    const res = await callGasApi({
+        action: "resetMemberPassword",
+        sessionId: localStorage.getItem("sessionId"),
+        targetUserId,
+        newPassword: newPassword.trim(),
+        requestId,
+    });
+    if (res?.success) {
+        alert(`パスワードを再設定しました。\n本人に新しいパスワードを伝えてください。`);
+        loadMembersUser();
+    } else {
+        alert(res?.msg || "再設定に失敗しました");
+    }
+}
 async function approveMember(userId) {
     if (!confirm("このユーザーを承認しますか？")) return;
     const res = await callGasApi({ action: "approveMember", userId });

@@ -41,8 +41,22 @@
         <br>
         <span id="message" style="color:red;"></span>
     </form>
+    <div class="forgot">
+        <button type="button" id="forgotPwBtn" class="forgot-link">パスワードをお忘れの方</button>
+    </div>
     <div class="regist">
         <button type="button" id="gotoRegist">メンバー申請</button>
+    </div>
+
+    <!-- パスワード再発行申請フォーム -->
+    <div id="forgotForm" class="forgot-form" style="display:none;">
+        <p class="forgot-desc">登録されているユーザー名（氏名）を入力して申請してください。管理者がパスワードを再設定します。</p>
+        <input type="text" id="forgotUsername" placeholder="ユーザー名（例：平尾 大雅）">
+        <div class="forgot-actions">
+            <button type="button" id="forgotCancelBtn" class="forgot-cancel">キャンセル</button>
+            <button type="button" id="forgotSubmitBtn" class="forgot-submit">申請する</button>
+        </div>
+        <span id="forgotMessage"></span>
     </div>
 
 </div>

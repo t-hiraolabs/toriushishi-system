@@ -239,3 +239,16 @@ CREATE TABLE IF NOT EXISTS game_scores (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- -------------------------------------------------------
+-- password_reset_requests  (パスワード再発行申請)
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS password_reset_requests (
+  id         SERIAL PRIMARY KEY,
+  user_id    INTEGER NOT NULL,
+  user_name  TEXT NOT NULL,
+  status     TEXT NOT NULL DEFAULT 'pending',  -- 'pending' | 'done'
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_pwreset_status ON password_reset_requests(status);

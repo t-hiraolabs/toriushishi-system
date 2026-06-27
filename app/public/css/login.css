@@ -143,3 +143,70 @@ body::after {
 }
 
 .regist li a:hover { color: #e63946; }
+
+/* パスワード再発行 */
+.forgot {
+  margin-top: 12px;
+  text-align: center;
+}
+.forgot-link {
+  background: none;
+  border: none;
+  color: #a0a0a0;
+  font-size: .85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px;
+}
+.forgot-link:hover { color: #e63946; }
+
+.forgot-form {
+  margin-top: 14px;
+  padding: 14px;
+  background: rgba(0,0,0,.18);
+  border-radius: 10px;
+  text-align: left;
+}
+.forgot-desc {
+  font-size: .8rem;
+  color: #cfcfcf;
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+.forgot-form input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(255,255,255,.95);
+  font-size: .95rem;
+  margin-bottom: 10px;
+}
+.forgot-actions {
+  display: flex;
+  gap: 8px;
+}
+.forgot-cancel, .forgot-submit {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.forgot-cancel {
+  background: #6c757d;
+  color: #fff;
+}
+.forgot-submit {
+  background: #e63946;
+  color: #fff;
+}
+.forgot-submit:disabled { opacity: .6; }
+#forgotMessage {
+  display: block;
+  margin-top: 8px;
+  font-size: .82rem;
+}

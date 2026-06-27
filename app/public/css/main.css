@@ -1427,3 +1427,21 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   font-weight: 700;
   cursor: pointer;
 }
+
+/* パスワード再発行申請（管理者） */
+.pw-reset-item {
+  background: #fff7e6;
+  border: 1px solid #f0c97a;
+}
+.pw-reset-btn {
+  margin-left: auto;
+  background: #e6a23c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pw-reset-btn:active { opacity: .8; }
