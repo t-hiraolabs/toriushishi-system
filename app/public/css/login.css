@@ -180,6 +180,7 @@ body::after {
   border-radius: 8px;
   border: 1px solid rgba(255,255,255,.25);
   background: rgba(255,255,255,.95);
+  color: #000;
   font-size: .95rem;
   margin-bottom: 10px;
 }
@@ -201,7 +202,7 @@ body::after {
   color: #fff;
 }
 .forgot-submit {
-  background: #e63946;
+  background: #333;
   color: #fff;
 }
 .forgot-submit:disabled { opacity: .6; }
