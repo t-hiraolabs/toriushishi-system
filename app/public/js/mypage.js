@@ -28,10 +28,11 @@ async function loadMyPageFor(targetUserId, showRate) {
     overlay.style.display = "none";
     if (!res?.success) { content.innerHTML = '<p style="padding:16px;color:var(--text-3);">取得失敗</p>'; return; }
     myPageCurrentUser = res.user;
+    myPageCurrentUser.userId = targetUserId;
     renderMyPage(res, showRate);
 }
 
-function renderMyPage({ user, gear, eventRate, practiceRate }, showRate = true) {
+function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRate = true) {
     const content = document.getElementById("myPageContent");
     const g = gear || {};
     const gearRows = [
@@ -88,6 +89,16 @@ function renderMyPage({ user, gear, eventRate, practiceRate }, showRate = true) 
         ${personalSection}
 
         <div class="mypage-section">
+            <div class="mypage-section-title">子供情報</div>
+            ${children?.length ? children.map(c => `
+                <div class="mypage-gear-row mypage-child-row" data-child-id="${c.childId}">
+                    <span class="mypage-gear-val">${escHtml(c.childName)}</span>
+                    ${isAdmin ? `<button class="mypage-child-del-btn" data-child-id="${c.childId}" data-child-name="${escHtml(c.childName)}">削除</button>` : ""}
+                </div>
+            `).join("") : '<p class="mypage-empty">登録なし</p>'}
+        </div>
+
+        <div class="mypage-section">
             <div class="mypage-section-title">衣装情報</div>
             ${gearRows.length ? gearRows.map(r => `
                 <div class="mypage-gear-row">
@@ -96,10 +107,36 @@ function renderMyPage({ user, gear, eventRate, practiceRate }, showRate = true) 
                 </div>
             `).join("") : '<p class="mypage-empty">未登録</p>'}
         </div>
+
+        ${isAdmin && !showRate ? `
+        <div class="mypage-section mypage-danger-zone">
+            <button class="mypage-delete-member-btn" id="deleteMemberBtn">このメンバーを削除</button>
+        </div>
+        ` : ""}
     `;
 
     if (isAdmin) {
         document.getElementById("openMemberInfoEditBtn")?.addEventListener("click", () => openMemberInfoEdit(user));
+        document.querySelectorAll(".mypage-child-del-btn").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const childId = btn.dataset.childId;
+                const childName = btn.dataset.childName;
+                if (!confirm(`「${childName}」を削除しますか？`)) return;
+                const res = await callGasApi({ action: "deleteChild", childId: Number(childId), userId: myPageTargetUserId });
+                if (res.success) { alert("削除しました"); loadMyPageFor(myPageTargetUserId, false); }
+                else alert(res.msg || "削除に失敗しました");
+            });
+        });
+        document.getElementById("deleteMemberBtn")?.addEventListener("click", async () => {
+            const name = user.name;
+            if (!confirm(`「${name}」を削除しますか？\nこの操作は取り消せません。`)) return;
+            const res = await callGasApi({ action: "deleteMember", userId: myPageTargetUserId });
+            if (res.success) {
+                alert("削除しました");
+                document.getElementById("myPageCard").classList.remove("active");
+                loadMembersUser();
+            } else alert(res.msg || "削除に失敗しました");
+        });
     }
 }
 

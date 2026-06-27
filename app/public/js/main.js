@@ -30,7 +30,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadEventEvents();
     initCalendar();
     loadMembersUser();
-    if (userRole === "admin") loadMembersAdmin();
     initHaruWidget();
 });
 
@@ -388,7 +387,6 @@ function initEventDelegation() {
                 case "event":              document.getElementById("eventDetailCard")?.classList.remove("active"); break;
                 case "practice":           document.getElementById("practiceDetailCard")?.classList.remove("active"); break;
                 case "member":             document.getElementById("membersCardUser")?.classList.remove("active"); break;
-                case "member-management":  document.getElementById("membersCardAdmin")?.classList.remove("active"); break;
                 case "create":             document.getElementById("eventCreateCard")?.classList.remove("active"); break;
                 case "practice-create":    document.getElementById("practiceCreateCard")?.classList.remove("active"); break;
                 case "otabi":              document.getElementById("otabiCard")?.classList.remove("active"); break;
@@ -417,7 +415,6 @@ document.querySelectorAll(".tab-item").forEach(tab => {
     tab.addEventListener("click", async () => {
         const targetTab = tab.dataset.target;
         if (targetTab === "member") { document.getElementById("membersCardUser").classList.add("active"); return; }
-        if (targetTab === "member-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } document.getElementById("membersCardAdmin").classList.add("active"); return; }
         if (targetTab === "event-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openCreateForm(); return; }
         if (targetTab === "practice-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openPracticeCreateForm(); return; }
         if (targetTab === "otabi-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openOtabiCard(); return; }
@@ -431,47 +428,37 @@ async function loadMembersUser() {
     const list = document.getElementById("memberListUser");
     const overlay = card.querySelector(".loading-overlay");
     overlay.style.display = "flex";
-    const res = await callGasApi({ action: "getMembers", role: "user" });
-    list.innerHTML = "";
-    res.members.filter(m => m.status === "active").forEach(m => list.appendChild(buildMemberItemUser(m)));
-    overlay.style.display = "none";
-}
-async function loadMembersAdmin() {
-    const card = document.getElementById("membersCardAdmin");
-    const list = document.getElementById("memberListAdmin");
-    const overlay = card.querySelector(".loading-overlay");
-    overlay.style.display = "flex";
     try {
-        const res = await callGasApi({ action: "getMembers", role: "admin" });
+        const role = userRole === "admin" ? "admin" : "user";
+        const res = await callGasApi({ action: "getMembers", role });
         list.innerHTML = "";
-        const hold = res.members.filter(m => m.status === "hold");
-        const active = res.members.filter(m => m.status === "active");
-        if (hold.length) { list.appendChild(makeTitle("承認待ちメンバー")); hold.forEach(m => list.appendChild(buildMemberItemAdmin(m, true))); }
-        if (active.length) { list.appendChild(makeTitle("アクティブメンバー")); active.forEach(m => list.appendChild(buildMemberItemAdmin(m, false))); }
+        if (userRole === "admin") {
+            const hold = res.members.filter(m => m.status === "hold");
+            const active = res.members.filter(m => m.status === "active");
+            if (hold.length) { list.appendChild(makeTitle("承認待ちメンバー")); hold.forEach(m => list.appendChild(buildMemberItemUser(m, true))); }
+            if (active.length) { list.appendChild(makeTitle("アクティブメンバー")); active.forEach(m => list.appendChild(buildMemberItemUser(m, false))); }
+        } else {
+            res.members.filter(m => m.status === "active").forEach(m => list.appendChild(buildMemberItemUser(m, false)));
+        }
     } finally { overlay.style.display = "none"; }
 }
-function buildMemberItemUser(member) {
-    const li = document.createElement("li"); li.classList.add("member-item");
-    if (member.position) { const p = document.createElement("span"); p.classList.add("member-position"); p.textContent = member.position; li.appendChild(p); }
-    const n = document.createElement("span"); n.classList.add("member-name"); n.textContent = member.name; li.appendChild(n);
-    appendChildren(li, member, false);
-    const btn = document.createElement("button");
-    btn.classList.add("member-profile-btn");
-    btn.innerHTML = `<i class="fas fa-user"></i>`;
-    btn.addEventListener("click", () => openMemberProfile(member.userId, member.name));
-    li.appendChild(btn);
-    return li;
-}
-function buildMemberItemAdmin(member, isHold) {
+function buildMemberItemUser(member, isHold = false) {
     const li = document.createElement("li"); li.classList.add("member-item");
     if (isHold) li.classList.add("is-hold");
     if (member.position) { const p = document.createElement("span"); p.classList.add("member-position"); p.textContent = member.position; li.appendChild(p); }
     const n = document.createElement("span"); n.classList.add("member-name"); n.textContent = member.name; li.appendChild(n);
-    appendChildren(li, member, true);
-    const btn = document.createElement("button"); btn.classList.add("member-action");
-    if (isHold) { btn.textContent = "承認する"; btn.addEventListener("click", () => approveMember(member.userId)); }
-    else { btn.textContent = "削除"; btn.addEventListener("click", () => deleteMember(member.userId)); }
-    li.appendChild(btn);
+    if (isHold && userRole === "admin") {
+        const btn = document.createElement("button"); btn.classList.add("member-action");
+        btn.textContent = "承認する";
+        btn.addEventListener("click", () => approveMember(member.userId));
+        li.appendChild(btn);
+    } else {
+        const btn = document.createElement("button");
+        btn.classList.add("member-profile-btn");
+        btn.innerHTML = `<i class="fas fa-user"></i>`;
+        btn.addEventListener("click", () => openMemberProfile(member.userId, member.name));
+        li.appendChild(btn);
+    }
     return li;
 }
 function appendChildren(li, member, isAdmin) {
@@ -498,17 +485,7 @@ function makeTitle(text) { const p = document.createElement("p"); p.textContent 
 async function approveMember(userId) {
     if (!confirm("このユーザーを承認しますか？")) return;
     const res = await callGasApi({ action: "approveMember", userId });
-    if (res.success) { alert("承認しました！"); loadMembersAdmin(); } else alert("承認に失敗しました");
-}
-async function deleteMember(userId) {
-    if (!confirm("本当に削除しますか？")) return;
-    const res = await callGasApi({ action: "deleteMember", userId });
-    if (res.success) { alert("削除しました！"); loadMembersAdmin(); } else alert("削除に失敗しました");
-}
-async function deleteChild(childId, childName) {
-    if (!confirm(`「${childName}」を削除しますか？`)) return;
-    const res = await callGasApi({ action: "deleteChild", childId, userId });
-    if (res.success) { alert("削除しました！"); loadMembersAdmin(); } else alert(res.msg || "削除に失敗しました");
+    if (res.success) { alert("承認しました！"); loadMembersUser(); } else alert("承認に失敗しました");
 }
 
 /* =======================================================

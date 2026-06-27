@@ -1352,3 +1352,32 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   border-color: var(--accent);
   color: #fff;
 }
+
+/* メンバー詳細 子供・削除 */
+.mypage-child-row {
+  justify-content: space-between;
+}
+.mypage-child-del-btn {
+  font-size: .75rem;
+  padding: 3px 10px;
+  border: 1px solid var(--danger, #e74c3c);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--danger, #e74c3c);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.mypage-danger-zone {
+  padding: 8px 16px 16px;
+}
+.mypage-delete-member-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1px solid var(--danger, #e74c3c);
+  border-radius: 10px;
+  color: var(--danger, #e74c3c);
+  font-size: .95rem;
+  font-weight: 700;
+  cursor: pointer;
+}

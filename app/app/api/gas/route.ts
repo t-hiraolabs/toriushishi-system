@@ -1313,13 +1313,14 @@ async function saveChildGear(childId: string, gear: Record<string, unknown>, req
 async function getMyPage(userId: string) {
   const uid = Number(userId);
 
-  const [userRes, gearRes, eventsRes, ansEventsRes, practicesRes, ansPracticesRes] = await Promise.all([
+  const [userRes, gearRes, eventsRes, ansEventsRes, practicesRes, ansPracticesRes, childrenRes] = await Promise.all([
     supabase.from('users').select('*').eq('user_id', uid).single(),
     supabase.from('member_gear').select('*').eq('user_id', uid).single(),
     supabase.from('events').select('event_id,date'),
     supabase.from('answers_events').select('event_id,status').eq('user_id', uid),
     supabase.from('practices').select('practice_id,date'),
     supabase.from('answers_practices').select('practice_id,status').eq('user_id', uid),
+    supabase.from('children').select('child_id,child_name,status').eq('user_id', uid).neq('status', 'deleted'),
   ]);
 
   if (!userRes.data) return { success: false, msg: 'user not found' };
@@ -1361,5 +1362,11 @@ async function getMyPage(userId: string) {
     ? { participated: practiceParticipated, total: eligiblePractices.length, rate: practiceParticipated / eligiblePractices.length }
     : null;
 
-  return { success: true, user, gear, eventRate, practiceRate };
+  const children = (childrenRes.data || []).map((c) => ({
+    childId: c.child_id,
+    childName: c.child_name,
+    status: c.status,
+  }));
+
+  return { success: true, user, gear, eventRate, practiceRate, children };
 }
