@@ -1381,3 +1381,21 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   font-weight: 700;
   cursor: pointer;
 }
+
+/* 子供ブロック */
+.mypage-child-block {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+}
+.mypage-child-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.mypage-child-name {
+  font-weight: 700;
+  font-size: .95rem;
+}

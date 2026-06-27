@@ -90,12 +90,23 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
 
         <div class="mypage-section">
             <div class="mypage-section-title">子供情報</div>
-            ${children?.length ? children.map(c => `
-                <div class="mypage-gear-row mypage-child-row" data-child-id="${c.childId}">
-                    <span class="mypage-gear-val">${escHtml(c.childName)}</span>
-                    ${isAdmin ? `<button class="mypage-child-del-btn" data-child-id="${c.childId}" data-child-name="${escHtml(c.childName)}">削除</button>` : ""}
-                </div>
-            `).join("") : '<p class="mypage-empty">登録なし</p>'}
+            ${children?.length ? children.map(c => {
+                const bd = c.birthday ? c.birthday.replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$1年$2月$3日").replace(/年0(\d)/, "年$1").replace(/月0(\d)/, "月$1") : "";
+                const g = c.gear || {};
+                const gearRows = [
+                    { label: "着物（上）", val: g.kimono_top },
+                    { label: "着物（下）", val: g.kimono_bottom },
+                ].filter(r => r.val);
+                return `
+                <div class="mypage-child-block">
+                    <div class="mypage-child-header">
+                        <span class="mypage-child-name">${escHtml(c.childName)}</span>
+                        ${isAdmin ? `<button class="mypage-child-del-btn" data-child-id="${c.childId}" data-child-name="${escHtml(c.childName)}">削除</button>` : ""}
+                    </div>
+                    ${bd ? `<div class="mypage-gear-row"><span class="mypage-gear-label">生年月日</span><span class="mypage-gear-val">${bd}</span></div>` : ""}
+                    ${gearRows.map(r => `<div class="mypage-gear-row"><span class="mypage-gear-label">${escHtml(r.label)}</span><span class="mypage-gear-val">${escHtml(String(r.val))}</span></div>`).join("")}
+                </div>`;
+            }).join("") : '<p class="mypage-empty">登録なし</p>'}
         </div>
 
         <div class="mypage-section">

@@ -1313,14 +1313,19 @@ async function saveChildGear(childId: string, gear: Record<string, unknown>, req
 async function getMyPage(userId: string) {
   const uid = Number(userId);
 
-  const [userRes, gearRes, eventsRes, ansEventsRes, practicesRes, ansPracticesRes, childrenRes] = await Promise.all([
+  const [userRes, gearRes, eventsRes, ansEventsRes, practicesRes, ansPracticesRes, childrenRes, childGearRes] = await Promise.all([
     supabase.from('users').select('*').eq('user_id', uid).single(),
     supabase.from('member_gear').select('*').eq('user_id', uid).single(),
     supabase.from('events').select('event_id,date'),
     supabase.from('answers_events').select('event_id,status').eq('user_id', uid),
     supabase.from('practices').select('practice_id,date'),
     supabase.from('answers_practices').select('practice_id,status').eq('user_id', uid),
-    supabase.from('children').select('child_id,child_name,status').eq('user_id', uid).neq('status', 'deleted'),
+    supabase.from('children').select('child_id,child_name,birthday,status').eq('user_id', uid).neq('status', 'deleted'),
+    supabase.from('children').select('child_id').eq('user_id', uid).neq('status', 'deleted').then(async (r) => {
+      const ids = (r.data || []).map((c) => c.child_id);
+      if (!ids.length) return { data: [] };
+      return supabase.from('child_gear').select('child_id,kimono_top,kimono_bottom').in('child_id', ids);
+    }),
   ]);
 
   if (!userRes.data) return { success: false, msg: 'user not found' };
@@ -1362,10 +1367,17 @@ async function getMyPage(userId: string) {
     ? { participated: practiceParticipated, total: eligiblePractices.length, rate: practiceParticipated / eligiblePractices.length }
     : null;
 
+  const childGearMap: Record<number, { kimono_top: string; kimono_bottom: string }> = {};
+  (childGearRes.data || []).forEach((g) => {
+    childGearMap[g.child_id] = { kimono_top: g.kimono_top ?? '', kimono_bottom: g.kimono_bottom ?? '' };
+  });
+
   const children = (childrenRes.data || []).map((c) => ({
     childId: c.child_id,
     childName: c.child_name,
+    birthday: c.birthday ? new Date(c.birthday).toISOString().slice(0, 10) : '',
     status: c.status,
+    gear: childGearMap[c.child_id] || {},
   }));
 
   return { success: true, user, gear, eventRate, practiceRate, children };
