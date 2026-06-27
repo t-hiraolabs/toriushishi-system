@@ -420,7 +420,7 @@ document.querySelectorAll(".tab-item").forEach(tab => {
         if (targetTab === "practice-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openPracticeCreateForm(); return; }
         if (targetTab === "otabi-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openOtabiCard(); return; }
         if (targetTab === "gear-management") { if (userRole !== "admin") { alert("管理者のみアクセスできます。"); return; } openGearCard(); return; }
-        if (targetTab === "app-settings") { if (userRole !== "admin") { alert("管理者のみアクセスできます。"); return; } openAppSettings(); return; }
+        if (targetTab === "app-settings") { openAppSettings(); return; }
         if (targetTab === "mypage") { openMyPage(); return; }
     });
 });
@@ -857,7 +857,9 @@ async function applyHaruWidgetVisibility(visible) {
 
 function openAppSettings() {
     document.getElementById("appSettingsCard").classList.add("active");
-    initHaruWidgetVisibility();
+    const adminSection = document.getElementById("appSettingsAdminSection");
+    if (adminSection) adminSection.style.display = (userRole === "admin") ? "" : "none";
+    if (userRole === "admin") initHaruWidgetVisibility();
 }
 
 let haruWidgetSwitchListenerAttached = false;

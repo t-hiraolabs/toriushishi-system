@@ -305,6 +305,7 @@
                 <ul class="tab-list">
                     <li class="tab-item" data-target="mypage">マイページ</li>
                     <li class="tab-item" data-target="member">メンバー</li>
+                    <li class="tab-item" data-target="app-settings">設定</li>
                 </ul>
             </section>
         </div>
@@ -316,7 +317,6 @@
                     <li class="tab-item" data-target="practice-management">練習日管理</li>
                     <li class="tab-item" data-target="otabi-management">お旅管理</li>
                     <li class="tab-item" data-target="gear-management">衣装管理</li>
-                    <li class="tab-item" data-target="app-settings">設定</li>
                 </ul>
             </section>
         </div>
@@ -763,7 +763,7 @@
     <div class="member-card" id="appSettingsCard">
         <button class="close-card-btn" data-target="app-settings">戻る</button>
         <h2>設定</h2>
-        <div class="otabi-setting-section">
+        <div class="otabi-setting-section" id="appSettingsAdminSection" style="display:none;">
             <div class="otabi-setting-title">ホーム画面</div>
             <div class="display-setting-row">
                 <span class="display-setting-label">春例大祭ウィジェットを表示</span>
