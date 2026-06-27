@@ -318,16 +318,6 @@
                     <li class="tab-item" data-target="gear-management">衣装管理</li>
                 </ul>
             </section>
-            <section class="section">
-                <p class="section-title">表示設定</p>
-                <div class="display-setting-row">
-                    <span class="display-setting-label">春例大祭ウィジェット</span>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="haruWidgetToggleSwitch" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-            </section>
         </div>
 
         <div class="app-version">
@@ -508,6 +498,7 @@
             <button class="otabi-tab-btn active" data-tab="places">訪問先</button>
             <button class="otabi-tab-btn" data-tab="schedule">スケジュール</button>
             <button class="otabi-tab-btn" data-tab="donations">お花代</button>
+            <button class="otabi-tab-btn" data-tab="otabi-settings" id="otabiSettingsTabBtn" style="display:none;">設定</button>
         </div>
         <div class="otabi-tab-pane active" data-tab="places">
             <div class="otabi-controls">
@@ -571,6 +562,18 @@
             <div id="otabiDonationTotal" class="otabi-don-total-bar"></div>
             <div id="otabiDonationGrid" class="otabi-don-grid"></div>
             <button class="save-event-btn" id="saveDonationsBtn" style="margin:8px 0 4px;">お花代を保存</button>
+        </div>
+        <div class="otabi-tab-pane" data-tab="otabi-settings">
+            <div class="otabi-setting-section">
+                <div class="otabi-setting-title">ホーム画面</div>
+                <div class="display-setting-row">
+                    <span class="display-setting-label">春例大祭ウィジェットを表示</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="haruWidgetToggleSwitch" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 

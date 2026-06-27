@@ -220,9 +220,32 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'getMyPage':
       return getMyPage(data.userId as string);
 
+    case 'getSetting':
+      return getSetting(data.key as string);
+
+    case 'saveSetting':
+      return saveSetting(data.key as string, data.value as string, data.userId as string);
+
     default:
       return { success: false, msg: 'unknown action' };
   }
+}
+
+async function getSetting(key: string) {
+  const { data } = await supabase.from('settings').select('value').eq('key', key).single();
+  return { success: true, value: data?.value ?? null };
+}
+
+async function saveSetting(key: string, value: string, userId: string) {
+  const session = await validateSession(userId);
+  if (!session.valid || session.role !== 'admin') return { success: false, msg: '権限がありません' };
+  const { data: existing } = await supabase.from('settings').select('id').eq('key', key).single();
+  if (existing) {
+    await supabase.from('settings').update({ value, updated_at: new Date().toISOString() }).eq('key', key);
+  } else {
+    await supabase.from('settings').insert({ key, value });
+  }
+  return { success: true };
 }
 
 // -------------------------------------------------------

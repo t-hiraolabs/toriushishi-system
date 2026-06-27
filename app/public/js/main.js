@@ -418,7 +418,7 @@ document.querySelectorAll(".tab-item").forEach(tab => {
         if (targetTab === "event-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openCreateForm(); return; }
         if (targetTab === "practice-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openPracticeCreateForm(); return; }
         if (targetTab === "otabi-management") { if (userRole === "user") { alert("管理者のみアクセスできます。"); return; } openOtabiCard(); return; }
-        if (targetTab === "gear-management") { openGearCard(); return; }
+        if (targetTab === "gear-management") { if (userRole !== "admin") { alert("管理者のみアクセスできます。"); return; } openGearCard(); return; }
         if (targetTab === "mypage") { openMyPage(); return; }
     });
 });
@@ -846,20 +846,23 @@ let haruGroup = "上組";
 let haruAllGroups = {};
 let haruYear = new Date().getFullYear();
 
-function initHaruWidgetVisibility() {
+async function applyHaruWidgetVisibility(visible) {
     const widget = document.getElementById("haruWidget");
     const sw = document.getElementById("haruWidgetToggleSwitch");
-    if (!widget || !sw) return;
+    if (widget) widget.style.display = visible ? "" : "none";
+    if (sw) sw.checked = visible;
+}
 
-    const saved = localStorage.getItem("haruWidgetVisible");
-    const visible = saved === null ? true : saved === "true";
-    sw.checked = visible;
-    widget.style.display = visible ? "" : "none";
+async function initHaruWidgetVisibility() {
+    const res = await callGasApi({ action: "getSetting", key: "haruWidgetVisible" });
+    const visible = res.value === null ? true : res.value === "true";
+    applyHaruWidgetVisibility(visible);
 
-    sw.addEventListener("change", () => {
+    const sw = document.getElementById("haruWidgetToggleSwitch");
+    sw?.addEventListener("change", async () => {
         const v = sw.checked;
-        widget.style.display = v ? "" : "none";
-        localStorage.setItem("haruWidgetVisible", v);
+        applyHaruWidgetVisibility(v);
+        await callGasApi({ action: "saveSetting", key: "haruWidgetVisible", value: String(v), userId: localStorage.getItem("sessionId") });
     });
 }
 
