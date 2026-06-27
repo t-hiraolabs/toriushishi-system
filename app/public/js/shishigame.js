@@ -37,7 +37,7 @@ function setupGameCanvas(canvas) {
 
 function sgHandleInput() {
     if (!sgGame) return;
-    if (sgGame.dead) {
+    if (sgGame.dead || !sgGame.started) {
         sgGame.start();
     } else {
         sgGame.jump();
@@ -45,6 +45,8 @@ function sgHandleInput() {
 }
 
 document.addEventListener("keydown", e => {
+    const card = document.getElementById("gameCard");
+    if (!card || !card.classList.contains("active")) return;
     if (e.code === "Space" || e.code === "ArrowUp") {
         e.preventDefault();
         sgHandleInput();
