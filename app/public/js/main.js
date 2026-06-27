@@ -447,18 +447,11 @@ function buildMemberItemUser(member, isHold = false) {
     if (isHold) li.classList.add("is-hold");
     if (member.position) { const p = document.createElement("span"); p.classList.add("member-position"); p.textContent = member.position; li.appendChild(p); }
     const n = document.createElement("span"); n.classList.add("member-name"); n.textContent = member.name; li.appendChild(n);
-    if (isHold && userRole === "admin") {
-        const btn = document.createElement("button"); btn.classList.add("member-action");
-        btn.textContent = "承認する";
-        btn.addEventListener("click", () => approveMember(member.userId));
-        li.appendChild(btn);
-    } else {
-        const btn = document.createElement("button");
-        btn.classList.add("member-profile-btn");
-        btn.innerHTML = `<i class="fas fa-user"></i>`;
-        btn.addEventListener("click", () => openMemberProfile(member.userId, member.name));
-        li.appendChild(btn);
-    }
+    const btn = document.createElement("button");
+    btn.classList.add("member-profile-btn");
+    btn.innerHTML = `<i class="fas fa-user"></i>`;
+    btn.addEventListener("click", () => openMemberProfile(member.userId, member.name, isHold));
+    li.appendChild(btn);
     return li;
 }
 function appendChildren(li, member, isAdmin) {

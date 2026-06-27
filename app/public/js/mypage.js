@@ -11,7 +11,10 @@ function openMyPage() {
     loadMyPageFor(userId, true);
 }
 
-function openMemberProfile(targetUserId, name) {
+let myPageIsHold = false;
+
+function openMemberProfile(targetUserId, name, isHold = false) {
+    myPageIsHold = isHold;
     document.getElementById("myPageTitle").textContent = name;
     document.getElementById("myPageCard").classList.add("active");
     loadMyPageFor(targetUserId, false);
@@ -119,7 +122,14 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
             `).join("") : '<p class="mypage-empty">未登録</p>'}
         </div>
 
-        ${isAdmin && !showRate ? `
+        ${isAdmin && myPageIsHold ? `
+        <div class="mypage-section mypage-approve-zone">
+            <button class="mypage-approve-btn" id="approveMemberBtn">承認する</button>
+            <button class="mypage-reject-btn" id="rejectMemberBtn">拒否する</button>
+        </div>
+        ` : ""}
+
+        ${isAdmin && !showRate && !myPageIsHold ? `
         <div class="mypage-section mypage-danger-zone">
             <button class="mypage-delete-member-btn" id="deleteMemberBtn">このメンバーを削除</button>
         </div>
@@ -128,6 +138,26 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
 
     if (isAdmin) {
         document.getElementById("openMemberInfoEditBtn")?.addEventListener("click", () => openMemberInfoEdit(user));
+        document.getElementById("approveMemberBtn")?.addEventListener("click", async () => {
+            if (!confirm(`「${user.name}」を承認しますか？`)) return;
+            const res = await callGasApi({ action: "approveMember", userId: myPageTargetUserId });
+            if (res.success) {
+                alert("承認しました");
+                myPageIsHold = false;
+                document.getElementById("myPageCard").classList.remove("active");
+                loadMembersUser();
+            } else alert(res.msg || "承認に失敗しました");
+        });
+        document.getElementById("rejectMemberBtn")?.addEventListener("click", async () => {
+            if (!confirm(`「${user.name}」を拒否して削除しますか？\nこの操作は取り消せません。`)) return;
+            const res = await callGasApi({ action: "deleteMember", userId: myPageTargetUserId });
+            if (res.success) {
+                alert("拒否しました");
+                myPageIsHold = false;
+                document.getElementById("myPageCard").classList.remove("active");
+                loadMembersUser();
+            } else alert(res.msg || "拒否に失敗しました");
+        });
         document.querySelectorAll(".mypage-child-del-btn").forEach(btn => {
             btn.addEventListener("click", async () => {
                 const childId = btn.dataset.childId;
