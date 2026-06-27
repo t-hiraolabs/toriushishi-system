@@ -486,17 +486,15 @@ function createBulkNewRow() {
             <div class="otabi-drag-handle">⠷</div>
             <button class="otabi-bulk-remove" type="button">✕</button>
         </div>
-        <input type="text" class="bulk-place-search" placeholder="訪問先を検索…" autocomplete="off" />
+        <input type="text" class="bulk-place-search" placeholder="訪問先名（入力または候補から選択）" autocomplete="off" />
         <div class="bulk-place-candidates" style="display:none;"></div>
         <input type="hidden" class="bulk-place-id" />
-        <input type="text" class="bulk-place-name" placeholder="訪問先名 *" />
     `;
 
     div.querySelector(".otabi-bulk-remove").addEventListener("click", () => div.remove());
 
     const searchInput = div.querySelector(".bulk-place-search");
     const candidates = div.querySelector(".bulk-place-candidates");
-    const nameInput = div.querySelector(".bulk-place-name");
     const idInput = div.querySelector(".bulk-place-id");
 
     const updateCandidates = () => {
@@ -512,24 +510,15 @@ function createBulkNewRow() {
         candidates.querySelectorAll(".bulk-candidate").forEach(c => {
             c.addEventListener("click", () => {
                 idInput.value = c.dataset.id;
-                nameInput.value = c.dataset.name;
                 searchInput.value = c.dataset.name;
                 candidates.style.display = "none";
             });
         });
     };
 
-    searchInput.addEventListener("input", updateCandidates);
+    searchInput.addEventListener("input", () => { idInput.value = ""; updateCandidates(); });
     searchInput.addEventListener("focus", updateCandidates);
-    searchInput.addEventListener("blur", () => {
-        setTimeout(() => {
-            candidates.style.display = "none";
-            // 候補選択なしでも入力テキストを訪問先名にフォールバック
-            if (!nameInput.value.trim() && searchInput.value.trim()) {
-                nameInput.value = searchInput.value.trim();
-            }
-        }, 150);
-    });
+    searchInput.addEventListener("blur", () => setTimeout(() => { candidates.style.display = "none"; }, 150));
 
     return div;
 }
@@ -546,8 +535,7 @@ async function saveBulkEntries() {
             reorderUpdates.push({ entry_id: Number(row.dataset.entryId), no });
         } else {
             // 新規行 → 訪問先名があれば保存（検索フィールドもフォールバック）
-            const name = row.querySelector(".bulk-place-name").value.trim()
-                || row.querySelector(".bulk-place-search").value.trim();
+            const name = row.querySelector(".bulk-place-search").value.trim();
             if (name) {
                 newEntries.push({
                     entry_id: null,
