@@ -6,6 +6,7 @@ let myPageTargetUserId = null;
 let myPageCurrentUser = null;
 
 function openMyPage() {
+    myPageIsHold = false;
     document.getElementById("myPageTitle").textContent = "マイページ";
     document.getElementById("myPageCard").classList.add("active");
     loadMyPageFor(userId, true);
