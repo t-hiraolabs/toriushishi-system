@@ -62,6 +62,32 @@ async function sendPushToAll(title: string, body: string, url = '/main.html') {
   );
 }
 
+// 管理者のみへWebプッシュ通知を送信。
+async function sendPushToAdmins(title: string, body: string, url = '/main.html') {
+  if (!ensureVapid()) return;
+  const { data: admins } = await supabase.from('users').select('user_id').eq('role', 'admin');
+  const adminIds = (admins || []).map((a) => a.user_id);
+  if (adminIds.length === 0) return;
+  const { data: subs } = await supabase
+    .from('push_subscriptions')
+    .select('id, subscription')
+    .in('user_id', adminIds);
+  if (!subs || subs.length === 0) return;
+  const payload = JSON.stringify({ title, body, url });
+  await Promise.all(
+    subs.map(async (row) => {
+      try {
+        await webpush.sendNotification(row.subscription as webpush.PushSubscription, payload);
+      } catch (err: unknown) {
+        const code = (err as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) {
+          await supabase.from('push_subscriptions').delete().eq('id', row.id);
+        }
+      }
+    })
+  );
+}
+
 async function savePushSubscription(sessionId: string, subscription: Record<string, unknown>) {
   const session = await validateSession(sessionId);
   if (!session.valid) return { success: false, msg: 'ログインし直してください' };
@@ -438,8 +464,11 @@ async function requestPasswordReset(username: string) {
     });
   }
 
-  // 注: LINE_GROUP_ID は全員のグループのため、申請内容はLINE通知しない。
-  // 管理者はメンバー画面の「パスワード再発行申請」一覧で確認する。
+  // 管理者のみにプッシュ通知（全員グループには流さない）
+  await sendPushToAdmins(
+    '🔑 パスワード再発行申請',
+    `${row.stored_name} さんからパスワード再発行の申請がありました。`
+  );
 
   return { success: true };
 }
