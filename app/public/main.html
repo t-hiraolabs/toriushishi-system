@@ -776,6 +776,18 @@
         </div>
 
         <div class="otabi-setting-section">
+            <div class="otabi-setting-title">通知</div>
+            <div class="display-setting-row">
+                <span class="display-setting-label">プッシュ通知を受け取る</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="pushNotifyToggle">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <p class="push-notify-hint" id="pushNotifyHint">新しいイベントが登録されたときに通知が届きます。</p>
+        </div>
+
+        <div class="otabi-setting-section">
             <button type="button" class="otabi-setting-title pw-change-toggle" id="pwChangeToggle">
                 <span>パスワード変更</span>
                 <i class="fas fa-chevron-down pw-change-chevron"></i>
@@ -878,6 +890,7 @@
 <script src="js/gear.js"></script>
 <script src="js/mypage.js"></script>
 <script src="js/shishigame.js"></script>
+<script src="js/push.js"></script>
 <script src="js/main.js"></script>
 <script>
 if ('serviceWorker' in navigator) {

@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/db';
 import { hashPassword, saveSession, validateSession } from '@/lib/auth';
+import webpush from 'web-push';
+
+export const runtime = 'nodejs';
+
+let vapidConfigured = false;
+function ensureVapid(): boolean {
+  if (vapidConfigured) return true;
+  const pub = process.env.VAPID_PUBLIC_KEY;
+  const priv = process.env.VAPID_PRIVATE_KEY;
+  if (!pub || !priv) return false;
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT || 'mailto:hiraolabs@gmail.com',
+    pub,
+    priv
+  );
+  vapidConfigured = true;
+  return true;
+}
 
 // -------------------------------------------------------
 // Helpers
@@ -24,23 +42,48 @@ function formatDate(d: Date | string | null): string {
   return `${y}/${m}/${day}`;
 }
 
-async function sendLineNotification(message: string) {
-  const token = process.env.LINE_TOKEN;
-  const groupId = process.env.LINE_GROUP_ID;
-  if (!token || !groupId) return;
-  try {
-    await fetch('https://api.line.me/v2/bot/message/push', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        to: groupId,
-        messages: [{ type: 'text', text: message }],
-      }),
-    });
-  } catch (_) {}
+// 全購読者へWebプッシュ通知を送信。失効した購読は削除する。
+async function sendPushToAll(title: string, body: string, url = '/main.html') {
+  if (!ensureVapid()) return;
+  const { data: subs } = await supabase.from('push_subscriptions').select('id, subscription');
+  if (!subs || subs.length === 0) return;
+  const payload = JSON.stringify({ title, body, url });
+  await Promise.all(
+    subs.map(async (row) => {
+      try {
+        await webpush.sendNotification(row.subscription as webpush.PushSubscription, payload);
+      } catch (err: unknown) {
+        const code = (err as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) {
+          await supabase.from('push_subscriptions').delete().eq('id', row.id);
+        }
+      }
+    })
+  );
+}
+
+async function savePushSubscription(sessionId: string, subscription: Record<string, unknown>) {
+  const session = await validateSession(sessionId);
+  if (!session.valid) return { success: false, msg: 'ログインし直してください' };
+  const endpoint = subscription?.endpoint as string;
+  if (!endpoint) return { success: false, msg: '購読情報が不正です' };
+  const { error } = await supabase.from('push_subscriptions').upsert(
+    {
+      user_id: session.userId,
+      endpoint,
+      subscription,
+      created_at: new Date().toISOString(),
+    },
+    { onConflict: 'endpoint' }
+  );
+  if (error) return { success: false, msg: error.message };
+  return { success: true };
+}
+
+async function deletePushSubscription(endpoint: string) {
+  if (!endpoint) return { success: false, msg: 'endpoint がありません' };
+  await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  return { success: true };
 }
 
 // -------------------------------------------------------
@@ -82,6 +125,15 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
 
     case 'changePassword':
       return changePassword(data.sessionId as string, data.currentPassword as string, data.newPassword as string);
+
+    case 'getVapidPublicKey':
+      return { success: true, publicKey: process.env.VAPID_PUBLIC_KEY || '' };
+
+    case 'savePushSubscription':
+      return savePushSubscription(data.sessionId as string, data.subscription as Record<string, unknown>);
+
+    case 'deletePushSubscription':
+      return deletePushSubscription(data.endpoint as string);
 
     // ===== Events =====
     case 'getEventsWithStats':
@@ -146,16 +198,10 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
         const d = new Date(String(ev.date).replace(/\//g, '-'));
         const dateStr = `${ev.date}（${weekdays[d.getDay()]}）`;
         const typeLabel = ev.type === 'festival' ? '🎉' : '📢';
-        const msg = [
-          `${typeLabel} 新しいイベントが登録されました`,
-          ``,
-          `📌 ${ev.title}`,
-          `📅 ${dateStr}${ev.time && ev.time !== '未定' ? ' ' + ev.time : ev.time === '未定' ? ' （時間未定）' : ''}`,
-          ev.deadline ? `回答期限：${ev.deadline}` : '',
-          ``,
-          `アプリから参加・不参加を回答してください。`,
-        ].filter(l => l !== undefined).join('\n');
-        sendLineNotification(msg);
+        const timeStr = ev.time && ev.time !== '未定' ? ' ' + ev.time : ev.time === '未定' ? '（時間未定）' : '';
+        const title = `${typeLabel} 新しいイベント：${ev.title}`;
+        const body = `📅 ${dateStr}${timeStr}${ev.deadline ? `\n回答期限：${ev.deadline}` : ''}\nアプリから参加・不参加を回答してください。`;
+        await sendPushToAll(title, body);
       }
       return result;
     }

@@ -913,6 +913,7 @@ function openAppSettings() {
     if (adminSection) adminSection.style.display = (userRole === "admin") ? "" : "none";
     if (userRole === "admin") initHaruWidgetVisibility();
     initPasswordChange();
+    initPushNotify();
 }
 
 let pwChangeListenerAttached = false;

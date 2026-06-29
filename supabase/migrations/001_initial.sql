@@ -252,3 +252,15 @@ CREATE TABLE IF NOT EXISTS password_reset_requests (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_pwreset_status ON password_reset_requests(status);
+
+-- -------------------------------------------------------
+-- push_subscriptions  (Web Push 購読情報)
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id           SERIAL PRIMARY KEY,
+  user_id      INTEGER,
+  endpoint     TEXT NOT NULL UNIQUE,
+  subscription JSONB NOT NULL,
+  created_at   TIMESTAMP DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id);
