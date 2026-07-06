@@ -1508,3 +1508,24 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   margin: 6px 2px 0;
   line-height: 1.5;
 }
+
+/* 練習出席者の欠席化ボタン（管理者） */
+.response-list.attend li.attend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mark-absent-btn {
+  flex-shrink: 0;
+  background: var(--accent-dim, #7a1520);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: .72rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mark-absent-btn:disabled { opacity: .6; }
+.mark-absent-btn:active { opacity: .8; }

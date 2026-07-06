@@ -760,7 +760,41 @@ async function fillPracticeDetailCard(practiceData, userId, card) {
     const attendList = card.querySelector(".response-list.attend"); const absentList = card.querySelector(".response-list.absent"); const lateList = card.querySelector(".response-list.late");
     if (attendList) attendList.innerHTML = ""; absentList.innerHTML = ""; lateList.innerHTML = "";
     card.querySelectorAll(".response-list").forEach(ul => ul.style.display = "none");
-    (practiceData.attend || []).forEach(name => { const li = document.createElement("li"); li.textContent = name; attendList?.appendChild(li); });
+    const isAdmin = userRole === "admin";
+    const attendMembers = practiceData.attendMembers || (practiceData.attend || []).map(name => ({ userId: null, name }));
+    attendMembers.forEach(m => {
+        const li = document.createElement("li");
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = m.name;
+        li.appendChild(nameSpan);
+        if (isAdmin && m.userId != null) {
+            li.classList.add("attend-row");
+            const btn = document.createElement("button");
+            btn.className = "mark-absent-btn";
+            btn.textContent = "欠席にする";
+            btn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (!confirm(`「${m.name}」さんを欠席にしますか？`)) return;
+                btn.disabled = true; btn.textContent = "更新中…";
+                const res = await callGasApi({
+                    action: "setPracticeStatusForMember",
+                    sessionId: localStorage.getItem("sessionId"),
+                    practiceId: practiceData.practiceId,
+                    targetUserId: m.userId,
+                    status: "欠席",
+                });
+                if (res?.success) {
+                    await getPractices();
+                    fillPracticeDetailCard(practiceMap[practiceData.practiceId], userId, card);
+                } else {
+                    alert(res?.msg || "更新に失敗しました");
+                    btn.disabled = false; btn.textContent = "欠席にする";
+                }
+            });
+            li.appendChild(btn);
+        }
+        attendList?.appendChild(li);
+    });
     (practiceData.absent || []).forEach(name => { const li = document.createElement("li"); li.textContent = name; absentList.appendChild(li); });
     (practiceData.late || []).forEach(name => { const li = document.createElement("li"); li.textContent = name; lateList.appendChild(li); });
     const attendToggle = card.querySelector(".toggle-response-btn.attend"); const absentToggle = card.querySelector(".toggle-response-btn.absent"); const lateToggle = card.querySelector(".toggle-response-btn.late");

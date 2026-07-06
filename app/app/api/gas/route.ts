@@ -185,6 +185,14 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
         (data.status || data.answer) as string
       );
 
+    case 'setPracticeStatusForMember':
+      return setPracticeStatusForMember(
+        data.sessionId as string,
+        data.practiceId as string,
+        data.targetUserId as string,
+        data.status as string
+      );
+
     // ===== AI chat =====
     case 'chatAI':
       return chatAILocal(data.text as string || data.message as string);
@@ -709,13 +717,14 @@ async function getPracticeWithStats(userId: string) {
     const absent: string[] = [];
     const late: string[] = [];
     const attend: string[] = [];
+    const attendMembers: Array<{ userId: number; name: string }> = [];
     let myStatus = '';
 
     activeUsers.forEach((u) => {
       const s = answerMap[u.id];
       if (s === '欠席') absent.push(u.name);
       else if (s === '遅刻') late.push(u.name);
-      else attend.push(u.name); // 欠席・遅刻以外は出席とみなす（未回答含む）
+      else { attend.push(u.name); attendMembers.push({ userId: u.id, name: u.name }); } // 欠席・遅刻以外は出席とみなす（未回答含む）
       if (u.id === uid && s) myStatus = s;
     });
 
@@ -728,7 +737,7 @@ async function getPracticeWithStats(userId: string) {
       end: pr.end || '',
       location: pr.location,
       comment: pr.comment,
-      absent, late, attend, myStatus,
+      absent, late, attend, attendMembers, myStatus,
       sortKey: new Date(pr.date).getTime(),
     };
   });
@@ -838,6 +847,13 @@ async function updatePracticeResponse(practiceId: string, userId: string, status
   });
 
   return { success: true, absent, late };
+}
+
+// 管理者が他メンバーの練習出欠を変更する
+async function setPracticeStatusForMember(sessionId: string, practiceId: string, targetUserId: string, status: string) {
+  const session = await validateSession(sessionId);
+  if (!session.valid || session.role !== 'admin') return { success: false, msg: '権限がありません' };
+  return updatePracticeResponse(practiceId, targetUserId, status);
 }
 
 // -------------------------------------------------------
