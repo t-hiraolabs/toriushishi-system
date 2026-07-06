@@ -757,12 +757,14 @@ async function fillPracticeDetailCard(practiceData, userId, card) {
     card.querySelector(".practice-detail-card-time-text").textContent = (practiceData.start || "") + (practiceData.end ? " 〜 " + practiceData.end : "");
     card.querySelector(".practice-detail-card-location").textContent = practiceData.location || "";
     card.querySelector(".practice-detail-card-comment").textContent = practiceData.comment || "";
-    const absentList = card.querySelector(".response-list.absent"); const lateList = card.querySelector(".response-list.late");
-    absentList.innerHTML = ""; lateList.innerHTML = "";
+    const attendList = card.querySelector(".response-list.attend"); const absentList = card.querySelector(".response-list.absent"); const lateList = card.querySelector(".response-list.late");
+    if (attendList) attendList.innerHTML = ""; absentList.innerHTML = ""; lateList.innerHTML = "";
     card.querySelectorAll(".response-list").forEach(ul => ul.style.display = "none");
+    (practiceData.attend || []).forEach(name => { const li = document.createElement("li"); li.textContent = name; attendList?.appendChild(li); });
     (practiceData.absent || []).forEach(name => { const li = document.createElement("li"); li.textContent = name; absentList.appendChild(li); });
     (practiceData.late || []).forEach(name => { const li = document.createElement("li"); li.textContent = name; lateList.appendChild(li); });
-    const absentToggle = card.querySelector(".toggle-response-btn.absent"); const lateToggle = card.querySelector(".toggle-response-btn.late");
+    const attendToggle = card.querySelector(".toggle-response-btn.attend"); const absentToggle = card.querySelector(".toggle-response-btn.absent"); const lateToggle = card.querySelector(".toggle-response-btn.late");
+    if (attendToggle) attendToggle.textContent = `出席 ${(practiceData.attend || []).length}人`;
     if (absentToggle) absentToggle.textContent = `欠席 ${(practiceData.absent || []).length}人`;
     if (lateToggle) lateToggle.textContent = `遅れて参加 ${(practiceData.late || []).length}人`;
     card.querySelector(".response-btn.absent")?.classList.toggle("selected", (practiceData.myStatus || "") === "欠席");

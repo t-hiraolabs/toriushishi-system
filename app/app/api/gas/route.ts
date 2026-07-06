@@ -708,12 +708,14 @@ async function getPracticeWithStats(userId: string) {
 
     const absent: string[] = [];
     const late: string[] = [];
+    const attend: string[] = [];
     let myStatus = '';
 
     activeUsers.forEach((u) => {
       const s = answerMap[u.id];
       if (s === '欠席') absent.push(u.name);
-      if (s === '遅刻') late.push(u.name);
+      else if (s === '遅刻') late.push(u.name);
+      else attend.push(u.name); // 欠席・遅刻以外は出席とみなす（未回答含む）
       if (u.id === uid && s) myStatus = s;
     });
 
@@ -726,7 +728,7 @@ async function getPracticeWithStats(userId: string) {
       end: pr.end || '',
       location: pr.location,
       comment: pr.comment,
-      absent, late, myStatus,
+      absent, late, attend, myStatus,
       sortKey: new Date(pr.date).getTime(),
     };
   });
