@@ -126,10 +126,25 @@ export async function POST(req: NextRequest) {
   }
 }
 
+// デモ環境: 読み取り系・ログイン以外の書き込みを一律ブロック（fail-closed）
+const DEMO_MODE = process.env.DEMO_MODE === 'true';
+function isDemoAllowed(action: string): boolean {
+  if (action.startsWith('get')) return true;
+  return ['login', 'validateSession', 'chatAI', 'appMeta'].includes(action);
+}
+
 async function dispatch(data: Record<string, unknown>): Promise<unknown> {
   const action = data.action as string;
 
+  if (DEMO_MODE && !isDemoAllowed(action)) {
+    return { success: false, demo: true, msg: 'これはデモ版です。データの追加・変更・削除はできません。' };
+  }
+
   switch (action) {
+    // ===== Meta =====
+    case 'appMeta':
+      return { success: true, demo: DEMO_MODE };
+
     // ===== Auth =====
     case 'login':
       return loginAPI(data.username as string, data.password as string);
@@ -351,16 +366,16 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
 
 async function validateSessionWithName(sessionId: string, requiredRole?: string) {
   const session = await validateSession(sessionId, requiredRole);
-  if (!session.valid) return session;
-  const { data: userRow } = await supabase.from('users').select('name').eq('id', session.userId).single();
-  return { ...session, name: (userRow?.name as string) || '' };
+  if (!session.valid) return { ...session, demo: DEMO_MODE };
+  const { data: userRow } = await supabase.from('users').select('stored_name').eq('user_id', session.userId).single();
+  return { ...session, name: (userRow?.stored_name as string) || '', demo: DEMO_MODE };
 }
 
 async function saveGameScore(userId: string, score: number) {
   const session = await validateSession(userId);
   if (!session.valid) return { success: false, msg: '未認証' };
-  const { data: userRow } = await supabase.from('users').select('name').eq('id', session.userId).single();
-  const userName = (userRow?.name as string) || 'Unknown';
+  const { data: userRow } = await supabase.from('users').select('stored_name').eq('user_id', session.userId).single();
+  const userName = (userRow?.stored_name as string) || 'Unknown';
   const { data: existing } = await supabase.from('game_scores').select('score').eq('user_id', userId).single();
   const isHighScore = !existing || score > (existing.score as number);
   if (isHighScore) {

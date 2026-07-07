@@ -12,6 +12,25 @@ if (savedUsername && savedPassword) {
     form.password.value = savedPassword;
 }
 
+// デモ版ならログイン情報を表示・自動入力
+(async () => {
+    try {
+        const res = await fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "appMeta" }) });
+        const meta = await res.json();
+        if (!meta?.demo) return;
+        const form = document.getElementById("loginForm");
+        if (!savedUsername) { form.username.value = "山田 太郎"; form.password.value = "demo1234"; }
+        const box = document.createElement("div");
+        box.className = "demo-login-hint";
+        box.innerHTML =
+            '🎏 <strong>デモ版</strong>（サンプル）<br>' +
+            '管理者：山田 太郎 / demo1234<br>' +
+            '一般：鈴木 花子 / demo1234<br>' +
+            '<small>※データの変更は保存されません</small>';
+        form.parentNode.insertBefore(box, form);
+    } catch (_) {}
+})();
+
 
 if (loginBtn) {
     loginBtn.addEventListener("click", async () => {

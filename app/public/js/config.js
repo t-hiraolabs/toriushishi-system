@@ -43,6 +43,11 @@ async function checkSessionAndGetUserId() {
         userId = res.userId;
         userRole = res.role;
         userName = res.name;
+        if (res.demo) {
+            const banner = document.getElementById("demoBanner");
+            if (banner) banner.style.display = "block";
+            document.body.classList.add("demo-mode");
+        }
         return true;
 
     } catch (err) {

@@ -1529,3 +1529,18 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
 }
 .mark-absent-btn:disabled { opacity: .6; }
 .mark-absent-btn:active { opacity: .8; }
+
+/* デモ版バナー */
+#demoBanner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9998;
+  background: #c8a84b;
+  color: #1a1a1a;
+  text-align: center;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  padding-top: calc(6px + env(safe-area-inset-top));
+}
+body.demo-mode .nav-title { top: 0; }

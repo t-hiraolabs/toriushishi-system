@@ -229,6 +229,16 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expires     ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_otabi_sched_year_grp ON otabi_schedules(year, "group");
 
 -- -------------------------------------------------------
+-- settings  (アプリ設定 key-value)
+-- -------------------------------------------------------
+CREATE TABLE IF NOT EXISTS settings (
+  id         SERIAL PRIMARY KEY,
+  key        TEXT NOT NULL UNIQUE,
+  value      TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- -------------------------------------------------------
 -- game_scores  (ゲームランキング)
 -- -------------------------------------------------------
 CREATE TABLE IF NOT EXISTS game_scores (

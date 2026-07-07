@@ -211,3 +211,18 @@ body::after {
   margin-top: 8px;
   font-size: .82rem;
 }
+
+/* デモ版ログインヒント */
+.demo-login-hint {
+  margin: 0 auto 16px;
+  padding: 12px 14px;
+  background: rgba(200,168,75,.15);
+  border: 1px solid #c8a84b;
+  border-radius: 10px;
+  color: #f1f1f1;
+  font-size: .82rem;
+  line-height: 1.7;
+  text-align: center;
+}
+.demo-login-hint strong { color: #c8a84b; }
+.demo-login-hint small { color: #b0b0b0; }
