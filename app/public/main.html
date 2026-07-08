@@ -451,14 +451,17 @@
             <label><input type="checkbox" id="practiceRangeMode"> 期間指定（複数日まとめて登録）</label>
         </div>
         <div id="practiceSingleDate" class="event-create-card-time">
-            <label for="practiceDate">日付</label>
-            <input type="date" id="practiceDate" />
+            <label>日付（カレンダーから選択）</label>
+            <div class="mini-cal-selected" id="practiceDateSelectedLabel">未選択</div>
+            <div class="mini-cal" id="practiceDateCal"></div>
+            <input type="date" id="practiceDate" style="display:none" />
         </div>
         <div id="practiceRangeDates" class="event-create-card-time" style="display:none;">
-            <label for="practiceStartDate">開始日</label>
-            <input type="date" id="practiceStartDate" />
-            <label for="practiceEndDate">終了日</label>
-            <input type="date" id="practiceEndDate" />
+            <label>開始日〜終了日（カレンダーで範囲を選択）</label>
+            <div class="mini-cal-selected" id="practiceRangeSelectedLabel">未選択</div>
+            <div class="mini-cal" id="practiceRangeCal"></div>
+            <input type="date" id="practiceStartDate" style="display:none" />
+            <input type="date" id="practiceEndDate" style="display:none" />
             <div class="weekday-select">
                 <label>曜日を選択</label>
                 <div class="weekday-checkboxes">

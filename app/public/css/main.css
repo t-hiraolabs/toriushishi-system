@@ -1544,3 +1544,23 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
   padding-top: calc(6px + env(safe-area-inset-top));
 }
 body.demo-mode .nav-title { top: 0; }
+
+/* 練習日フォーム: ミニカレンダー */
+.mini-cal-selected {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent, #e63946);
+  margin: 4px 0 8px;
+}
+.mini-cal {
+  background: var(--surface-2, #242424);
+  border-radius: var(--radius-md, 14px);
+  padding: 8px;
+  margin-bottom: 10px;
+}
+.mini-cal .cal-grid {
+  grid-template-columns: repeat(7, 1fr);
+}
+.mini-cal .day {
+  cursor: pointer;
+}
