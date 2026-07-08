@@ -623,21 +623,13 @@ document.addEventListener("DOMContentLoaded", () => {
 function initPracticeCreateCard() {
     document.getElementById("practiceTitle").value = "";
     document.getElementById("practiceDate").value = "";
-    document.getElementById("practiceStartDate").value = "";
-    document.getElementById("practiceEndDate").value = "";
     document.getElementById("practiceStart").value = "";
     document.getElementById("practiceEnd").value = "";
     document.getElementById("practiceLocation").value = "";
     document.getElementById("practiceComment").value = "";
-    const rangeMode = document.getElementById("practiceRangeMode");
-    if (rangeMode) rangeMode.checked = false;
-    document.getElementById("practiceSingleDate").style.display = "";
-    document.getElementById("practiceRangeDates").style.display = "none";
-    document.querySelectorAll('input[name="practiceWeekday"]').forEach(cb => cb.checked = false);
-    practiceRangeSelection = { start: null, end: null };
+    document.getElementById("practiceDateSelectedLabel").textContent = "未選択";
     const today = new Date();
     renderPracticeDateCalendar(today.getFullYear(), today.getMonth());
-    renderPracticeRangeCalendar(today.getFullYear(), today.getMonth());
 }
 function openPracticeCreateForm() { initPracticeCreateCard(); document.getElementById("practiceCreateCard").classList.add("active"); }
 
@@ -686,48 +678,7 @@ function renderPracticeDateCalendar(year, month) {
     el.querySelector(".cal-next").addEventListener("click", () => { const n = new Date(year, month + 1); renderPracticeDateCalendar(n.getFullYear(), n.getMonth()); });
 }
 
-let practiceRangeSelection = { start: null, end: null };
-function renderPracticeRangeCalendar(year, month) {
-    const el = document.getElementById("practiceRangeCal");
-    if (!el) return;
-    const { start, end } = practiceRangeSelection;
-    el.innerHTML = buildMiniCalendarHtml(year, month, dateStr => {
-        if (start && end) return dateStr >= start && dateStr <= end;
-        return dateStr === start;
-    });
-    el.querySelectorAll(".day").forEach(day => {
-        day.addEventListener("click", () => {
-            const clicked = day.dataset.date;
-            if (!practiceRangeSelection.start || (practiceRangeSelection.start && practiceRangeSelection.end)) {
-                practiceRangeSelection = { start: clicked, end: null };
-            } else {
-                if (clicked < practiceRangeSelection.start) {
-                    practiceRangeSelection = { start: clicked, end: practiceRangeSelection.start };
-                } else {
-                    practiceRangeSelection.end = clicked;
-                }
-            }
-            document.getElementById("practiceStartDate").value = practiceRangeSelection.start || "";
-            document.getElementById("practiceEndDate").value = practiceRangeSelection.end || "";
-            const label = practiceRangeSelection.start
-                ? `${pcFormatJa(practiceRangeSelection.start)} 〜 ${practiceRangeSelection.end ? pcFormatJa(practiceRangeSelection.end) : "終了日を選択"}`
-                : "未選択";
-            document.getElementById("practiceRangeSelectedLabel").textContent = label;
-            renderPracticeRangeCalendar(year, month);
-        });
-    });
-    el.querySelector(".cal-prev").addEventListener("click", () => { const p = new Date(year, month - 1); renderPracticeRangeCalendar(p.getFullYear(), p.getMonth()); });
-    el.querySelector(".cal-next").addEventListener("click", () => { const n = new Date(year, month + 1); renderPracticeRangeCalendar(n.getFullYear(), n.getMonth()); });
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-    const rangeModeCheck = document.getElementById("practiceRangeMode");
-    if (rangeModeCheck) {
-        rangeModeCheck.addEventListener("change", () => {
-            document.getElementById("practiceSingleDate").style.display = rangeModeCheck.checked ? "none" : "";
-            document.getElementById("practiceRangeDates").style.display = rangeModeCheck.checked ? "" : "none";
-        });
-    }
     const savePracticeBtn = document.querySelector(".save-practice-btn");
     if (!savePracticeBtn) return;
     savePracticeBtn.addEventListener("click", async () => {
@@ -736,36 +687,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const end = document.getElementById("practiceEnd").value;
         const location = document.getElementById("practiceLocation").value.trim();
         const comment = document.getElementById("practiceComment").value.trim();
-        const isRange = document.getElementById("practiceRangeMode").checked;
-        let datesToSave = [];
-        if (isRange) {
-            const startDate = document.getElementById("practiceStartDate").value;
-            const endDate = document.getElementById("practiceEndDate").value;
-            const selectedWeekdays = [...document.querySelectorAll('input[name="practiceWeekday"]:checked')].map(cb => Number(cb.value));
-            if (!startDate) return alert("開始日を選択してください");
-            if (!endDate) return alert("終了日を選択してください");
-            if (startDate > endDate) return alert("開始日は終了日より前にしてください");
-            if (selectedWeekdays.length === 0) return alert("曜日を選択してください");
-            const cur = new Date(startDate + "T00:00:00"); const last = new Date(endDate + "T00:00:00");
-            while (cur <= last) {
-                if (selectedWeekdays.includes(cur.getDay())) datesToSave.push(`${cur.getFullYear()}-${String(cur.getMonth()+1).padStart(2,"0")}-${String(cur.getDate()).padStart(2,"0")}`);
-                cur.setDate(cur.getDate() + 1);
-            }
-            if (datesToSave.length === 0) return alert("指定の期間・曜日に該当する日がありません");
-            if (!confirm(`${datesToSave.length}件の練習日を登録します。よろしいですか？`)) return;
-        } else {
-            const date = document.getElementById("practiceDate").value;
-            if (!date) return alert("日付を選択してください");
-            datesToSave = [date];
-            if (!confirm("練習日を保存しますか？")) return;
-        }
+        const date = document.getElementById("practiceDate").value;
+        if (!date) return alert("カレンダーで日付を選択してください");
         if (!start) return alert("開始時間を選択してください");
+        if (!confirm("練習日を保存しますか？")) return;
         try {
             loadingOverlay.style.display = "flex";
-            for (const date of datesToSave) {
-                const res = await callGasApi({ action: "savePractice", practice: { title: title || "練習", date, start, end, location, comment } });
-                if (!res.success) throw new Error(res.message || "練習日保存失敗");
-            }
+            const res = await callGasApi({ action: "savePractice", practice: { title: title || "練習", date, start, end, location, comment } });
+            if (!res.success) throw new Error(res.message || "練習日保存失敗");
             alert("保存しました");
             document.getElementById("practiceCreateCard").classList.remove("active");
             await getPractices(); loadHomeEvents(); initCalendar();
