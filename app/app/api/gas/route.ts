@@ -258,6 +258,9 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'savePractice':
       return savePractice(data.practice as Record<string, unknown>);
 
+    case 'deletePractice':
+      return deletePractice(data.sessionId as string, data.practiceId as string);
+
     case 'addPerformance':
       return addPerformance(data.performance as Record<string, unknown>);
 
@@ -1054,6 +1057,16 @@ async function saveEvent(event: Record<string, unknown>) {
 
 async function savePractice(practice: Record<string, unknown>) {
   const now = new Date().toISOString();
+
+  const { data: dup } = await supabase
+    .from('practices')
+    .select('practice_id')
+    .eq('date', practice.date)
+    .limit(1);
+  if (dup && dup.length > 0) {
+    return { success: false, message: `${practice.date} にはすでに練習日が登録されています` };
+  }
+
   const { data: last } = await supabase.from('practices').select('practice_id').order('practice_id', { ascending: false }).limit(1);
   const newId = last && last.length > 0 ? last[0].practice_id + 1 : 1;
 
@@ -1071,6 +1084,16 @@ async function savePractice(practice: Record<string, unknown>) {
   });
   if (error) return { success: false, message: error.message };
   return { success: true, practiceId: newId, created: true };
+}
+
+async function deletePractice(sessionId: string, practiceId: string) {
+  const session = await validateSession(sessionId);
+  if (!session.valid || session.role !== 'admin') return { success: false, msg: '権限がありません' };
+  const pid = Number(practiceId);
+  await supabase.from('answers_practices').delete().eq('practice_id', pid);
+  const { error } = await supabase.from('practices').delete().eq('practice_id', pid);
+  if (error) return { success: false, msg: error.message };
+  return { success: true };
 }
 
 async function addPerformance(performance: Record<string, unknown>) {

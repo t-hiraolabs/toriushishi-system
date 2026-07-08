@@ -659,7 +659,8 @@ function buildMiniCalendarHtml(year, month, isSelectedFn) {
         if (event?.type === "festival") dots += '<span class="event-dot festival"></span>';
         if (event?.type === "regular") dots += '<span class="event-dot regular"></span>';
         if (practice) dots += '<span class="event-dot practice"></span>';
-        grid += `<div class="day${sel ? " selected" : ""}" data-date="${dateStr}">${d}<div class="dots">${dots}</div></div>`;
+        const disabled = !!practice;
+        grid += `<div class="day${sel ? " selected" : ""}${disabled ? " day-disabled" : ""}" data-date="${dateStr}">${d}<div class="dots">${dots}</div></div>`;
     }
     return `
         <div class="cal-header">
@@ -674,7 +675,7 @@ function renderPracticeDateCalendar(year, month) {
     const el = document.getElementById("practiceDateCal");
     if (!el) return;
     el.innerHTML = buildMiniCalendarHtml(year, month, dateStr => practiceSelectedDates.has(dateStr));
-    el.querySelectorAll(".day").forEach(day => {
+    el.querySelectorAll(".day:not(.day-disabled)").forEach(day => {
         day.addEventListener("click", () => {
             const d = day.dataset.date;
             if (practiceSelectedDates.has(d)) practiceSelectedDates.delete(d);
@@ -828,6 +829,28 @@ async function fillPracticeDetailCard(practiceData, userId, card) {
     if (lateToggle) lateToggle.textContent = `遅れて参加 ${(practiceData.late || []).length}人`;
     card.querySelector(".response-btn.absent")?.classList.toggle("selected", (practiceData.myStatus || "") === "欠席");
     card.querySelector(".response-btn.late")?.classList.toggle("selected", (practiceData.myStatus || "") === "遅刻");
+
+    const deleteBtn = document.getElementById("deletePracticeBtn");
+    if (deleteBtn) {
+        deleteBtn.style.display = userRole === "admin" ? "" : "none";
+        deleteBtn.onclick = async () => {
+            if (!confirm(`「${practiceData.title || "練習"}」（${practiceData.date}）を削除しますか？\nこの操作は取り消せません。`)) return;
+            deleteBtn.disabled = true; deleteBtn.textContent = "削除中…";
+            const res = await callGasApi({
+                action: "deletePractice",
+                sessionId: localStorage.getItem("sessionId"),
+                practiceId: practiceData.practiceId,
+            });
+            if (res?.success) {
+                alert("削除しました");
+                card.classList.remove("active");
+                await getPractices(); loadHomeEvents(); initCalendar();
+            } else {
+                alert(res?.msg || "削除に失敗しました");
+                deleteBtn.disabled = false; deleteBtn.textContent = "この練習日を削除";
+            }
+        };
+    }
 }
 
 /* =======================================================

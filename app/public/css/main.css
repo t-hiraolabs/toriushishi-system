@@ -1564,3 +1564,25 @@ body.demo-mode .nav-title { top: 0; }
 .mini-cal .day {
   cursor: pointer;
 }
+
+/* 練習日フォーム: 登録済みの日を無効化 */
+.mini-cal .day-disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+/* 練習削除ボタン */
+.delete-practice-btn {
+  width: 100%;
+  margin-top: 14px;
+  background: var(--accent-dim, #7a1520);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 12px;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.delete-practice-btn:active { opacity: .8; }
