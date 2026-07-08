@@ -651,7 +651,14 @@ function buildMiniCalendarHtml(year, month, isSelectedFn) {
     for (let d = 1; d <= totalDays; d++) {
         const dateStr = pcToStr(year, month, d);
         const sel = isSelectedFn(dateStr);
-        grid += `<div class="day${sel ? " selected" : ""}" data-date="${dateStr}">${d}</div>`;
+        const slashDate = `${year}/${String(month+1).padStart(2,"0")}/${String(d).padStart(2,"0")}`;
+        const event = Object.values(eventMap).find(e => normalize(e.date) === normalize(slashDate));
+        const practice = Object.values(practiceMap).find(p => normalize(p.date) === normalize(slashDate));
+        let dots = "";
+        if (event?.type === "festival") dots += '<span class="event-dot festival"></span>';
+        if (event?.type === "regular") dots += '<span class="event-dot regular"></span>';
+        if (practice) dots += '<span class="event-dot practice"></span>';
+        grid += `<div class="day${sel ? " selected" : ""}" data-date="${dateStr}">${d}<div class="dots">${dots}</div></div>`;
     }
     return `
         <div class="cal-header">
