@@ -112,6 +112,8 @@ class ShishiGame {
         this.dead = false;
         this.started = false;
         this._buildings = this._genBuildings();
+        this._lionImg = new Image();
+        this._lionImg.src = "images/game/shishi_sprite.png";
         this._init();
     }
 
@@ -317,116 +319,34 @@ class ShishiGame {
         }
     }
 
-    // 伝統的な獅子舞（頭は右向き＝進行方向、緑の唐草胴体が後ろに流れる）
+    // 実写の獅子舞画像を使用（頭が右＝進行方向）
     _drawLion(ctx, x, y, f) {
         ctx.save();
         ctx.translate(x, y);
         const leg = Math.floor(f / 7) % 2;
-        const bob = Math.sin(f / 6) * 1.5;            // 胴体の上下の揺れ
-        const jaw = (Math.floor(f / 9) % 2) ? 7 : 1;  // 口のパクパク
+        const bob = Math.sin(f / 6) * 1.5; // 胴体の上下の揺れ
 
-        // ---- 脚（胴体の後ろ）----
+        // ---- 脚（画像の下に少しだけ覗かせる）----
         const legSets = leg === 0
-            ? [[-20, 6, 14], [-2, 6, 10]]
-            : [[-18, 6, 10], [-4, 6, 14]];
+            ? [[-14, 6, 10], [2, 6, 7]]
+            : [[-12, 6, 7], [4, 6, 10]];
         legSets.forEach(([lx, lw, lh]) => {
-            ctx.fillStyle = "#1f7a3d";
+            ctx.fillStyle = "#222";
             ctx.fillRect(lx, -lh, lw, lh);
-            ctx.fillStyle = "#f4f4f0";          // 白い足先
+            ctx.fillStyle = "#f4f4f0";
             ctx.fillRect(lx, -3, lw, 3);
         });
 
         ctx.save();
         ctx.translate(0, bob);
 
-        // ---- 胴体（緑の唐草模様の布）----
-        ctx.fillStyle = "#2e9e52";
-        ctx.beginPath();
-        ctx.moveTo(-30, -8);
-        ctx.quadraticCurveTo(-36, -32, -16, -34);
-        ctx.lineTo(8, -34);
-        ctx.quadraticCurveTo(16, -22, 6, -8);
-        ctx.closePath();
-        ctx.fill();
-        // 白い波のフリル（裾）
-        ctx.strokeStyle = "#eaf7ee";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let i = -28; i <= 4; i += 8) {
-            ctx.moveTo(i, -9);
-            ctx.arc(i + 4, -9, 4, Math.PI, 0, false);
+        const img = this._lionImg;
+        if (img && img.complete && img.naturalWidth > 0) {
+            const drawW = 110;
+            const drawH = drawW * (img.naturalHeight / img.naturalWidth);
+            // 画像は胴体が左・頭が右向きなので、原点(脚の付け根)を胴体後方に合わせる
+            ctx.drawImage(img, -drawW + 28, -drawH + 8, drawW, drawH);
         }
-        ctx.stroke();
-        // 唐草の渦（白い丸）
-        ctx.fillStyle = "rgba(255,255,255,0.9)";
-        [[-22, -24], [-10, -28], [-16, -15], [-4, -18]].forEach(([cx, cy]) => {
-            ctx.beginPath(); ctx.arc(cx, cy, 2.5, 0, Math.PI * 2); ctx.fill();
-        });
-
-        // ---- 頭（赤い漆塗り風、右向き）----
-        // 緑のたてがみフリル（頭の後ろ）
-        ctx.fillStyle = "#1f7a3d";
-        for (let a = -Math.PI / 2; a <= Math.PI / 2; a += Math.PI / 6) {
-            ctx.beginPath();
-            ctx.arc(13 + Math.cos(a) * 15, -36 + Math.sin(a) * 14, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // 頭の土台
-        ctx.fillStyle = "#cc1f1f";
-        ctx.beginPath();
-        ctx.ellipse(16, -36, 15, 13, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // 金の眉バンド
-        ctx.fillStyle = "#e8b53a";
-        ctx.fillRect(6, -44, 22, 4);
-        // 頭頂のこぶ（角）
-        ctx.fillStyle = "#b51818";
-        ctx.beginPath(); ctx.arc(14, -48, 4, 0, Math.PI * 2); ctx.fill();
-
-        // 耳（垂れ耳）
-        ctx.fillStyle = "#a51515";
-        ctx.beginPath();
-        ctx.ellipse(6, -42, 5, 7, -0.4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 目（大きな金色）
-        ctx.fillStyle = "#f5d76e";
-        ctx.beginPath(); ctx.arc(18, -38, 5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#111";
-        ctx.beginPath(); ctx.arc(20, -38, 2.6, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = "#fff";
-        ctx.beginPath(); ctx.arc(19, -39, 1, 0, Math.PI * 2); ctx.fill();
-
-        // ---- パクパクする口（歯付き）----
-        // 上あご
-        ctx.fillStyle = "#cc1f1f";
-        ctx.beginPath();
-        ctx.moveTo(24, -40);
-        ctx.lineTo(34, -37);
-        ctx.lineTo(32, -31);
-        ctx.lineTo(24, -31);
-        ctx.closePath();
-        ctx.fill();
-        // 口の中（赤）
-        ctx.fillStyle = "#5a0d0d";
-        ctx.beginPath();
-        ctx.moveTo(24, -31);
-        ctx.lineTo(33, -31);
-        ctx.lineTo(31, -31 + jaw + 1);
-        ctx.lineTo(24, -31 + jaw + 3);
-        ctx.closePath();
-        ctx.fill();
-        // 下あご
-        ctx.fillStyle = "#a51515";
-        ctx.fillRect(23, -31 + jaw, 10, 4);
-        // 上の歯
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(25, -32, 2, 3);
-        ctx.fillRect(30, -32, 2, 3);
-        // 下の歯
-        ctx.fillRect(25, -31 + jaw, 2, 2);
-        ctx.fillRect(30, -31 + jaw, 2, 2);
 
         ctx.restore();
         ctx.restore();
