@@ -52,6 +52,7 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
     const roleLabel = user.role === "admin" ? "管理者" : "一般";
     const isAdmin = typeof userRole !== "undefined" && userRole === "admin";
     const isSelf = String(myPageTargetUserId) === String(userId);
+    const canImpersonate = typeof isSystemAdmin !== "undefined" && isSystemAdmin && !isSelf;
 
     const rateSection = showRate ? `
         <div class="mypage-section">
@@ -88,6 +89,7 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
                 <div class="mypage-name">${escHtml(user.name)}</div>
                 <div class="mypage-role">${roleLabel}</div>
             </div>
+            ${canImpersonate ? `<button class="mypage-impersonate-btn" id="mypageImpersonateBtn"><i class="fas fa-user-secret"></i> このアカウントで入る</button>` : ""}
         </div>
 
         ${rateSection}
@@ -155,6 +157,12 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
         </div>
         ` : ""}
     `;
+
+    if (canImpersonate) {
+        document.getElementById("mypageImpersonateBtn")?.addEventListener("click", () => {
+            impersonateAsUser(myPageTargetUserId, user.name);
+        });
+    }
 
     if (isAdmin) {
         document.getElementById("openMemberInfoEditBtn")?.addEventListener("click", () => openMemberInfoEdit(user));

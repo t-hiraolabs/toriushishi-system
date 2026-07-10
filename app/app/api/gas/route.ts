@@ -167,6 +167,12 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'changePassword':
       return changePassword(data.sessionId as string, data.currentPassword as string, data.newPassword as string);
 
+    case 'impersonateUser':
+      return impersonateUser(data.sessionId as string, Number(data.targetUserId));
+
+    case 'endImpersonation':
+      return endImpersonation(data.sessionId as string);
+
     case 'getVapidPublicKey':
       return { success: true, publicKey: process.env.VAPID_PUBLIC_KEY || '' };
 
@@ -367,11 +373,66 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
 // Table: game_scores (user_id TEXT UNIQUE, user_name TEXT, score INT, created_at TIMESTAMP)
 // -------------------------------------------------------
 
+const SYSTEM_ADMIN_NAME = '平尾大雅';
+
 async function validateSessionWithName(sessionId: string, requiredRole?: string) {
   const session = await validateSession(sessionId, requiredRole);
   if (!session.valid) return { ...session, demo: DEMO_MODE };
   const { data: userRow } = await supabase.from('users').select('stored_name').eq('user_id', session.userId).single();
-  return { ...session, name: (userRow?.stored_name as string) || '', demo: DEMO_MODE };
+  const name = (userRow?.stored_name as string) || '';
+  const { data: sessionRow } = await supabase.from('sessions').select('impersonated_by').eq('session_id', sessionId).single();
+  return {
+    ...session,
+    name,
+    demo: DEMO_MODE,
+    isSystemAdmin: normalize(name) === normalize(SYSTEM_ADMIN_NAME),
+    impersonating: !!sessionRow?.impersonated_by,
+  };
+}
+
+// システム管理者(平尾大雅)が任意アカウントへログイン中セッションを作成
+async function impersonateUser(sessionId: string, targetUserId: number) {
+  const session = await validateSession(sessionId);
+  if (!session.valid) return { success: false, msg: 'ログインし直してください' };
+
+  const { data: me } = await supabase.from('users').select('stored_name').eq('user_id', session.userId).single();
+  if (normalize((me?.stored_name as string) || '') !== normalize(SYSTEM_ADMIN_NAME)) {
+    return { success: false, msg: '権限がありません' };
+  }
+
+  const { data: target } = await supabase.from('users').select('*').eq('user_id', targetUserId).single();
+  if (!target || target.status === 'deleted') return { success: false, msg: '対象のユーザーが見つかりません' };
+
+  const { data: children } = await supabase.from('children').select('*').eq('user_id', targetUserId);
+  const childList = (children || []).map((c) => ({
+    childId: c.child_id,
+    childName: c.child_name,
+    role: c.role,
+    status: c.status,
+  }));
+
+  const newSessionId = await saveSession({
+    userId: target.user_id,
+    username: target.stored_name,
+    role: target.role,
+    children: childList,
+    impersonatedBy: sessionId,
+  });
+
+  return { success: true, sessionId: newSessionId, userName: target.stored_name };
+}
+
+// なりすましを終了し、元のシステム管理者セッションへ戻る
+async function endImpersonation(sessionId: string) {
+  const { data: sessionRow } = await supabase.from('sessions').select('impersonated_by').eq('session_id', sessionId).single();
+  const originalSessionId = sessionRow?.impersonated_by as string | undefined;
+  if (!originalSessionId) return { success: false, msg: 'なりすましセッションではありません' };
+
+  const original = await validateSession(originalSessionId);
+  if (!original.valid) return { success: false, msg: '元のセッションが無効です。再ログインしてください。' };
+
+  await supabase.from('sessions').delete().eq('session_id', sessionId);
+  return { success: true, sessionId: originalSessionId };
 }
 
 async function saveGameScore(userId: string, score: number) {

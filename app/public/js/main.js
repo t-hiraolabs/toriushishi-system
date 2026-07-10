@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadMembersUser();
     initHaruWidget();
     initGameTabVisibility();
+    initImpersonateBanner();
     setTimeout(() => { maybeShowPushPrompt(); }, 1500);
 });
 
@@ -39,8 +40,35 @@ document.addEventListener("DOMContentLoaded", async () => {
 function initGameTabVisibility() {
     const tab = document.getElementById("gameTabItem");
     if (!tab) return;
-    const name = (userName || "").replace(/\s/g, "");
-    tab.style.display = name === "平尾大雅" ? "" : "none";
+    tab.style.display = isSystemAdmin ? "" : "none";
+}
+
+function initImpersonateBanner() {
+    document.getElementById("endImpersonateBtn")?.addEventListener("click", async () => {
+        const res = await callGasApi({ action: "endImpersonation", sessionId: localStorage.getItem("sessionId") });
+        if (res?.success) {
+            localStorage.setItem("sessionId", res.sessionId);
+            location.href = "main.html";
+        } else {
+            alert(res?.msg || "戻れませんでした。再ログインしてください。");
+        }
+    });
+}
+
+// システム管理者が対象アカウントへなりすましログインする
+async function impersonateAsUser(targetUserId, targetName) {
+    if (!confirm(`「${targetName}」としてログインしますか？`)) return;
+    const res = await callGasApi({
+        action: "impersonateUser",
+        sessionId: localStorage.getItem("sessionId"),
+        targetUserId,
+    });
+    if (res?.success) {
+        localStorage.setItem("sessionId", res.sessionId);
+        location.href = "main.html";
+    } else {
+        alert(res?.msg || "切り替えに失敗しました");
+    }
 }
 
 /* =======================================================

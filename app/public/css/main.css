@@ -1644,3 +1644,49 @@ body.demo-mode .nav-title { top: 0; }
   background: var(--accent, #e63946);
   color: #fff;
 }
+
+/* なりすましログイン */
+#impersonateBanner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9998;
+  background: #3a2a6a;
+  color: #fff;
+  text-align: center;
+  font-size: .78rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  padding-top: calc(6px + env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#endImpersonateBtn {
+  background: #fff;
+  color: #3a2a6a;
+  border: none;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: .72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mypage-impersonate-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #3a2a6a;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 8px 12px;
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mypage-impersonate-btn:active { opacity: .8; }

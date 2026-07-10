@@ -16,6 +16,7 @@ export async function saveSession(user: {
   username: string;
   role: string;
   children: unknown[];
+  impersonatedBy?: string;
 }): Promise<string> {
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
@@ -27,6 +28,7 @@ export async function saveSession(user: {
     user_name: user.username,
     children: user.children,
     expires_at: expiresAt.toISOString(),
+    impersonated_by: user.impersonatedBy || null,
   });
 
   if (error) throw new Error('Failed to create session: ' + error.message);

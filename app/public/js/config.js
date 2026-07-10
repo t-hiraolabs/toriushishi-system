@@ -20,9 +20,11 @@ async function callGasApi(payload) {
 /* =======================================================
 権限チェック
 ======================================================= */
-let userId;   // ページ内で一時的に保持
-let userRole; // ページ内で一時的に保持
-let userName; // ページ内で一時的に保持
+let userId;         // ページ内で一時的に保持
+let userRole;       // ページ内で一時的に保持
+let userName;       // ページ内で一時的に保持
+let isSystemAdmin;  // 全アカウントへなりすませるシステム管理者か
+let isImpersonating; // 現在なりすまし中か
 
 async function checkSessionAndGetUserId() {
     try {
@@ -43,10 +45,19 @@ async function checkSessionAndGetUserId() {
         userId = res.userId;
         userRole = res.role;
         userName = res.name;
+        isSystemAdmin = !!res.isSystemAdmin;
+        isImpersonating = !!res.impersonating;
         if (res.demo) {
             const banner = document.getElementById("demoBanner");
             if (banner) banner.style.display = "block";
             document.body.classList.add("demo-mode");
+        }
+        if (isImpersonating) {
+            const banner = document.getElementById("impersonateBanner");
+            if (banner) {
+                banner.style.display = "block";
+                banner.querySelector(".impersonate-banner-name").textContent = userName;
+            }
         }
         return true;
 

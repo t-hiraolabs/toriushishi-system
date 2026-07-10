@@ -274,3 +274,8 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
   created_at   TIMESTAMP DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id);
+
+-- -------------------------------------------------------
+-- sessions.impersonated_by  (システム管理者のなりすましログイン)
+-- -------------------------------------------------------
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS impersonated_by TEXT;
