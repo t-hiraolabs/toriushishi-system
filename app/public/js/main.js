@@ -44,6 +44,16 @@ function initGameTabVisibility() {
 }
 
 function initImpersonateBanner() {
+    const icon = document.getElementById("accountSwitchIcon");
+    if (!icon) return;
+    if (!isSystemAdmin && !isImpersonating) return;
+    icon.style.display = "flex";
+    icon.classList.toggle("active-impersonating", isImpersonating);
+
+    icon.addEventListener("click", openAccountSwitchModal);
+    document.getElementById("accountSwitchCloseBtn")?.addEventListener("click", () => {
+        document.getElementById("accountSwitchModal").style.display = "none";
+    });
     document.getElementById("endImpersonateBtn")?.addEventListener("click", async () => {
         const res = await callGasApi({ action: "endImpersonation", sessionId: localStorage.getItem("sessionId") });
         if (res?.success) {
@@ -52,6 +62,30 @@ function initImpersonateBanner() {
         } else {
             alert(res?.msg || "戻れませんでした。再ログインしてください。");
         }
+    });
+}
+
+async function openAccountSwitchModal() {
+    const modal = document.getElementById("accountSwitchModal");
+    const returnRow = document.getElementById("accountSwitchReturnRow");
+    const list = document.getElementById("accountSwitchList");
+    returnRow.style.display = isImpersonating ? "block" : "none";
+    list.innerHTML = '<li class="account-switch-loading">読み込み中…</li>';
+    modal.style.display = "flex";
+    const res = await callGasApi({ action: "getMembers", role: "admin" });
+    if (!res?.success) { list.innerHTML = '<li class="account-switch-loading">取得失敗</li>'; return; }
+    const members = (res.members || []).filter(m => m.status === "active" && String(m.userId) !== String(userId));
+    if (!members.length) { list.innerHTML = '<li class="account-switch-loading">対象がありません</li>'; return; }
+    list.innerHTML = "";
+    members.forEach(m => {
+        const li = document.createElement("li");
+        li.className = "account-switch-item";
+        li.innerHTML = `<span>${escHtml(m.name)}</span>${m.position ? `<span class="account-switch-position">${escHtml(m.position)}</span>` : ""}`;
+        li.addEventListener("click", () => {
+            modal.style.display = "none";
+            impersonateAsUser(m.userId, m.name);
+        });
+        list.appendChild(li);
     });
 }
 

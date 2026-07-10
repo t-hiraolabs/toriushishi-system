@@ -52,13 +52,6 @@ async function checkSessionAndGetUserId() {
             if (banner) banner.style.display = "block";
             document.body.classList.add("demo-mode");
         }
-        if (isImpersonating) {
-            const banner = document.getElementById("impersonateBanner");
-            if (banner) {
-                banner.style.display = "block";
-                banner.querySelector(".impersonate-banner-name").textContent = userName;
-            }
-        }
         return true;
 
     } catch (err) {

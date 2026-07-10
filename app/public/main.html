@@ -170,9 +170,22 @@
 
 <div id="demoBanner" style="display:none;">🎏 これはデモ版です（サンプル）。データの変更は保存されません。</div>
 
-<div id="impersonateBanner" style="display:none;">
-    🕵️ <span class="impersonate-banner-name"></span> としてログイン中
-    <button type="button" id="endImpersonateBtn">元のアカウントに戻る</button>
+<button type="button" id="accountSwitchIcon" style="display:none;"><i class="fas fa-user-secret"></i></button>
+
+<div id="accountSwitchModal" class="account-switch-modal" style="display:none;">
+    <div class="account-switch-box">
+        <div class="account-switch-header">
+            <span>アカウント切替</span>
+            <button type="button" id="accountSwitchCloseBtn" class="account-switch-close">&times;</button>
+        </div>
+        <div id="accountSwitchReturnRow" style="display:none;">
+            <button type="button" id="endImpersonateBtn" class="account-switch-return-btn">
+                <i class="fas fa-undo"></i> 元のアカウントに戻る
+            </button>
+        </div>
+        <div class="account-switch-list-title">アカウントを選んで切り替え</div>
+        <ul id="accountSwitchList" class="account-switch-list"></ul>
+    </div>
 </div>
 
 <div id="pushPromptModal" class="push-prompt-modal" style="display:none;">

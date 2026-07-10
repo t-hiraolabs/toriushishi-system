@@ -1645,33 +1645,113 @@ body.demo-mode .nav-title { top: 0; }
   color: #fff;
 }
 
-/* なりすましログイン */
-#impersonateBanner {
+/* なりすましログイン: 左上アイコン */
+#accountSwitchIcon {
   position: fixed;
-  top: 0; left: 0; right: 0;
+  top: calc(10px + env(safe-area-inset-top));
+  left: 10px;
   z-index: 9998;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
   background: #3a2a6a;
   color: #fff;
-  text-align: center;
-  font-size: .78rem;
-  font-weight: 700;
-  padding: 6px 10px;
-  padding-top: calc(6px + env(safe-area-inset-top));
+  font-size: 15px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+#accountSwitchIcon.active-impersonating {
+  background: #e63946;
+  animation: accountSwitchPulse 2s infinite;
+}
+@keyframes accountSwitchPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(230,57,70,.5); }
+  50%      { box-shadow: 0 0 0 6px rgba(230,57,70,0); }
+}
+
+.account-switch-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  background: rgba(0,0,0,.6);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  padding: 24px;
 }
-#endImpersonateBtn {
-  background: #fff;
-  color: #3a2a6a;
+.account-switch-box {
+  background: var(--surface, #1a1a1a);
+  border-radius: var(--radius-lg, 20px);
+  padding: 16px;
+  max-width: 340px;
+  width: 100%;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+.account-switch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-1, #f1f1f1);
+  margin-bottom: 10px;
+}
+.account-switch-close {
+  background: none;
   border: none;
-  border-radius: 6px;
-  padding: 3px 10px;
-  font-size: .72rem;
+  color: var(--text-2, #a0a0a0);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+}
+.account-switch-return-btn {
+  width: 100%;
+  background: #3a2a6a;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 10px;
+  font-size: .85rem;
   font-weight: 700;
   cursor: pointer;
+  margin-bottom: 10px;
+}
+.account-switch-list-title {
+  font-size: 12px;
+  color: var(--text-3, #666);
+  margin-bottom: 6px;
+}
+.account-switch-list {
+  overflow-y: auto;
+  flex: 1;
+}
+.account-switch-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 10px;
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  font-size: .88rem;
+  color: var(--text-1, #f1f1f1);
+}
+.account-switch-item:active { background: var(--surface-3, #2e2e2e); }
+.account-switch-position {
+  font-size: .72rem;
+  color: var(--text-3, #666);
+}
+.account-switch-loading {
+  text-align: center;
+  color: var(--text-3, #666);
+  padding: 20px;
+  font-size: .85rem;
 }
 
 .mypage-impersonate-btn {
