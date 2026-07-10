@@ -70,6 +70,10 @@ async function openAccountSwitchModal() {
     const returnRow = document.getElementById("accountSwitchReturnRow");
     const list = document.getElementById("accountSwitchList");
     returnRow.style.display = isImpersonating ? "block" : "none";
+    if (isImpersonating) {
+        const nameEl = document.getElementById("accountSwitchCurrentName");
+        if (nameEl) nameEl.textContent = userName || "";
+    }
     list.innerHTML = '<li class="account-switch-loading">読み込み中…</li>';
     modal.style.display = "flex";
     const res = await callGasApi({ action: "getMembers", role: "admin" });

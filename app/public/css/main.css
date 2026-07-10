@@ -1711,6 +1711,17 @@ body.demo-mode .nav-title { top: 0; }
   cursor: pointer;
   padding: 4px;
 }
+.account-switch-current {
+  font-size: .82rem;
+  font-weight: 700;
+  color: var(--text-1, #f1f1f1);
+  background: rgba(230,57,70,.15);
+  border: 1px solid rgba(230,57,70,.4);
+  border-radius: var(--radius-sm, 8px);
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  text-align: center;
+}
 .account-switch-return-btn {
   width: 100%;
   background: #3a2a6a;
