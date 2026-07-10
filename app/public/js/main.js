@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     loadMembersUser();
     initHaruWidget();
     initGameTabVisibility();
+    setTimeout(() => { maybeShowPushPrompt(); }, 1500);
 });
 
 // ゲームタブは平尾大雅のみ表示

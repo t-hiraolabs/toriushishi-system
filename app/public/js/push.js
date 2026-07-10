@@ -100,3 +100,35 @@ async function disablePushNotify(hint) {
         console.error("push unsubscribe error:", err);
     }
 }
+
+// ===== 初回のみの通知許可プロンプト =====
+const PUSH_PROMPT_KEY = "pushPromptShown";
+
+async function maybeShowPushPrompt() {
+    if (localStorage.getItem(PUSH_PROMPT_KEY)) return;
+
+    const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    if (!supported) return;
+    if (Notification.permission !== "default") {
+        // すでに許可/拒否済みなら二度と聞かない
+        localStorage.setItem(PUSH_PROMPT_KEY, "1");
+        return;
+    }
+
+    const modal = document.getElementById("pushPromptModal");
+    if (!modal) return;
+    modal.style.display = "flex";
+
+    document.getElementById("pushPromptAllowBtn")?.addEventListener("click", async () => {
+        localStorage.setItem(PUSH_PROMPT_KEY, "1");
+        modal.style.display = "none";
+        await enablePushNotify();
+        const toggle = document.getElementById("pushNotifyToggle");
+        if (toggle) toggle.checked = true;
+    }, { once: true });
+
+    document.getElementById("pushPromptDenyBtn")?.addEventListener("click", () => {
+        localStorage.setItem(PUSH_PROMPT_KEY, "1");
+        modal.style.display = "none";
+    }, { once: true });
+}

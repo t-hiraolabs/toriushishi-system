@@ -1586,3 +1586,61 @@ body.demo-mode .nav-title { top: 0; }
   cursor: pointer;
 }
 .delete-practice-btn:active { opacity: .8; }
+
+/* 初回通知許可プロンプト */
+.push-prompt-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 9997;
+  background: rgba(0,0,0,.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.push-prompt-box {
+  background: var(--surface, #1a1a1a);
+  border-radius: var(--radius-lg, 20px);
+  padding: 28px 22px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow-md, 0 6px 24px rgba(0,0,0,.5));
+}
+.push-prompt-icon {
+  font-size: 40px;
+  margin-bottom: 8px;
+}
+.push-prompt-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-1, #f1f1f1);
+  margin-bottom: 6px;
+}
+.push-prompt-desc {
+  font-size: 13px;
+  color: var(--text-2, #a0a0a0);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.push-prompt-actions {
+  display: flex;
+  gap: 10px;
+}
+.push-prompt-deny, .push-prompt-allow {
+  flex: 1;
+  padding: 11px;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  font-size: .88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.push-prompt-deny {
+  background: var(--surface-3, #2e2e2e);
+  color: var(--text-2, #a0a0a0);
+}
+.push-prompt-allow {
+  background: var(--accent, #e63946);
+  color: #fff;
+}
