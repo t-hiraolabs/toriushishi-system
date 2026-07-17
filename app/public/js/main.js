@@ -838,6 +838,30 @@ async function fillDetailCard(eventData, userId, card) {
         card.querySelectorAll(".response-list").forEach(ul => ul.style.display = "none");
         const perfList = card.querySelector(".performance-list");
         if (perfList) perfList.style.display = "none";
+
+        const deleteBtn = document.getElementById("deleteEventBtn");
+        if (deleteBtn) {
+            deleteBtn.style.display = userRole === "admin" ? "" : "none";
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = "このイベントを削除";
+            deleteBtn.onclick = async () => {
+                if (!confirm(`「${eventData.title || "イベント"}」（${eventData.date}）を削除しますか？\nこの操作は取り消せません。`)) return;
+                deleteBtn.disabled = true; deleteBtn.textContent = "削除中…";
+                const res = await callGasApi({
+                    action: "deleteEvent",
+                    sessionId: localStorage.getItem("sessionId"),
+                    eventId: eventData.eventId,
+                });
+                if (res?.success) {
+                    alert("削除しました");
+                    card.classList.remove("active");
+                    await getEvents(); loadHomeEvents(); loadEventEvents(); initCalendar();
+                } else {
+                    alert(res?.msg || "削除に失敗しました");
+                    deleteBtn.disabled = false; deleteBtn.textContent = "このイベントを削除";
+                }
+            };
+        }
     } catch(e) { console.error(e); }
     finally { if (loadingOverlay) loadingOverlay.style.display = "none"; }
 }

@@ -267,6 +267,9 @@ async function dispatch(data: Record<string, unknown>): Promise<unknown> {
     case 'deletePractice':
       return deletePractice(data.sessionId as string, data.practiceId as string);
 
+    case 'deleteEvent':
+      return deleteEvent(data.sessionId as string, data.eventId as string);
+
     case 'addPerformance':
       return addPerformance(data.performance as Record<string, unknown>);
 
@@ -1203,6 +1206,17 @@ async function deletePractice(sessionId: string, practiceId: string) {
   const pid = Number(practiceId);
   await supabase.from('answers_practices').delete().eq('practice_id', pid);
   const { error } = await supabase.from('practices').delete().eq('practice_id', pid);
+  if (error) return { success: false, msg: error.message };
+  return { success: true };
+}
+
+async function deleteEvent(sessionId: string, eventId: string) {
+  const session = await validateSession(sessionId);
+  if (!session.valid || session.role !== 'admin') return { success: false, msg: '権限がありません' };
+  const eid = Number(eventId);
+  await supabase.from('answers_events').delete().eq('event_id', eid);
+  await supabase.from('performances').delete().eq('event_id', eid);
+  const { error } = await supabase.from('events').delete().eq('event_id', eid);
   if (error) return { success: false, msg: error.message };
   return { success: true };
 }

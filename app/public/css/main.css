@@ -1587,6 +1587,20 @@ body.demo-mode .nav-title { top: 0; }
 }
 .delete-practice-btn:active { opacity: .8; }
 
+.delete-event-btn {
+  width: 100%;
+  margin-top: 14px;
+  background: var(--accent-dim, #7a1520);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm, 8px);
+  padding: 12px;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.delete-event-btn:active { opacity: .8; }
+
 /* 初回通知許可プロンプト */
 .push-prompt-modal {
   position: fixed;
