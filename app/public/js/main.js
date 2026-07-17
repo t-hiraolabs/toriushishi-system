@@ -606,6 +606,7 @@ async function approveMember(userId) {
 イベント新規作成
 ======================================================= */
 function initEventCreateCard() {
+    delete document.querySelector(".event-create-card").dataset.eventId;
     document.getElementById("eventTitle").value = "";
     document.getElementById("eventDate").value = "";
     document.getElementById("eventTime").value = "";

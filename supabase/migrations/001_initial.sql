@@ -279,3 +279,11 @@ CREATE INDEX IF NOT EXISTS idx_push_user ON push_subscriptions(user_id);
 -- sessions.impersonated_by  (システム管理者のなりすましログイン)
 -- -------------------------------------------------------
 ALTER TABLE sessions ADD COLUMN IF NOT EXISTS impersonated_by TEXT;
+
+-- -------------------------------------------------------
+-- performances: add fields collected by the event form
+-- -------------------------------------------------------
+ALTER TABLE performances ADD COLUMN IF NOT EXISTS time_from TEXT;
+ALTER TABLE performances ADD COLUMN IF NOT EXISTS time_to TEXT;
+ALTER TABLE performances ADD COLUMN IF NOT EXISTS taiko_dai TEXT;
+ALTER TABLE performances ADD COLUMN IF NOT EXISTS taiko_ko TEXT;

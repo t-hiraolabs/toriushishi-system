@@ -702,15 +702,23 @@ async function registUserAPI(form: Record<string, unknown>) {
 async function getEventsWithStats(userId: string) {
   const uid = Number(userId);
 
-  const [eventsRes, answersRes, usersRes] = await Promise.all([
+  const [eventsRes, answersRes, usersRes, perfsRes] = await Promise.all([
     supabase.from('events').select('*').order('date', { ascending: true }),
     supabase.from('answers_events').select('*'),
     supabase.from('users').select('user_id,stored_name,status,created_at'),
+    supabase.from('performances').select('*'),
   ]);
 
   const events = eventsRes.data || [];
   const answers = answersRes.data || [];
   const users = usersRes.data || [];
+  const perfs = perfsRes.data || [];
+
+  const perfsByEvent: Record<number, Array<Record<string, unknown>>> = {};
+  perfs.forEach((p) => {
+    if (!perfsByEvent[p.event_id]) perfsByEvent[p.event_id] = [];
+    perfsByEvent[p.event_id].push(mapPerformanceRow(p));
+  });
 
   const activeUsers = users.filter((u) => u.status === 'active').map((u) => ({
     id: u.user_id,
@@ -760,9 +768,27 @@ async function getEventsWithStats(userId: string) {
       yes, no, na,
       myStatus,
       members: { yes: yesNames, no: noNames, na: naNames },
+      performances: perfsByEvent[ev.event_id] || [],
       sortKey: evDate.getTime(),
     };
   });
+}
+
+// DBの performances 行 → フロントエンドが期待する形へ変換
+function mapPerformanceRow(p: Record<string, unknown>) {
+  let roles = p.roles;
+  if (typeof roles === 'string') {
+    try { roles = JSON.parse(roles); } catch { roles = []; }
+  }
+  return {
+    no: p.order || '',
+    timeFrom: p.time_from || '',
+    timeTo: p.time_to || '',
+    name: p.name || '',
+    taikoDai: p.taiko_dai || '',
+    taikoKo: p.taiko_ko || '',
+    roles: Array.isArray(roles) ? roles : [],
+  };
 }
 
 async function getPracticeWithStats(userId: string) {
@@ -848,10 +874,7 @@ async function getEventDetailWithUserData(eventId: string, userId: string) {
     event: { ...ev, eventId: ev.event_id, date: formatDate(ev.date) },
     members,
     myAnswer,
-    performances: (perfs || []).map((p) => ({
-      ...p,
-      roles: typeof p.roles === 'string' ? JSON.parse(p.roles) : p.roles,
-    })),
+    performances: (perfs || []).map(mapPerformanceRow),
   };
 }
 
@@ -1094,6 +1117,7 @@ async function saveEvent(event: Record<string, unknown>) {
       })
       .eq('event_id', Number(event.eventId));
     if (error) return { success: false, message: error.message };
+    await replaceEventPerformances(Number(event.eventId), event.performances);
     return { success: true, eventId: event.eventId, updated: true };
   }
 
@@ -1113,7 +1137,33 @@ async function saveEvent(event: Record<string, unknown>) {
     updated_at: now,
   });
   if (error) return { success: false, message: error.message };
+  await replaceEventPerformances(newId, event.performances);
   return { success: true, eventId: newId, created: true };
+}
+
+// イベントの演目を全入れ替え（フォームで集めた内容をそのまま反映）
+async function replaceEventPerformances(eventId: number, performances: unknown) {
+  await supabase.from('performances').delete().eq('event_id', eventId);
+  if (!Array.isArray(performances) || performances.length === 0) return;
+
+  const now = new Date().toISOString();
+  const { data: last } = await supabase.from('performances').select('performance_id').order('performance_id', { ascending: false }).limit(1);
+  let nextId = last && last.length > 0 ? last[0].performance_id + 1 : 1;
+
+  const rows = (performances as Array<Record<string, unknown>>).map((p) => ({
+    performance_id: nextId++,
+    event_id: eventId,
+    name: p.name || '',
+    order: p.no || '',
+    time_from: p.timeFrom || '',
+    time_to: p.timeTo || '',
+    taiko_dai: p.taikoDai || '',
+    taiko_ko: p.taikoKo || '',
+    roles: JSON.stringify(p.roles || []),
+    created_at: now,
+    updated_at: now,
+  }));
+  await supabase.from('performances').insert(rows);
 }
 
 async function savePractice(practice: Record<string, unknown>) {
