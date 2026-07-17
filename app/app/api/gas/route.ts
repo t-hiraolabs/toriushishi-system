@@ -661,6 +661,9 @@ async function registUserAPI(form: Record<string, unknown>) {
     city: form.city || '',
     address_detail: form.addressDetail || '',
     birthday: form.birthDate || null,
+    emergency_contact_name: form.emergencyName || '',
+    emergency_contact_relation: form.emergencyRelation || '',
+    emergency_contact_phone: form.emergencyPhone || '',
     sns_consent: form.snsConsent ? 'yes' : 'no',
     created_at: now,
     updated_at: now,
@@ -1088,6 +1091,9 @@ async function updateMemberInfo(targetUserId: string, data: Record<string, unkno
     addressDetail: 'address_detail',
     birthday: 'birthday',
     position: 'position',
+    emergencyName: 'emergency_contact_name',
+    emergencyRelation: 'emergency_contact_relation',
+    emergencyPhone: 'emergency_contact_phone',
   };
   for (const [jsKey, dbKey] of Object.entries(fieldMap)) {
     if (data[jsKey] !== undefined) update[dbKey] = data[jsKey];
@@ -1857,6 +1863,9 @@ async function getMyPage(userId: string) {
     city: u.city || '',
     addressDetail: u.address_detail || '',
     birthday: u.birthday ? new Date(u.birthday).toISOString().slice(0, 10) : '',
+    emergencyName: u.emergency_contact_name || '',
+    emergencyRelation: u.emergency_contact_relation || '',
+    emergencyPhone: u.emergency_contact_phone || '',
     createdAt: u.created_at,
   };
 

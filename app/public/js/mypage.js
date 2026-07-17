@@ -73,6 +73,7 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
                 { label: "電話番号", val: user.phone },
                 { label: "住所",     val: [user.prefecture, user.city, user.addressDetail].filter(Boolean).join(" ") },
                 { label: "生年月日", val: user.birthday ? user.birthday.replace(/^(\d{4})-(\d{2})-(\d{2})$/, "$1年$2月$3日").replace(/年0(\d)/, "年$1").replace(/月0(\d)/, "月$1") : "" },
+                { label: "緊急連絡先", val: [user.emergencyName, user.emergencyRelation ? `（${user.emergencyRelation}）` : "", user.emergencyPhone].filter(Boolean).join(" ") },
             ].filter(r => r.val).map(r => `
                 <div class="mypage-gear-row">
                     <span class="mypage-gear-label">${escHtml(r.label)}</span>
@@ -257,6 +258,9 @@ function openMemberInfoEdit(user) {
     document.getElementById("mEdit_city").value = user.city || "";
     document.getElementById("mEdit_addressDetail").value = user.addressDetail || "";
     document.getElementById("mEdit_birthday").value = user.birthday || "";
+    document.getElementById("mEdit_emergencyName").value = user.emergencyName || "";
+    document.getElementById("mEdit_emergencyRelation").value = user.emergencyRelation || "";
+    document.getElementById("mEdit_emergencyPhone").value = user.emergencyPhone || "";
     document.getElementById("memberInfoEditCard").classList.add("active");
 }
 
@@ -270,6 +274,9 @@ async function saveMemberInfo() {
         city:          document.getElementById("mEdit_city").value.trim(),
         addressDetail: document.getElementById("mEdit_addressDetail").value.trim(),
         birthday:      document.getElementById("mEdit_birthday").value,
+        emergencyName:     document.getElementById("mEdit_emergencyName").value.trim(),
+        emergencyRelation: document.getElementById("mEdit_emergencyRelation").value.trim(),
+        emergencyPhone:    document.getElementById("mEdit_emergencyPhone").value.trim(),
     };
     const btn = document.getElementById("memberInfoSaveBtn");
     btn.disabled = true; btn.textContent = "保存中…";
@@ -287,6 +294,9 @@ async function saveMemberInfo() {
         myPageCurrentUser.city = data.city;
         myPageCurrentUser.addressDetail = data.addressDetail;
         myPageCurrentUser.birthday = data.birthday;
+        myPageCurrentUser.emergencyName = data.emergencyName;
+        myPageCurrentUser.emergencyRelation = data.emergencyRelation;
+        myPageCurrentUser.emergencyPhone = data.emergencyPhone;
         renderMyPage({ user: myPageCurrentUser, gear: null, eventRate: null, practiceRate: null }, false);
     }
 }

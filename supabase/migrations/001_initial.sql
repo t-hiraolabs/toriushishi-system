@@ -287,3 +287,10 @@ ALTER TABLE performances ADD COLUMN IF NOT EXISTS time_from TEXT;
 ALTER TABLE performances ADD COLUMN IF NOT EXISTS time_to TEXT;
 ALTER TABLE performances ADD COLUMN IF NOT EXISTS taiko_dai TEXT;
 ALTER TABLE performances ADD COLUMN IF NOT EXISTS taiko_ko TEXT;
+
+-- -------------------------------------------------------
+-- users: emergency contact fields
+-- -------------------------------------------------------
+ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact_name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact_relation TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS emergency_contact_phone TEXT;

@@ -75,6 +75,16 @@ document.getElementById("registBtn").addEventListener("click", async () => {
     const phone3 = document.getElementById("phone3").value.trim();
     const phone = `${phone1}-${phone2}-${phone3}`;
 
+    // ===== 緊急連絡先 =====
+    const emergencyName = document.getElementById("emergencyName").value.trim();
+    const emergencyRelation = document.getElementById("emergencyRelation").value.trim();
+    const emergencyPhone1Val = document.getElementById("emergencyPhone1").value.trim();
+    const emergencyPhone2Val = document.getElementById("emergencyPhone2").value.trim();
+    const emergencyPhone3Val = document.getElementById("emergencyPhone3").value.trim();
+    const emergencyPhone = (emergencyPhone1Val || emergencyPhone2Val || emergencyPhone3Val)
+        ? `${emergencyPhone1Val}-${emergencyPhone2Val}-${emergencyPhone3Val}`
+        : "";
+
     // ===== 住所 =====
     const prefecture = document.getElementById("prefecture").value.trim();
     const city = document.getElementById("city").value.trim();
@@ -161,6 +171,9 @@ document.getElementById("registBtn").addEventListener("click", async () => {
         city,
         addressDetail,
         birthDate,
+        emergencyName,
+        emergencyRelation,
+        emergencyPhone,
         children,
         snsConsent
     };
@@ -209,6 +222,23 @@ phone2.addEventListener("input", () => {
 
 phone3.addEventListener("input", () => {
     onlyNumber(phone3);
+});
+
+// 緊急連絡先の電話番号も同様に自動移動
+const emergencyPhone1 = document.getElementById("emergencyPhone1");
+const emergencyPhone2 = document.getElementById("emergencyPhone2");
+const emergencyPhone3 = document.getElementById("emergencyPhone3");
+
+emergencyPhone1.addEventListener("input", () => {
+    onlyNumber(emergencyPhone1);
+    if (emergencyPhone1.value.length === emergencyPhone1.maxLength) emergencyPhone2.focus();
+});
+emergencyPhone2.addEventListener("input", () => {
+    onlyNumber(emergencyPhone2);
+    if (emergencyPhone2.value.length === emergencyPhone2.maxLength) emergencyPhone3.focus();
+});
+emergencyPhone3.addEventListener("input", () => {
+    onlyNumber(emergencyPhone3);
 });
 
 
