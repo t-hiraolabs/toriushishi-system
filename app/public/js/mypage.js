@@ -200,7 +200,7 @@ function renderMyPage({ user, gear, eventRate, practiceRate, children }, showRat
                 const childId = btn.dataset.childId;
                 const childName = btn.dataset.childName;
                 if (!confirm(`「${childName}」を削除しますか？`)) return;
-                const res = await callGasApi({ action: "deleteChild", childId: Number(childId), userId: myPageTargetUserId });
+                const res = await callGasApi({ action: "deleteChild", childId: Number(childId), userId });
                 if (res.success) { alert("削除しました"); loadMyPageFor(myPageTargetUserId, false); }
                 else alert(res.msg || "削除に失敗しました");
             });

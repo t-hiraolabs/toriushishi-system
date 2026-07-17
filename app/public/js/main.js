@@ -548,7 +548,13 @@ function appendChildren(li, member, isAdmin) {
             const delBtn = document.createElement("button");
             delBtn.textContent = "削除";
             delBtn.classList.add("child-delete-btn");
-            delBtn.addEventListener("click", (e) => { e.stopPropagation(); deleteChild(child.childId, child.childName); });
+            delBtn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (!confirm(`「${child.childName}」を削除しますか？`)) return;
+                const res = await callGasApi({ action: "deleteChild", childId: Number(child.childId), userId });
+                if (res.success) { alert("削除しました"); loadMembersUser(); }
+                else alert(res.msg || "削除に失敗しました");
+            });
             c.appendChild(delBtn);
         }
         ul.appendChild(c);
