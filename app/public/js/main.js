@@ -307,30 +307,44 @@ function wireNamePicker(inputEl, getOptions) {
     inputEl.addEventListener("blur", () => { setTimeout(() => { list.style.display = "none"; }, 150); });
 }
 
-function buildPerfItem(data = {}) {
+function buildPerfItem(data = {}, opts = {}) {
     const div = document.createElement("div");
-    div.className = "perf-item";
+    div.className = "perf-item" + (opts.collapsed ? " collapsed" : "");
     const escQ = s => (s || '').replace(/"/g, '&quot;');
     div.innerHTML = `
-        <div class="perf-item-header">
-            <div class="perf-time-row">
-                <input type="time" class="perf-time-from" value="${escQ(data.timeFrom || '')}">
-                <span class="perf-tilde">〜</span>
-                <input type="time" class="perf-time-to" value="${escQ(data.timeTo || '')}">
-            </div>
+        <div class="perf-item-summary">
+            <button type="button" class="perf-summary-toggle">
+                <span class="perf-summary-chevron">▾</span>
+                <span class="perf-summary-name">${escHtml(data.name || '') || '（演目名未設定）'}</span>
+            </button>
             <button class="perf-remove-btn" type="button">✕</button>
         </div>
-        <input type="text" class="perf-name" placeholder="演目名（提婆・狐・三継ぎなど）" value="${escQ(data.name || '')}" autocomplete="off">
-        <div class="perf-drums">
-            <input type="text" class="perf-taiko-dai" placeholder="大太鼓" value="${escQ(data.taikoDai || '')}" autocomplete="off">
-            <input type="text" class="perf-taiko-ko" placeholder="小太鼓" value="${escQ(data.taikoKo || '')}" autocomplete="off">
+        <div class="perf-item-body">
+            <div class="perf-item-header">
+                <div class="perf-time-row">
+                    <input type="time" class="perf-time-from" value="${escQ(data.timeFrom || '')}">
+                    <span class="perf-tilde">〜</span>
+                    <input type="time" class="perf-time-to" value="${escQ(data.timeTo || '')}">
+                </div>
+            </div>
+            <input type="text" class="perf-name" placeholder="演目名（提婆・狐・三継ぎなど）" value="${escQ(data.name || '')}" autocomplete="off">
+            <div class="perf-drums">
+                <input type="text" class="perf-taiko-dai" placeholder="大太鼓" value="${escQ(data.taikoDai || '')}" autocomplete="off">
+                <input type="text" class="perf-taiko-ko" placeholder="小太鼓" value="${escQ(data.taikoKo || '')}" autocomplete="off">
+            </div>
+            <div class="perf-roles-list"></div>
+            <button class="perf-add-role-btn" type="button">＋ 役割を追加（演者・獅子・子役・台…）</button>
         </div>
-        <div class="perf-roles-list"></div>
-        <button class="perf-add-role-btn" type="button">＋ 役割を追加（演者・獅子・子役・台…）</button>
     `;
     div.querySelector(".perf-remove-btn").addEventListener("click", () => div.remove());
+    div.querySelector(".perf-summary-toggle").addEventListener("click", () => div.classList.toggle("collapsed"));
+    const nameInput = div.querySelector(".perf-name");
+    const summaryName = div.querySelector(".perf-summary-name");
+    const syncSummaryName = () => { summaryName.textContent = nameInput.value.trim() || "（演目名未設定）"; };
+    nameInput.addEventListener("input", syncSummaryName);
+    nameInput.addEventListener("change", syncSummaryName);
     div.querySelector(".perf-add-role-btn").addEventListener("click", () => addRoleRow(div.querySelector(".perf-roles-list")));
-    wireNamePicker(div.querySelector(".perf-name"), () => PERF_NAME_OPTIONS);
+    wireNamePicker(nameInput, () => PERF_NAME_OPTIONS);
     wireNamePicker(div.querySelector(".perf-taiko-dai"), () => perfMemberNameOptions);
     wireNamePicker(div.querySelector(".perf-taiko-ko"), () => perfMemberNameOptions);
     const rolesList = div.querySelector(".perf-roles-list");
@@ -811,7 +825,7 @@ function openEditForm(eventData) {
     document.getElementById("eventComment").value = eventData.comment || "";
     const performanceList = document.getElementById("performanceList");
     if (Array.isArray(eventData.performances)) {
-        eventData.performances.forEach(perf => performanceList.appendChild(buildPerfItem(perf)));
+        eventData.performances.forEach(perf => performanceList.appendChild(buildPerfItem(perf, { collapsed: true })));
     }
     const deleteBtn = document.getElementById("deleteEventBtn");
     deleteBtn.style.display = userRole === "admin" ? "" : "none";

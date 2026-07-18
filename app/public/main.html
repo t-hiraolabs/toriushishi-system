@@ -31,6 +31,46 @@
     flex-direction: column;
     gap: 8px;
 }
+.perf-item-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.perf-summary-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    background: none;
+    border: none;
+    color: var(--text-1);
+    font-size: .92rem;
+    font-weight: 600;
+    text-align: left;
+    padding: 2px 0;
+    cursor: pointer;
+}
+.perf-summary-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.perf-summary-chevron {
+    color: var(--text-3);
+    font-size: .8rem;
+    flex-shrink: 0;
+    transition: transform .2s;
+}
+.perf-item.collapsed .perf-summary-chevron { transform: rotate(-90deg); }
+.perf-item.collapsed .perf-item-body { display: none; }
+.perf-item-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 4px;
+}
 .perf-item-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .perf-time-row { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
 .perf-time-row input[type="time"] {
