@@ -299,6 +299,13 @@ const PERF_SUBROLE_SUGGESTIONS = {
     "1本": ["子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
 };
 
+// 対になる役割（片方を入れたらもう片方も自動で追加＆一覧では1行にまとめて表示）
+const PERF_ROLE_PAIR_MAP = {
+    "前(子役)": "前(台)", "前(台)": "前(子役)",
+    "後右(子役)": "後右(台)", "後右(台)": "後右(子役)",
+    "後左(子役)": "後左(台)", "後左(台)": "後左(子役)",
+};
+
 // 時間欄をタップして開いただけで現在時刻が仮に入る端末があるため、
 // フォーカス時点の値と実際に変わったか(=確定して選び直したか)をblur時に見て、変わっていた場合だけもう一方へコピーする
 function wireTimeAutoFill(mainEl, otherEl) {
@@ -439,6 +446,16 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
         const perfName = getPerfName ? getPerfName() : "";
         const suggested = PERF_ROLE_SUGGESTIONS[perfName] || [];
         return [...new Set([...suggested, ...PERF_ROLE_BASE_OPTIONS])];
+    });
+    // 前(子役)を入れたら前(台)も自動で追加する（後右・後左も同様）
+    labelInput.addEventListener("change", () => {
+        const label = labelInput.value.trim();
+        const pairLabel = PERF_ROLE_PAIR_MAP[label];
+        if (!pairLabel) return;
+        const siblingLabels = [...container.children].map(r => r.querySelector(".role-label-input")?.value.trim());
+        if (!siblingLabels.includes(pairLabel)) {
+            addRoleRow(container, { label: pairLabel }, getPerfName, getParentLabel);
+        }
     });
     const picker = row.querySelector(".role-member-picker");
     const hiddenInput = row.querySelector(".role-members-input");
@@ -593,9 +610,42 @@ function wirePerfReorderDrag(list) {
     });
 }
 
+// 前(子役)/前(台) のような対になる役割を1行にまとめる（後右・後左も同様）
+function groupPairedRoles(roles) {
+    const used = new Set();
+    const grouped = [];
+    roles.forEach((r, i) => {
+        if (used.has(i)) return;
+        const pairLabel = PERF_ROLE_PAIR_MAP[r.label];
+        const noSubRoles = !(r.subRoles && r.subRoles.length);
+        if (pairLabel && noSubRoles && r.label.endsWith("(子役)")) {
+            const j = roles.findIndex((r2, i2) =>
+                i2 !== i && !used.has(i2) && r2.label === pairLabel && !(r2.subRoles && r2.subRoles.length));
+            if (j !== -1) {
+                used.add(i); used.add(j);
+                grouped.push({ paired: true, prefix: r.label.replace("(子役)", ""), child: r, dai: roles[j] });
+                return;
+            }
+        }
+        grouped.push(r);
+    });
+    return grouped;
+}
+
 function renderRoleDetail(r, depth = 0) {
-    const subHtml = Array.isArray(r.subRoles) && r.subRoles.length
-        ? `<div class="perf-detail-subroles">${r.subRoles.map(sr => renderRoleDetail(sr, depth + 1)).join('')}</div>`
+    if (r.paired) {
+        return `
+        <div class="perf-detail-role perf-detail-role-paired" style="margin-left:${depth * 14}px;">
+            <span class="perf-role-label-text">${escHtml(r.prefix)}</span>
+            <span class="perf-role-pair-members">
+                <span class="perf-role-pair-item">子役: ${escHtml((r.child.members || '').replace(/\n/g, '、'))}</span>
+                <span class="perf-role-pair-item">台: ${escHtml((r.dai.members || '').replace(/\n/g, '、'))}</span>
+            </span>
+        </div>`;
+    }
+    const subs = Array.isArray(r.subRoles) ? groupPairedRoles(r.subRoles) : [];
+    const subHtml = subs.length
+        ? `<div class="perf-detail-subroles">${subs.map(sr => renderRoleDetail(sr, depth + 1)).join('')}</div>`
         : '';
     return `
         <div class="perf-detail-role" style="margin-left:${depth * 14}px;">
@@ -613,7 +663,7 @@ function renderPerformances(container, performances) {
         const time = perf.timeFrom ? `${perf.timeFrom}〜${perf.timeTo || ''}` : '';
         let rolesHtml = '';
         if (Array.isArray(perf.roles)) {
-            rolesHtml = perf.roles.map(r => renderRoleDetail(r)).join('');
+            rolesHtml = groupPairedRoles(perf.roles).map(r => renderRoleDetail(r)).join('');
         } else if (perf.roles && typeof perf.roles === 'object') {
             rolesHtml = Object.entries(perf.roles).filter(([, v]) => v).map(([k, v]) => `
                 <div class="perf-detail-role">
