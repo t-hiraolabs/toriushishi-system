@@ -682,13 +682,15 @@ async function registUserAPI(form: Record<string, unknown>) {
     let lastChildId = lastChild && lastChild.length > 0 ? lastChild[0].child_id : 0;
 
     for (const c of form.children as Array<Record<string, unknown>>) {
-      const first = String(c.firstName || '').trim();
-      if (!first) continue;
+      const childLast = String(c.lastName || '').trim();
+      const childFirst = String(c.firstName || '').trim();
+      if (!childFirst) continue;
+      const fullChildName = [childLast, childFirst].filter(Boolean).join(' ');
       lastChildId++;
       await supabase.from('children').insert({
         child_id: lastChildId,
         user_id: newUserId,
-        child_name: first,
+        child_name: fullChildName,
         birthday: c.birthday || null,
         role: 'child',
         status: 'hold',
