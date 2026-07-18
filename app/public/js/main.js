@@ -394,6 +394,64 @@ function wireNamePicker(inputEl, getOptions) {
     });
 }
 
+// タグの横の「＋」ボタンを押すと候補リストが出てきて、選ぶ（または入力してEnter）とタグが追加される
+function wireTagAddButton(btn, getOptions, onAdd) {
+    const wrap = document.createElement("div");
+    wrap.className = "tag-add-popover-wrap";
+    btn.parentNode.insertBefore(wrap, btn);
+    wrap.appendChild(btn);
+    const popover = document.createElement("div");
+    popover.className = "tag-add-popover";
+    popover.style.display = "none";
+    wrap.appendChild(popover);
+
+    let open = false;
+    function renderPopover(filterText) {
+        const options = getOptions();
+        const q = (filterText || "").trim();
+        const filtered = q ? options.filter(o => o.includes(q)) : options;
+        popover.innerHTML = `
+            <input type="text" class="tag-add-search" placeholder="名前を入力 or 選択" autocomplete="off">
+            <div class="tag-add-options">
+                ${filtered.length ? filtered.map(o => `<div class="name-picker-option">${escHtml(o)}</div>`).join("") : '<div class="tag-add-empty">候補なし</div>'}
+            </div>
+        `;
+        const searchInput = popover.querySelector(".tag-add-search");
+        searchInput.value = q;
+        searchInput.addEventListener("input", () => renderPopover(searchInput.value));
+        searchInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                const v = searchInput.value.trim();
+                if (v) { onAdd(v); closePopover(); }
+            }
+        });
+        popover.querySelectorAll(".name-picker-option").forEach(opt => {
+            opt.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                onAdd(opt.textContent);
+                closePopover();
+            });
+        });
+        popover.style.display = "block";
+        open = true;
+        setTimeout(() => searchInput.focus(), 0);
+    }
+    function closePopover() {
+        popover.style.display = "none";
+        open = false;
+    }
+    btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (open) closePopover();
+        else renderPopover("");
+    });
+    document.addEventListener("mousedown", (e) => {
+        if (open && !wrap.contains(e.target)) closePopover();
+    });
+}
+
 function buildPerfItem(data = {}, opts = {}) {
     const div = document.createElement("div");
     div.className = "perf-item" + (opts.collapsed ? " collapsed" : "");
@@ -447,14 +505,13 @@ function buildPerfItem(data = {}, opts = {}) {
     const rolesList = div.querySelector(".perf-roles-list");
     if (data.roles && Array.isArray(data.roles)) {
         if (data.roles.length) data.roles.forEach(r => addRoleRow(rolesList, r, getPerfName));
-        else { addRoleRow(rolesList, { label: "演者" }, getPerfName); addRoleRow(rolesList, { label: "獅子" }, getPerfName); }
+        else addRoleRow(rolesList, {}, getPerfName);
     } else if (data.roles && typeof data.roles === 'object') {
         const entries = Object.entries(data.roles).filter(([, v]) => v);
         if (entries.length) entries.forEach(([label, members]) => addRoleRow(rolesList, { label, members: String(members) }, getPerfName));
-        else { addRoleRow(rolesList, { label: "演者" }, getPerfName); addRoleRow(rolesList, { label: "獅子" }, getPerfName); }
+        else addRoleRow(rolesList, {}, getPerfName);
     } else {
-        addRoleRow(rolesList, { label: "演者" }, getPerfName);
-        addRoleRow(rolesList, { label: "獅子" }, getPerfName);
+        addRoleRow(rolesList, {}, getPerfName);
     }
     return div;
 }
@@ -468,11 +525,11 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
             <input type="text" class="role-label-input" placeholder="役割（演者・獅子・子役・中台・土台…）" value="${escQ(data.label || '')}" autocomplete="off">
             <button class="role-remove-btn" type="button">✕</button>
         </div>
-        <div class="role-tags-container"></div>
-        <input type="hidden" class="role-members-input" value="${escQ(data.members || '')}">
-        <div class="role-member-picker-row">
-            <input type="text" class="role-member-picker" placeholder="名前を選んで追加" autocomplete="off">
+        <div class="role-tags-row">
+            <div class="role-tags-container"></div>
+            <button type="button" class="role-tag-add-btn">＋</button>
         </div>
+        <input type="hidden" class="role-members-input" value="${escQ(data.members || '')}">
         ${getParentLabel ? "" : `
         <div class="perf-subroles-list"></div>
         <button class="perf-add-subrole-btn" type="button">＋ この役割の中に役割を追加</button>
@@ -500,7 +557,7 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
             addRoleRow(container, { label: pairLabel }, getPerfName, getParentLabel);
         }
     });
-    const picker = row.querySelector(".role-member-picker");
+    const addBtn = row.querySelector(".role-tag-add-btn");
     const hiddenInput = row.querySelector(".role-members-input");
     const tagsContainer = row.querySelector(".role-tags-container");
     let tags = (data.members || "").split("\n").map(s => s.trim()).filter(Boolean);
@@ -519,23 +576,16 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
     }
     renderTags();
 
-    wireNamePicker(picker, () => {
+    wireTagAddButton(addBtn, () => {
         const label = labelInput.value.trim();
         const isChildRole = label.includes("子役") && label !== "子役乗せ";
         return isChildRole ? perfChildNameOptions : perfMemberNameOptions;
-    });
-    const addPickedName = () => {
-        const name = picker.value.trim();
+    }, (name) => {
+        name = name.trim();
         if (!name) return;
         if (!tags.includes(name)) tags.push(name);
         renderTags();
-        picker.value = "";
-        picker.focus();
-    };
-    picker.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { e.preventDefault(); addPickedName(); }
     });
-    picker.addEventListener("change", addPickedName);
 
     // この役割の中にさらに役割を入れる（例：獅子(雄) の中に 前(子役)・前(台)…）
     // 階層は「演目名→役割→役割」の3階層までなので、すでに役割の中の役割(サブ役割)である場合は追加ボタンを出さない
