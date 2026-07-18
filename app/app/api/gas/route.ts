@@ -1000,7 +1000,7 @@ async function getMembers(currentUserRole: string) {
     .select('user_id,stored_name,role,status,position')
     .in('status', ['active', 'hold']);
 
-  const { data: children } = await supabase.from('children').select('child_id,user_id,child_name,status').neq('status', 'deleted');
+  const { data: children } = await supabase.from('children').select('child_id,user_id,child_name,status,birthday').neq('status', 'deleted');
 
   const raw = (users || []).map((u) => ({
     userId: u.user_id,
@@ -1013,6 +1013,7 @@ async function getMembers(currentUserRole: string) {
       .map((c) => ({
         childId: c.child_id,
         childName: c.child_name,
+        birthday: c.birthday,
         status: u.status === 'hold' ? 'hold' : c.status,
       })),
   }));
@@ -1030,7 +1031,7 @@ async function getMembers(currentUserRole: string) {
       name: m.name,
       status: m.status,
       position: m.position,
-      children: m.children.map((k) => ({ childName: k.childName })),
+      children: m.children.map((k) => ({ childName: k.childName, birthday: k.birthday })),
     })),
   };
 }

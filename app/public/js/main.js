@@ -957,16 +957,34 @@ function initEventCreateCard() {
     const overlay = document.querySelector("#eventCreateCard .loading-overlay");
     if (overlay) overlay.style.display = "none";
 }
+// 誕生日から満年齢を計算
+function calcAgeFromBirthday(birthdayStr) {
+    if (!birthdayStr) return null;
+    const bd = new Date(birthdayStr);
+    if (isNaN(bd.getTime())) return null;
+    const now = new Date();
+    let age = now.getFullYear() - bd.getFullYear();
+    const m = now.getMonth() - bd.getMonth();
+    if (m < 0 || (m === 0 && now.getDate() < bd.getDate())) age--;
+    return age;
+}
+
 let perfMemberOptionsLoaded = false;
-let perfMemberNameOptions = [];
-let perfChildNameOptions = [];
+let perfMemberNameOptions = [];   // 一般役割・太鼓用（大人＋中学生相当の子供）
+let perfChildNameOptions = [];    // 子役用（children登録者すべて）
 async function loadPerfMemberOptions() {
     if (perfMemberOptionsLoaded) return;
     try {
         const res = await callGasApi({ action: "getMembers", role: "admin" });
         const activeMembers = (res?.members || []).filter(m => m.status === "active");
-        perfMemberNameOptions = activeMembers.map(m => m.name);
-        perfChildNameOptions = activeMembers.flatMap(m => (m.children || []).map(c => c.childName)).filter(Boolean);
+        const allChildren = activeMembers.flatMap(m => m.children || []);
+        perfChildNameOptions = allChildren.map(c => c.childName).filter(Boolean);
+        // 中学生相当（12〜15歳）は子役以外の役割・太鼓の候補にも含める
+        const middleSchoolNames = allChildren
+            .filter(c => { const age = calcAgeFromBirthday(c.birthday); return age !== null && age >= 12 && age <= 15; })
+            .map(c => c.childName)
+            .filter(Boolean);
+        perfMemberNameOptions = [...activeMembers.map(m => m.name), ...middleSchoolNames];
         perfMemberOptionsLoaded = true;
     } catch (e) { console.error("演者候補の取得に失敗:", e); }
 }
