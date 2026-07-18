@@ -97,6 +97,37 @@
 .perf-role-row input[type="text"] { background: var(--surface-2); }
 .perf-role-row textarea { background: var(--surface-2); }
 .perf-item textarea { resize: vertical; font-family: inherit; min-height: 48px; }
+.role-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.role-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: var(--accent, #e63946);
+    color: #fff;
+    border-radius: 100px;
+    padding: 4px 6px 4px 12px;
+    font-size: .82rem;
+    font-weight: 600;
+}
+.role-tag-remove {
+    background: rgba(255,255,255,.25);
+    border: none;
+    color: #fff;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: .68rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
 .role-member-picker-row { display: flex; gap: 6px; }
 .role-member-picker-row .role-member-picker { flex: 1; }
 .role-member-add-btn {

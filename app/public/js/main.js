@@ -358,20 +358,39 @@ function addRoleRow(container, data = {}) {
             <input type="text" class="role-label-input" placeholder="役割（演者・獅子・子役・中台・土台…）" value="${escQ(data.label || '')}">
             <button class="role-remove-btn" type="button">✕</button>
         </div>
-        <textarea class="role-members-input" placeholder="名前（複数の場合は改行で区切る）" rows="2">${data.members || ''}</textarea>
+        <div class="role-tags-container"></div>
+        <input type="hidden" class="role-members-input" value="${escQ(data.members || '')}">
         <div class="role-member-picker-row">
-            <input type="text" class="role-member-picker" placeholder="名前を選んで追加" autocomplete="off">
+            <input type="text" class="role-member-picker" placeholder="名前を選んで追加（Enterでも追加）" autocomplete="off">
             <button class="role-member-add-btn" type="button">＋ 追加</button>
         </div>
     `;
     row.querySelector(".role-remove-btn").addEventListener("click", () => row.remove());
     const picker = row.querySelector(".role-member-picker");
+    const hiddenInput = row.querySelector(".role-members-input");
+    const tagsContainer = row.querySelector(".role-tags-container");
+    let tags = (data.members || "").split("\n").map(s => s.trim()).filter(Boolean);
+
+    function renderTags() {
+        hiddenInput.value = tags.join("\n");
+        tagsContainer.innerHTML = tags.map((t, i) => `
+            <span class="role-tag">${escHtml(t)}<button type="button" class="role-tag-remove" data-idx="${i}">✕</button></span>
+        `).join("");
+        tagsContainer.querySelectorAll(".role-tag-remove").forEach(btn => {
+            btn.addEventListener("click", () => {
+                tags.splice(Number(btn.dataset.idx), 1);
+                renderTags();
+            });
+        });
+    }
+    renderTags();
+
     wireNamePicker(picker, () => perfMemberNameOptions);
-    const textarea = row.querySelector(".role-members-input");
     const addPickedName = () => {
         const name = picker.value.trim();
         if (!name) return;
-        textarea.value = textarea.value ? `${textarea.value}\n${name}` : name;
+        if (!tags.includes(name)) tags.push(name);
+        renderTags();
         picker.value = "";
         picker.focus();
     };
@@ -379,6 +398,7 @@ function addRoleRow(container, data = {}) {
     picker.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); addPickedName(); }
     });
+    picker.addEventListener("change", addPickedName);
     container.appendChild(row);
 }
 
