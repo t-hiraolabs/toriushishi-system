@@ -276,6 +276,20 @@ function createPracticeCard(pr) {
 // =============================
 const PERF_NAME_OPTIONS = ["提婆", "狐", "ひょっとこ", "のみとり", "三継ぎ【頭】", "三継ぎ【扇子】", "三番叟", "練る", "宮出し"];
 
+// 役割の基本候補（常に表示）
+const PERF_ROLE_BASE_OPTIONS = ["演者", "獅子", "獅子(雄)♂", "獅子(雌)♀"];
+
+// 演目名ごとの役割候補（提婆・狐など選択時に優先表示）
+const PERF_ROLE_SUGGESTIONS = {
+    "提婆": ["演者", "獅子"],
+    "狐": ["演者", "獅子"],
+    "ひょっとこ": ["演者", "獅子"],
+    "のみとり": ["子役", "獅子"],
+    "三継ぎ【頭】": ["右", "子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
+    "三継ぎ【扇子】": ["右", "子役", "中台", "土台", "子台", "前付き"],
+    "三番叟": ["獅子(雄)", "獅子(雌)", "前(子役)", "前(台)", "後右(子役)", "後右(台)", "後左(子役)", "後左(台)", "子役乗せ"],
+};
+
 function wireNamePicker(inputEl, getOptions) {
     const wrap = document.createElement("div");
     wrap.className = "name-picker-wrap";
@@ -343,32 +357,40 @@ function buildPerfItem(data = {}, opts = {}) {
     const syncSummaryName = () => { summaryName.textContent = nameInput.value.trim() || "（演目名未設定）"; };
     nameInput.addEventListener("input", syncSummaryName);
     nameInput.addEventListener("change", syncSummaryName);
-    div.querySelector(".perf-add-role-btn").addEventListener("click", () => addRoleRow(div.querySelector(".perf-roles-list")));
+    const getPerfName = () => nameInput.value.trim();
+    div.querySelector(".perf-add-role-btn").addEventListener("click", () => addRoleRow(div.querySelector(".perf-roles-list"), {}, getPerfName));
     wireNamePicker(nameInput, () => PERF_NAME_OPTIONS);
     wireNamePicker(div.querySelector(".perf-taiko-dai"), () => perfMemberNameOptions);
     wireNamePicker(div.querySelector(".perf-taiko-ko"), () => perfMemberNameOptions);
+
+    // 開始時間を入れたら終了時間にも同じ時間を入れる（逆も同様。すでに値がある方は上書きしない）
+    const timeFrom = div.querySelector(".perf-time-from");
+    const timeTo = div.querySelector(".perf-time-to");
+    timeFrom.addEventListener("change", () => { if (timeFrom.value && !timeTo.value) timeTo.value = timeFrom.value; });
+    timeTo.addEventListener("change", () => { if (timeTo.value && !timeFrom.value) timeFrom.value = timeTo.value; });
+
     const rolesList = div.querySelector(".perf-roles-list");
     if (data.roles && Array.isArray(data.roles)) {
-        if (data.roles.length) data.roles.forEach(r => addRoleRow(rolesList, r));
-        else { addRoleRow(rolesList, { label: "演者" }); addRoleRow(rolesList, { label: "獅子" }); }
+        if (data.roles.length) data.roles.forEach(r => addRoleRow(rolesList, r, getPerfName));
+        else { addRoleRow(rolesList, { label: "演者" }, getPerfName); addRoleRow(rolesList, { label: "獅子" }, getPerfName); }
     } else if (data.roles && typeof data.roles === 'object') {
         const entries = Object.entries(data.roles).filter(([, v]) => v);
-        if (entries.length) entries.forEach(([label, members]) => addRoleRow(rolesList, { label, members: String(members) }));
-        else { addRoleRow(rolesList, { label: "演者" }); addRoleRow(rolesList, { label: "獅子" }); }
+        if (entries.length) entries.forEach(([label, members]) => addRoleRow(rolesList, { label, members: String(members) }, getPerfName));
+        else { addRoleRow(rolesList, { label: "演者" }, getPerfName); addRoleRow(rolesList, { label: "獅子" }, getPerfName); }
     } else {
-        addRoleRow(rolesList, { label: "演者" });
-        addRoleRow(rolesList, { label: "獅子" });
+        addRoleRow(rolesList, { label: "演者" }, getPerfName);
+        addRoleRow(rolesList, { label: "獅子" }, getPerfName);
     }
     return div;
 }
 
-function addRoleRow(container, data = {}) {
+function addRoleRow(container, data = {}, getPerfName) {
     const row = document.createElement("div");
     row.className = "perf-role-row";
     const escQ = s => (s || '').replace(/"/g, '&quot;');
     row.innerHTML = `
         <div class="perf-role-row-top">
-            <input type="text" class="role-label-input" placeholder="役割（演者・獅子・子役・中台・土台…）" value="${escQ(data.label || '')}">
+            <input type="text" class="role-label-input" placeholder="役割（演者・獅子・子役・中台・土台…）" value="${escQ(data.label || '')}" autocomplete="off">
             <button class="role-remove-btn" type="button">✕</button>
         </div>
         <div class="role-tags-container"></div>
@@ -379,6 +401,12 @@ function addRoleRow(container, data = {}) {
         </div>
     `;
     row.querySelector(".role-remove-btn").addEventListener("click", () => row.remove());
+    const labelInput = row.querySelector(".role-label-input");
+    wireNamePicker(labelInput, () => {
+        const perfName = getPerfName ? getPerfName() : "";
+        const suggested = PERF_ROLE_SUGGESTIONS[perfName] || [];
+        return [...new Set([...suggested, ...PERF_ROLE_BASE_OPTIONS])];
+    });
     const picker = row.querySelector(".role-member-picker");
     const hiddenInput = row.querySelector(".role-members-input");
     const tagsContainer = row.querySelector(".role-tags-container");
@@ -398,7 +426,7 @@ function addRoleRow(container, data = {}) {
     }
     renderTags();
 
-    wireNamePicker(picker, () => perfMemberNameOptions);
+    wireNamePicker(picker, () => (labelInput.value.trim().includes("子役") ? perfChildNameOptions : perfMemberNameOptions));
     const addPickedName = () => {
         const name = picker.value.trim();
         if (!name) return;
@@ -793,11 +821,14 @@ function initEventCreateCard() {
 }
 let perfMemberOptionsLoaded = false;
 let perfMemberNameOptions = [];
+let perfChildNameOptions = [];
 async function loadPerfMemberOptions() {
     if (perfMemberOptionsLoaded) return;
     try {
         const res = await callGasApi({ action: "getMembers", role: "admin" });
-        perfMemberNameOptions = (res?.members || []).filter(m => m.status === "active").map(m => m.name);
+        const activeMembers = (res?.members || []).filter(m => m.status === "active");
+        perfMemberNameOptions = activeMembers.map(m => m.name);
+        perfChildNameOptions = activeMembers.flatMap(m => (m.children || []).map(c => c.childName)).filter(Boolean);
         perfMemberOptionsLoaded = true;
     } catch (e) { console.error("演者候補の取得に失敗:", e); }
 }
