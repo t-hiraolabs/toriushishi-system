@@ -648,6 +648,10 @@ li { list-style: none; }
      Safari's native rendering and makes empty fields look pre-filled */
   -webkit-appearance: auto;
   appearance: auto;
+  /* viewportがuser-scalable=noのためiOSズームは発生しないので、ここは小さくしてよい */
+  width: auto;
+  padding: 5px 6px;
+  font-size: 13px;
 }
 .event-create-card input:-webkit-autofill,
 .event-create-card input:-webkit-autofill:focus {
