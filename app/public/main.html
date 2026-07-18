@@ -109,6 +109,28 @@
     cursor: pointer;
     white-space: nowrap;
 }
+.name-picker-wrap { position: relative; flex: 1; }
+.name-picker-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    max-height: 180px;
+    overflow-y: auto;
+    background: var(--surface-1, #1e1e1e);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    z-index: 50;
+}
+.name-picker-option {
+    padding: 9px 12px;
+    font-size: .85rem;
+    color: var(--text-1);
+    cursor: pointer;
+}
+.name-picker-option:active,
+.name-picker-option:hover { background: var(--surface-3); }
 /* ===== 演目詳細表示 ===== */
 .performance-list { padding: 4px 0; }
 .perf-detail-item {
@@ -485,19 +507,6 @@
         <button class="delete-event-btn" id="deleteEventBtn" style="display:none;">このイベントを削除</button>
     </div>
 
-    <!-- 演目名・メンバー名の候補リスト -->
-    <datalist id="perfNameList">
-        <option value="提婆">
-        <option value="狐">
-        <option value="ひょっとこ">
-        <option value="のみとり">
-        <option value="三継ぎ【頭】">
-        <option value="三継ぎ【扇子】">
-        <option value="三番叟">
-        <option value="練る">
-        <option value="宮出し">
-    </datalist>
-    <datalist id="perfMemberNamesList"></datalist>
 
     <!-- 練習日新規作成 -->
     <div class="event-create-card" id="practiceCreateCard">

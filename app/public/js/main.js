@@ -271,6 +271,42 @@ function createPracticeCard(pr) {
 /* =======================================================
 演目フォームヘルパー
 ======================================================= */
+// =============================
+// 名前選択ドロップダウン（iOSのdatalist非対応対策として自作）
+// =============================
+const PERF_NAME_OPTIONS = ["提婆", "狐", "ひょっとこ", "のみとり", "三継ぎ【頭】", "三継ぎ【扇子】", "三番叟", "練る", "宮出し"];
+
+function wireNamePicker(inputEl, getOptions) {
+    const wrap = document.createElement("div");
+    wrap.className = "name-picker-wrap";
+    inputEl.parentNode.insertBefore(wrap, inputEl);
+    wrap.appendChild(inputEl);
+    const list = document.createElement("div");
+    list.className = "name-picker-list";
+    list.style.display = "none";
+    wrap.appendChild(list);
+
+    function render() {
+        const options = getOptions();
+        const q = inputEl.value.trim();
+        const filtered = q ? options.filter(o => o.includes(q)) : options;
+        if (!filtered.length) { list.style.display = "none"; return; }
+        list.innerHTML = filtered.map(o => `<div class="name-picker-option">${escHtml(o)}</div>`).join("");
+        list.style.display = "block";
+    }
+    inputEl.addEventListener("focus", render);
+    inputEl.addEventListener("input", render);
+    list.addEventListener("mousedown", (e) => {
+        const opt = e.target.closest(".name-picker-option");
+        if (!opt) return;
+        e.preventDefault();
+        inputEl.value = opt.textContent;
+        list.style.display = "none";
+        inputEl.dispatchEvent(new Event("change"));
+    });
+    inputEl.addEventListener("blur", () => { setTimeout(() => { list.style.display = "none"; }, 150); });
+}
+
 function buildPerfItem(data = {}) {
     const div = document.createElement("div");
     div.className = "perf-item";
@@ -285,16 +321,19 @@ function buildPerfItem(data = {}) {
             </div>
             <button class="perf-remove-btn" type="button">✕</button>
         </div>
-        <input type="text" class="perf-name" list="perfNameList" placeholder="演目名（提婆・狐・三継ぎなど）" value="${escQ(data.name || '')}">
+        <input type="text" class="perf-name" placeholder="演目名（提婆・狐・三継ぎなど）" value="${escQ(data.name || '')}" autocomplete="off">
         <div class="perf-drums">
-            <input type="text" class="perf-taiko-dai" list="perfMemberNamesList" placeholder="大太鼓" value="${escQ(data.taikoDai || '')}">
-            <input type="text" class="perf-taiko-ko" list="perfMemberNamesList" placeholder="小太鼓" value="${escQ(data.taikoKo || '')}">
+            <input type="text" class="perf-taiko-dai" placeholder="大太鼓" value="${escQ(data.taikoDai || '')}" autocomplete="off">
+            <input type="text" class="perf-taiko-ko" placeholder="小太鼓" value="${escQ(data.taikoKo || '')}" autocomplete="off">
         </div>
         <div class="perf-roles-list"></div>
         <button class="perf-add-role-btn" type="button">＋ 役割を追加（演者・獅子・子役・台…）</button>
     `;
     div.querySelector(".perf-remove-btn").addEventListener("click", () => div.remove());
     div.querySelector(".perf-add-role-btn").addEventListener("click", () => addRoleRow(div.querySelector(".perf-roles-list")));
+    wireNamePicker(div.querySelector(".perf-name"), () => PERF_NAME_OPTIONS);
+    wireNamePicker(div.querySelector(".perf-taiko-dai"), () => perfMemberNameOptions);
+    wireNamePicker(div.querySelector(".perf-taiko-ko"), () => perfMemberNameOptions);
     const rolesList = div.querySelector(".perf-roles-list");
     if (data.roles && Array.isArray(data.roles)) {
         if (data.roles.length) data.roles.forEach(r => addRoleRow(rolesList, r));
@@ -321,12 +360,13 @@ function addRoleRow(container, data = {}) {
         </div>
         <textarea class="role-members-input" placeholder="名前（複数の場合は改行で区切る）" rows="2">${data.members || ''}</textarea>
         <div class="role-member-picker-row">
-            <input type="text" class="role-member-picker" list="perfMemberNamesList" placeholder="名前を選んで追加">
+            <input type="text" class="role-member-picker" placeholder="名前を選んで追加" autocomplete="off">
             <button class="role-member-add-btn" type="button">＋ 追加</button>
         </div>
     `;
     row.querySelector(".role-remove-btn").addEventListener("click", () => row.remove());
     const picker = row.querySelector(".role-member-picker");
+    wireNamePicker(picker, () => perfMemberNameOptions);
     const textarea = row.querySelector(".role-members-input");
     const addPickedName = () => {
         const name = picker.value.trim();
@@ -649,14 +689,12 @@ function initEventCreateCard() {
     if (overlay) overlay.style.display = "none";
 }
 let perfMemberOptionsLoaded = false;
+let perfMemberNameOptions = [];
 async function loadPerfMemberOptions() {
     if (perfMemberOptionsLoaded) return;
-    const list = document.getElementById("perfMemberNamesList");
-    if (!list) return;
     try {
         const res = await callGasApi({ action: "getMembers", role: "admin" });
-        const names = (res?.members || []).filter(m => m.status === "active").map(m => m.name);
-        list.innerHTML = names.map(n => `<option value="${escHtml(n)}">`).join("");
+        perfMemberNameOptions = (res?.members || []).filter(m => m.status === "active").map(m => m.name);
         perfMemberOptionsLoaded = true;
     } catch (e) { console.error("演者候補の取得に失敗:", e); }
 }
