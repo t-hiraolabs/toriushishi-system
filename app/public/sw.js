@@ -1,4 +1,4 @@
-const CACHE_NAME = 'shishiren-v2';
+const CACHE_NAME = 'shishiren-v3';
 
 // Install: cache core assets
 self.addEventListener('install', (event) => {
