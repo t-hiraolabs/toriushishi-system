@@ -340,14 +340,27 @@ function wireNamePicker(inputEl, getOptions) {
         list.innerHTML = filtered.map(o => `<div class="name-picker-option">${escHtml(o)}</div>`).join("");
         list.style.display = "block";
     }
+    let closeTimer = null;
     function closeList() {
         list.style.display = "none";
         inputEl.setAttribute("readonly", "readonly");
     }
+    function scheduleClose() {
+        closeTimer = setTimeout(closeList, 150);
+    }
+    function cancelScheduledClose() {
+        if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    }
+
     // focusはclickより先に発火するため、「focusが起きた直後のclick」＝1回目のタップとして無視し、
     // 「既にフォーカス済みの状態でのclick」＝2回目のタップとしてキーボードを開く
     let justFocused = false;
+    // 2回目のタップでキーボードを開くために自分でblur→focusし直す間、
+    // 通常のblur処理（リストを閉じてreadonlyに戻す）を一時的に抑止する
+    let suppressBlurClose = false;
+
     inputEl.addEventListener("focus", () => {
+        cancelScheduledClose();
         justFocused = true;
         render();
     });
@@ -357,6 +370,7 @@ function wireNamePicker(inputEl, getOptions) {
             return;
         }
         if (inputEl.hasAttribute("readonly")) {
+            suppressBlurClose = true;
             inputEl.blur();
             setTimeout(() => {
                 inputEl.removeAttribute("readonly");
@@ -364,7 +378,11 @@ function wireNamePicker(inputEl, getOptions) {
             }, 0);
         }
     });
-    inputEl.addEventListener("blur", () => { justFocused = false; });
+    inputEl.addEventListener("blur", () => {
+        justFocused = false;
+        if (suppressBlurClose) { suppressBlurClose = false; return; }
+        scheduleClose();
+    });
     inputEl.addEventListener("input", render);
     list.addEventListener("mousedown", (e) => {
         const opt = e.target.closest(".name-picker-option");
@@ -374,7 +392,6 @@ function wireNamePicker(inputEl, getOptions) {
         closeList();
         inputEl.dispatchEvent(new Event("change"));
     });
-    inputEl.addEventListener("blur", () => { setTimeout(closeList, 150); });
 }
 
 function buildPerfItem(data = {}, opts = {}) {
