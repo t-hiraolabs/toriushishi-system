@@ -299,6 +299,18 @@ const PERF_SUBROLE_SUGGESTIONS = {
     "1本": ["子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
 };
 
+// 時間欄をタップして開いただけで現在時刻が仮に入る端末があるため、
+// フォーカス時点の値と実際に変わったか(=確定して選び直したか)をblur時に見て、変わっていた場合だけもう一方へコピーする
+function wireTimeAutoFill(mainEl, otherEl) {
+    let valueOnFocus = mainEl.value;
+    mainEl.addEventListener("focus", () => { valueOnFocus = mainEl.value; });
+    mainEl.addEventListener("blur", () => {
+        if (mainEl.value && mainEl.value !== valueOnFocus && !otherEl.value) {
+            otherEl.value = mainEl.value;
+        }
+    });
+}
+
 function wireNamePicker(inputEl, getOptions) {
     const wrap = document.createElement("div");
     wrap.className = "name-picker-wrap";
@@ -373,11 +385,13 @@ function buildPerfItem(data = {}, opts = {}) {
     wireNamePicker(div.querySelector(".perf-taiko-dai"), () => perfMemberNameOptions);
     wireNamePicker(div.querySelector(".perf-taiko-ko"), () => perfMemberNameOptions);
 
-    // 開始時間を入れたら終了時間にも同じ時間を入れる（逆も同様。すでに値がある方は上書きしない）
+    // 開始時間を入れたら終了時間にも同じ時間を入れる（逆も同様）
+    // ピッカーを開いただけで現在時刻が仮に入ることがあるため、
+    // フォーカス時の値と実際に変わったか(＝確定操作をしたか)を見てから、離れたタイミング(blur)で反映する
     const timeFrom = div.querySelector(".perf-time-from");
     const timeTo = div.querySelector(".perf-time-to");
-    timeFrom.addEventListener("change", () => { if (timeFrom.value && !timeTo.value) timeTo.value = timeFrom.value; });
-    timeTo.addEventListener("change", () => { if (timeTo.value && !timeFrom.value) timeFrom.value = timeTo.value; });
+    wireTimeAutoFill(timeFrom, timeTo);
+    wireTimeAutoFill(timeTo, timeFrom);
 
     const rolesList = div.querySelector(".perf-roles-list");
     if (data.roles && Array.isArray(data.roles)) {
