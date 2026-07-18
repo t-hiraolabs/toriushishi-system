@@ -103,8 +103,21 @@
     gap: 6px;
     margin-bottom: 6px;
 }
+.perf-role-row.dragging {
+    box-shadow: 0 6px 18px rgba(0,0,0,.4);
+    position: relative;
+    z-index: 10;
+}
 .perf-role-row-top { display: flex; gap: 6px; align-items: center; }
 .perf-role-row-top .role-label-input { flex: 1; }
+.role-drag-handle {
+    color: var(--text-3);
+    font-size: .95rem;
+    cursor: grab;
+    flex-shrink: 0;
+    touch-action: none;
+    padding: 2px 2px 2px 0;
+}
 .role-remove-btn {
     width: 26px; height: 26px;
     border-radius: 50%;

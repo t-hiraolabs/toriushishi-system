@@ -522,6 +522,7 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
     const escQ = s => (s || '').replace(/"/g, '&quot;');
     row.innerHTML = `
         <div class="perf-role-row-top">
+            <span class="role-drag-handle">☰</span>
             <input type="text" class="role-label-input" placeholder="役割（演者・獅子・子役・中台・土台…）" value="${escQ(data.label || '')}" autocomplete="off">
             <button class="role-remove-btn" type="button">✕</button>
         </div>
@@ -598,7 +599,41 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
         }
     }
 
+    wireRoleRowDrag(row.querySelector(".role-drag-handle"), row, container);
     container.appendChild(row);
+}
+
+// 役割の行を指でつかんで並び替えられるようにする（同じcontainer内でのみ）
+function wireRoleRowDrag(handle, row, container) {
+    handle.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        const pointerId = e.pointerId;
+        handle.setPointerCapture(pointerId);
+        row.classList.add("dragging");
+
+        const onMove = (ev) => {
+            const items = [...container.children];
+            const idx = items.indexOf(row);
+            const currentY = ev.clientY;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i] === row) continue;
+                const r = items[i].getBoundingClientRect();
+                const mid = r.top + r.height / 2;
+                if (i < idx && currentY < mid) { container.insertBefore(row, items[i]); break; }
+                if (i > idx && currentY > mid) { container.insertBefore(row, items[i].nextSibling); break; }
+            }
+        };
+        const onUp = () => {
+            row.classList.remove("dragging");
+            handle.releasePointerCapture(pointerId);
+            handle.removeEventListener("pointermove", onMove);
+            handle.removeEventListener("pointerup", onUp);
+            handle.removeEventListener("pointercancel", onUp);
+        };
+        handle.addEventListener("pointermove", onMove);
+        handle.addEventListener("pointerup", onUp);
+        handle.addEventListener("pointercancel", onUp);
+    });
 }
 
 function collectRoleRow(rowEl) {
