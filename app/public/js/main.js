@@ -285,10 +285,10 @@ function buildPerfItem(data = {}) {
             </div>
             <button class="perf-remove-btn" type="button">✕</button>
         </div>
-        <input type="text" class="perf-name" placeholder="演目名（提蠹・狐・三継ぎなど）" value="${escQ(data.name || '')}">
+        <input type="text" class="perf-name" list="perfNameList" placeholder="演目名（提婆・狐・三継ぎなど）" value="${escQ(data.name || '')}">
         <div class="perf-drums">
-            <input type="text" class="perf-taiko-dai" placeholder="大太鼓" value="${escQ(data.taikoDai || '')}">
-            <input type="text" class="perf-taiko-ko" placeholder="小太鼓" value="${escQ(data.taikoKo || '')}">
+            <input type="text" class="perf-taiko-dai" list="perfMemberNamesList" placeholder="大太鼓" value="${escQ(data.taikoDai || '')}">
+            <input type="text" class="perf-taiko-ko" list="perfMemberNamesList" placeholder="小太鼓" value="${escQ(data.taikoKo || '')}">
         </div>
         <div class="perf-roles-list"></div>
         <button class="perf-add-role-btn" type="button">＋ 役割を追加（演者・獅子・子役・台…）</button>
@@ -320,8 +320,25 @@ function addRoleRow(container, data = {}) {
             <button class="role-remove-btn" type="button">✕</button>
         </div>
         <textarea class="role-members-input" placeholder="名前（複数の場合は改行で区切る）" rows="2">${data.members || ''}</textarea>
+        <div class="role-member-picker-row">
+            <input type="text" class="role-member-picker" list="perfMemberNamesList" placeholder="名前を選んで追加">
+            <button class="role-member-add-btn" type="button">＋ 追加</button>
+        </div>
     `;
     row.querySelector(".role-remove-btn").addEventListener("click", () => row.remove());
+    const picker = row.querySelector(".role-member-picker");
+    const textarea = row.querySelector(".role-members-input");
+    const addPickedName = () => {
+        const name = picker.value.trim();
+        if (!name) return;
+        textarea.value = textarea.value ? `${textarea.value}\n${name}` : name;
+        picker.value = "";
+        picker.focus();
+    };
+    row.querySelector(".role-member-add-btn").addEventListener("click", addPickedName);
+    picker.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); addPickedName(); }
+    });
     container.appendChild(row);
 }
 
@@ -631,12 +648,27 @@ function initEventCreateCard() {
     const overlay = document.querySelector("#eventCreateCard .loading-overlay");
     if (overlay) overlay.style.display = "none";
 }
+let perfMemberOptionsLoaded = false;
+async function loadPerfMemberOptions() {
+    if (perfMemberOptionsLoaded) return;
+    const list = document.getElementById("perfMemberNamesList");
+    if (!list) return;
+    try {
+        const res = await callGasApi({ action: "getMembers", role: "admin" });
+        const names = (res?.members || []).filter(m => m.status === "active").map(m => m.name);
+        list.innerHTML = names.map(n => `<option value="${escHtml(n)}">`).join("");
+        perfMemberOptionsLoaded = true;
+    } catch (e) { console.error("演者候補の取得に失敗:", e); }
+}
+
 function openCreateForm() {
     initEventCreateCard();
+    loadPerfMemberOptions();
     document.getElementById("eventCreateCard").classList.add("active");
 }
 function openEditForm(eventData) {
     initEventCreateCard();
+    loadPerfMemberOptions();
     const editCard = document.getElementById("eventCreateCard");
     editCard.dataset.eventId = eventData.eventId;
     document.querySelectorAll('input[name="eventType"]').forEach(r => r.checked = (r.value === eventData.type));

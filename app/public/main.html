@@ -97,6 +97,18 @@
 .perf-role-row input[type="text"] { background: var(--surface-2); }
 .perf-role-row textarea { background: var(--surface-2); }
 .perf-item textarea { resize: vertical; font-family: inherit; min-height: 48px; }
+.role-member-picker-row { display: flex; gap: 6px; }
+.role-member-picker-row .role-member-picker { flex: 1; }
+.role-member-add-btn {
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-3);
+    padding: 0 10px;
+    font-size: .8rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
 /* ===== 演目詳細表示 ===== */
 .performance-list { padding: 4px 0; }
 .perf-detail-item {
@@ -472,6 +484,20 @@
         <button class="save-event-btn">保存</button>
         <button class="delete-event-btn" id="deleteEventBtn" style="display:none;">このイベントを削除</button>
     </div>
+
+    <!-- 演目名・メンバー名の候補リスト -->
+    <datalist id="perfNameList">
+        <option value="提婆">
+        <option value="狐">
+        <option value="ひょっとこ">
+        <option value="のみとり">
+        <option value="三継ぎ【頭】">
+        <option value="三継ぎ【扇子】">
+        <option value="三番叟">
+        <option value="練る">
+        <option value="宮出し">
+    </datalist>
+    <datalist id="perfMemberNamesList"></datalist>
 
     <!-- 練習日新規作成 -->
     <div class="event-create-card" id="practiceCreateCard">
