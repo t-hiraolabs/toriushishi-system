@@ -1178,6 +1178,34 @@ async function replaceEventPerformances(eventId: number, performances: unknown) 
 async function savePractice(practice: Record<string, unknown>) {
   const now = new Date().toISOString();
 
+  if (practice.practiceId) {
+    const pid = Number(practice.practiceId);
+    const { data: dup } = await supabase
+      .from('practices')
+      .select('practice_id')
+      .eq('date', practice.date)
+      .neq('practice_id', pid)
+      .limit(1);
+    if (dup && dup.length > 0) {
+      return { success: false, message: `${practice.date} にはすでに練習日が登録されています` };
+    }
+
+    const { error } = await supabase
+      .from('practices')
+      .update({
+        date: practice.date,
+        title: practice.title || '練習',
+        start: practice.start || '',
+        end: practice.end || '',
+        location: practice.location || '',
+        comment: practice.comment || '',
+        updated_at: now,
+      })
+      .eq('practice_id', pid);
+    if (error) return { success: false, message: error.message };
+    return { success: true, practiceId: pid, updated: true };
+  }
+
   const { data: dup } = await supabase
     .from('practices')
     .select('practice_id')

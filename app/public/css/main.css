@@ -384,7 +384,8 @@ li { list-style: none; }
   Close / Edit buttons
 ======================================================= */
 .close-card-btn,
-.edit-event-btn {
+.edit-event-btn,
+.edit-practice-btn {
   position: sticky;
   top: 0;
   padding: 6px 14px;
@@ -405,14 +406,16 @@ li { list-style: none; }
   margin-top: 8px;
 }
 
-.edit-event-btn {
+.edit-event-btn,
+.edit-practice-btn {
   position: absolute;
   top: 20px; right: 20px;
   display: none;
 }
 
 .close-card-btn:hover,
-.edit-event-btn:hover { background: var(--border); color: var(--text-1); }
+.edit-event-btn:hover,
+.edit-practice-btn:hover { background: var(--border); color: var(--text-1); }
 
 /* =======================================================
   Detail Card Header

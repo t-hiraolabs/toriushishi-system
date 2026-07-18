@@ -406,7 +406,7 @@ function initEventDelegation() {
         }
 
         const practiceCard = target.closest("[data-practice-id]");
-        if (practiceCard && !target.closest(".close-card-btn, .response-btn, .toggle-response-btn")) {
+        if (practiceCard && !target.closest(".close-card-btn, .response-btn, .toggle-response-btn, .edit-practice-btn")) {
             const practiceId = Number(practiceCard.dataset.practiceId);
             const card = document.getElementById("practiceDetailCard");
             card.classList.add("active");
@@ -482,6 +482,11 @@ function initEventDelegation() {
         if (target.closest(".edit-event-btn")) {
             const detailCard = document.getElementById("eventDetailCard");
             openEditForm(eventMap[Number(detailCard.dataset.eventId)]);
+        }
+
+        if (target.closest(".edit-practice-btn")) {
+            const detailCard = document.getElementById("practiceDetailCard");
+            openPracticeEditForm(practiceMap[Number(detailCard.dataset.practiceId)]);
         }
     });
 }
@@ -612,7 +617,7 @@ async function approveMember(userId) {
 イベント新規作成
 ======================================================= */
 function initEventCreateCard() {
-    delete document.querySelector(".event-create-card").dataset.eventId;
+    delete document.getElementById("eventCreateCard").dataset.eventId;
     document.getElementById("eventTitle").value = "";
     document.getElementById("eventDate").value = "";
     document.getElementById("eventTime").value = "";
@@ -622,16 +627,17 @@ function initEventCreateCard() {
     document.getElementById("eventDeadline").value = "";
     document.getElementById("eventComment").value = "";
     document.getElementById("performanceList").innerHTML = "";
-    const overlay = document.querySelector(".event-create-card .loading-overlay");
+    document.getElementById("deleteEventBtn").style.display = "none";
+    const overlay = document.querySelector("#eventCreateCard .loading-overlay");
     if (overlay) overlay.style.display = "none";
 }
 function openCreateForm() {
     initEventCreateCard();
-    document.querySelector(".event-create-card").classList.add("active");
+    document.getElementById("eventCreateCard").classList.add("active");
 }
 function openEditForm(eventData) {
     initEventCreateCard();
-    const editCard = document.querySelector(".event-create-card");
+    const editCard = document.getElementById("eventCreateCard");
     editCard.dataset.eventId = eventData.eventId;
     document.querySelectorAll('input[name="eventType"]').forEach(r => r.checked = (r.value === eventData.type));
     document.getElementById("eventTitle").value = eventData.title || "";
@@ -648,6 +654,28 @@ function openEditForm(eventData) {
     if (Array.isArray(eventData.performances)) {
         eventData.performances.forEach(perf => performanceList.appendChild(buildPerfItem(perf)));
     }
+    const deleteBtn = document.getElementById("deleteEventBtn");
+    deleteBtn.style.display = userRole === "admin" ? "" : "none";
+    deleteBtn.disabled = false;
+    deleteBtn.textContent = "このイベントを削除";
+    deleteBtn.onclick = async () => {
+        if (!confirm(`「${eventData.title || "イベント"}」（${eventData.date}）を削除しますか？\nこの操作は取り消せません。`)) return;
+        deleteBtn.disabled = true; deleteBtn.textContent = "削除中…";
+        const res = await callGasApi({
+            action: "deleteEvent",
+            sessionId: localStorage.getItem("sessionId"),
+            eventId: eventData.eventId,
+        });
+        if (res?.success) {
+            alert("削除しました");
+            editCard.classList.remove("active");
+            document.getElementById("eventDetailCard").classList.remove("active");
+            await getEvents(); loadHomeEvents(); loadEventEvents(); initCalendar();
+        } else {
+            alert(res?.msg || "削除に失敗しました");
+            deleteBtn.disabled = false; deleteBtn.textContent = "このイベントを削除";
+        }
+    };
     editCard.classList.add("active");
 }
 
@@ -677,7 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!title) return alert("タイトルを入力してください");
         if (!date) return alert("日付を選択してください");
         if (!timeUndecided && !time) return alert("時間を選択するか「未定」にチェックしてください");
-        const createCard = document.querySelector(".event-create-card");
+        const createCard = document.getElementById("eventCreateCard");
         const eventId = createCard.dataset.eventId ? Number(createCard.dataset.eventId) : null;
         const performances = collectPerformances();
         try {
@@ -686,6 +714,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!res.success) throw new Error(res.message || "イベント保存失敗");
             alert("保存しました");
             document.getElementById("eventCreateCard").classList.remove("active");
+            document.getElementById("eventDetailCard").classList.remove("active");
+            await getEvents(); loadHomeEvents(); loadEventEvents(); initCalendar();
         } catch (err) { console.error(err); alert("保存中にエラーが発生しました"); }
         finally { loadingOverlay.style.display = "none"; }
     });
@@ -695,18 +725,64 @@ document.addEventListener("DOMContentLoaded", () => {
 練習日新規作成
 ======================================================= */
 let practiceSelectedDates = new Set();
+let practiceEditingId = null;
 function initPracticeCreateCard() {
+    delete document.getElementById("practiceCreateCard").dataset.practiceId;
+    practiceEditingId = null;
     document.getElementById("practiceTitle").value = "";
     document.getElementById("practiceStart").value = "";
     document.getElementById("practiceEnd").value = "";
     document.getElementById("practiceLocation").value = "";
     document.getElementById("practiceComment").value = "";
+    document.getElementById("practiceDateCalLabel").textContent = "日付（カレンダーから複数選択できます）";
+    document.getElementById("deletePracticeBtn").style.display = "none";
     practiceSelectedDates = new Set();
     document.getElementById("practiceDateSelectedLabel").textContent = "未選択";
     const today = new Date();
     renderPracticeDateCalendar(today.getFullYear(), today.getMonth());
 }
 function openPracticeCreateForm() { initPracticeCreateCard(); document.getElementById("practiceCreateCard").classList.add("active"); }
+
+function openPracticeEditForm(practiceData) {
+    initPracticeCreateCard();
+    const card = document.getElementById("practiceCreateCard");
+    card.dataset.practiceId = practiceData.practiceId;
+    practiceEditingId = practiceData.practiceId;
+    document.getElementById("practiceTitle").value = practiceData.title || "";
+    document.getElementById("practiceStart").value = practiceData.start || "";
+    document.getElementById("practiceEnd").value = practiceData.end || "";
+    document.getElementById("practiceLocation").value = practiceData.location || "";
+    document.getElementById("practiceComment").value = practiceData.comment || "";
+    document.getElementById("practiceDateCalLabel").textContent = "日付（変更する場合はカレンダーで選択）";
+    const isoDate = (practiceData.date || "").replace(/\//g, "-");
+    practiceSelectedDates = new Set([isoDate]);
+    document.getElementById("practiceDateSelectedLabel").textContent = pcFormatJa(isoDate);
+    const deleteBtn = document.getElementById("deletePracticeBtn");
+    deleteBtn.style.display = userRole === "admin" ? "" : "none";
+    deleteBtn.disabled = false;
+    deleteBtn.textContent = "この練習日を削除";
+    deleteBtn.onclick = async () => {
+        if (!confirm(`「${practiceData.title || "練習"}」（${practiceData.date}）を削除しますか？\nこの操作は取り消せません。`)) return;
+        deleteBtn.disabled = true; deleteBtn.textContent = "削除中…";
+        const res = await callGasApi({
+            action: "deletePractice",
+            sessionId: localStorage.getItem("sessionId"),
+            practiceId: practiceData.practiceId,
+        });
+        if (res?.success) {
+            alert("削除しました");
+            card.classList.remove("active");
+            document.getElementById("practiceDetailCard").classList.remove("active");
+            await getPractices(); loadHomeEvents(); initCalendar();
+        } else {
+            alert(res?.msg || "削除に失敗しました");
+            deleteBtn.disabled = false; deleteBtn.textContent = "この練習日を削除";
+        }
+    };
+    const [y, m] = isoDate.split("-").map(Number);
+    renderPracticeDateCalendar(y, m - 1);
+    card.classList.add("active");
+}
 
 /* ---- 練習日フォーム内ミニカレンダー ---- */
 function pcToStr(y, m, d) { return `${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`; }
@@ -733,7 +809,7 @@ function buildMiniCalendarHtml(year, month, isSelectedFn) {
         if (event?.type === "festival") dots += '<span class="event-dot festival"></span>';
         if (event?.type === "regular") dots += '<span class="event-dot regular"></span>';
         if (practice) dots += '<span class="event-dot practice"></span>';
-        const disabled = !!practice;
+        const disabled = !!practice && (!practiceEditingId || practice.practiceId !== practiceEditingId);
         grid += `<div class="day${sel ? " selected" : ""}${disabled ? " day-disabled" : ""}" data-date="${dateStr}">${d}<div class="dots">${dots}</div></div>`;
     }
     return `
@@ -752,8 +828,14 @@ function renderPracticeDateCalendar(year, month) {
     el.querySelectorAll(".day:not(.day-disabled)").forEach(day => {
         day.addEventListener("click", () => {
             const d = day.dataset.date;
-            if (practiceSelectedDates.has(d)) practiceSelectedDates.delete(d);
-            else practiceSelectedDates.add(d);
+            if (practiceEditingId) {
+                // 編集中は1日のみ選択（置き換え）
+                practiceSelectedDates = new Set([d]);
+            } else if (practiceSelectedDates.has(d)) {
+                practiceSelectedDates.delete(d);
+            } else {
+                practiceSelectedDates.add(d);
+            }
             const sorted = [...practiceSelectedDates].sort();
             document.getElementById("practiceDateSelectedLabel").textContent =
                 sorted.length ? sorted.map(pcFormatJa).join("、") : "未選択";
@@ -776,17 +858,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const dates = [...practiceSelectedDates].sort();
         if (dates.length === 0) return alert("カレンダーで日付を選択してください");
         if (!start) return alert("開始時間を選択してください");
-        if (!confirm(`${dates.length}件の練習日を保存しますか？`)) return;
+        const isEdit = !!practiceEditingId;
+        if (isEdit && dates.length !== 1) return alert("日付を1つ選択してください");
+        if (!confirm(isEdit ? "練習日を更新しますか？" : `${dates.length}件の練習日を保存しますか？`)) return;
         try {
             loadingOverlay.style.display = "flex";
-            for (const date of dates) {
-                const res = await callGasApi({ action: "savePractice", practice: { title: title || "練習", date, start, end, location, comment } });
+            if (isEdit) {
+                const res = await callGasApi({ action: "savePractice", practice: { practiceId: practiceEditingId, title: title || "練習", date: dates[0], start, end, location, comment } });
                 if (!res.success) throw new Error(res.message || "練習日保存失敗");
+            } else {
+                for (const date of dates) {
+                    const res = await callGasApi({ action: "savePractice", practice: { title: title || "練習", date, start, end, location, comment } });
+                    if (!res.success) throw new Error(res.message || "練習日保存失敗");
+                }
             }
             alert("保存しました");
             document.getElementById("practiceCreateCard").classList.remove("active");
+            document.getElementById("practiceDetailCard").classList.remove("active");
             await getPractices(); loadHomeEvents(); initCalendar();
-        } catch (err) { console.error(err); alert("保存中にエラーが発生しました"); }
+        } catch (err) { console.error(err); alert(err.message || "保存中にエラーが発生しました"); }
         finally { loadingOverlay.style.display = "none"; }
     });
 });
@@ -844,30 +934,6 @@ async function fillDetailCard(eventData, userId, card) {
         card.querySelectorAll(".response-list").forEach(ul => ul.style.display = "none");
         const perfList = card.querySelector(".performance-list");
         if (perfList) perfList.style.display = "none";
-
-        const deleteBtn = document.getElementById("deleteEventBtn");
-        if (deleteBtn) {
-            deleteBtn.style.display = userRole === "admin" ? "" : "none";
-            deleteBtn.disabled = false;
-            deleteBtn.textContent = "このイベントを削除";
-            deleteBtn.onclick = async () => {
-                if (!confirm(`「${eventData.title || "イベント"}」（${eventData.date}）を削除しますか？\nこの操作は取り消せません。`)) return;
-                deleteBtn.disabled = true; deleteBtn.textContent = "削除中…";
-                const res = await callGasApi({
-                    action: "deleteEvent",
-                    sessionId: localStorage.getItem("sessionId"),
-                    eventId: eventData.eventId,
-                });
-                if (res?.success) {
-                    alert("削除しました");
-                    card.classList.remove("active");
-                    await getEvents(); loadHomeEvents(); loadEventEvents(); initCalendar();
-                } else {
-                    alert(res?.msg || "削除に失敗しました");
-                    deleteBtn.disabled = false; deleteBtn.textContent = "このイベントを削除";
-                }
-            };
-        }
     } catch(e) { console.error(e); }
     finally { if (loadingOverlay) loadingOverlay.style.display = "none"; }
 }
@@ -928,27 +994,8 @@ async function fillPracticeDetailCard(practiceData, userId, card) {
     card.querySelector(".response-btn.absent")?.classList.toggle("selected", (practiceData.myStatus || "") === "欠席");
     card.querySelector(".response-btn.late")?.classList.toggle("selected", (practiceData.myStatus || "") === "遅刻");
 
-    const deleteBtn = document.getElementById("deletePracticeBtn");
-    if (deleteBtn) {
-        deleteBtn.style.display = userRole === "admin" ? "" : "none";
-        deleteBtn.onclick = async () => {
-            if (!confirm(`「${practiceData.title || "練習"}」（${practiceData.date}）を削除しますか？\nこの操作は取り消せません。`)) return;
-            deleteBtn.disabled = true; deleteBtn.textContent = "削除中…";
-            const res = await callGasApi({
-                action: "deletePractice",
-                sessionId: localStorage.getItem("sessionId"),
-                practiceId: practiceData.practiceId,
-            });
-            if (res?.success) {
-                alert("削除しました");
-                card.classList.remove("active");
-                await getPractices(); loadHomeEvents(); initCalendar();
-            } else {
-                alert(res?.msg || "削除に失敗しました");
-                deleteBtn.disabled = false; deleteBtn.textContent = "この練習日を削除";
-            }
-        };
-    }
+    const editBtn = document.getElementById("editPracticeBtn");
+    if (editBtn) editBtn.style.display = userRole === "admin" ? "block" : "none";
 }
 
 /* =======================================================

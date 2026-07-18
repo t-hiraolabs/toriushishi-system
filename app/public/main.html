@@ -395,13 +395,13 @@
             </div>
             <button class="toggle-performances-btn">演目一覧</button>
             <div class="performance-list"></div>
-            <button class="delete-event-btn" id="deleteEventBtn" style="display:none;">このイベントを削除</button>
         </div>
     </div>
 
     <!-- 練習詳細カード -->
     <div class="practice-detail-card" id="practiceDetailCard">
         <button class="close-card-btn" data-target="practice">戻る</button>
+        <button class="edit-practice-btn" id="editPracticeBtn" data-target="edit-practice" style="display:none;">編集</button>
         <div class="practice-detail-card-title"></div>
         <div class="practice-detail-card-time">
             <div class="practice-detail-card-date"></div>
@@ -426,7 +426,6 @@
                 <button class="toggle-response-btn late">遅れて参加</button>
                 <ul class="response-list late"></ul>
             </div>
-            <button class="delete-practice-btn" id="deletePracticeBtn" style="display:none;">この練習日を削除</button>
         </div>
     </div>
 
@@ -471,6 +470,7 @@
             <button type="button" id="addPerformanceBtn">演目を追加</button>
         </div>
         <button class="save-event-btn">保存</button>
+        <button class="delete-event-btn" id="deleteEventBtn" style="display:none;">このイベントを削除</button>
     </div>
 
     <!-- 練習日新規作成 -->
@@ -481,7 +481,7 @@
             <input type="text" id="practiceTitle" placeholder="練習" />
         </div>
         <div id="practiceSingleDate" class="event-create-card-time">
-            <label>日付（カレンダーから複数選択できます）</label>
+            <label id="practiceDateCalLabel">日付（カレンダーから複数選択できます）</label>
             <div class="mini-cal-selected" id="practiceDateSelectedLabel">未選択</div>
             <div class="mini-cal" id="practiceDateCal"></div>
         </div>
@@ -500,6 +500,7 @@
             <textarea id="practiceComment" placeholder="連絡事項を入力"></textarea>
         </div>
         <button class="save-practice-btn">保存</button>
+        <button class="delete-practice-btn" id="deletePracticeBtn" style="display:none;">この練習日を削除</button>
     </div>
 
     <!-- メンバーカード（一般） -->
