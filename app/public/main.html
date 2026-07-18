@@ -164,7 +164,17 @@
     font-size: .88rem;
     width: 100%;
     box-sizing: border-box;
+}
+.perf-item input[type="text"],
+.perf-item input[type="number"],
+.perf-item textarea {
     -webkit-appearance: none;
+}
+.perf-item input[type="time"] {
+    /* -webkit-appearance:none breaks Safari's time control and makes
+       empty fields look pre-filled with the current time */
+    -webkit-appearance: auto;
+    appearance: auto;
 }
 .perf-role-row input[type="text"] { background: var(--surface-2); }
 .perf-role-row textarea { background: var(--surface-2); }

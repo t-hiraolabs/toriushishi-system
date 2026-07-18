@@ -637,8 +637,17 @@ li { list-style: none; }
   color: var(--text-1) !important;
   font-size: 1.05rem;
   transition: border-color var(--transition);
+}
+.event-create-card input[type="text"],
+.event-create-card textarea {
   -webkit-appearance: none;
-  color-scheme: dark;
+}
+.event-create-card input[type="date"],
+.event-create-card input[type="time"] {
+  /* -webkit-appearance:none + color-scheme:dark on type=time/date breaks
+     Safari's native rendering and makes empty fields look pre-filled */
+  -webkit-appearance: auto;
+  appearance: auto;
 }
 .event-create-card input:-webkit-autofill,
 .event-create-card input:-webkit-autofill:focus {
