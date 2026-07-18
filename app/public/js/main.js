@@ -313,8 +313,7 @@ function buildPerfItem(data = {}) {
     const escQ = s => (s || '').replace(/"/g, '&quot;');
     div.innerHTML = `
         <div class="perf-item-header">
-            <div class="perf-item-header-left">
-                <input type="number" class="perf-no-input" placeholder="No." value="${escQ(String(data.no || ''))}" min="1">
+            <div class="perf-time-row">
                 <input type="time" class="perf-time-from" value="${escQ(data.timeFrom || '')}">
                 <span class="perf-tilde">〜</span>
                 <input type="time" class="perf-time-to" value="${escQ(data.timeTo || '')}">
@@ -404,9 +403,11 @@ function addRoleRow(container, data = {}) {
 
 function collectPerformances() {
     const performances = [];
+    let index = 0;
     document.querySelectorAll("#performanceList .perf-item").forEach(item => {
         const name = item.querySelector(".perf-name")?.value.trim();
         if (!name) return;
+        index++;
         const roles = [];
         item.querySelectorAll(".perf-role-row").forEach(row => {
             const label = row.querySelector(".role-label-input")?.value.trim();
@@ -414,7 +415,7 @@ function collectPerformances() {
             if (label) roles.push({ label, members: members || "" });
         });
         performances.push({
-            no: item.querySelector(".perf-no-input")?.value || "",
+            no: String(index),
             timeFrom: item.querySelector(".perf-time-from")?.value || "",
             timeTo: item.querySelector(".perf-time-to")?.value || "",
             name,
@@ -424,6 +425,74 @@ function collectPerformances() {
         });
     });
     return performances;
+}
+
+// =============================
+// 演目の並び替え（指ドラッグ）
+// =============================
+function openPerfReorderPanel() {
+    const perfItems = [...document.querySelectorAll("#performanceList .perf-item")];
+    if (perfItems.length < 2) { alert("並び替えるには演目が2つ以上必要です"); return; }
+    const list = document.getElementById("perfReorderList");
+    list.innerHTML = "";
+    perfItems.forEach((el, i) => {
+        const name = el.querySelector(".perf-name")?.value.trim() || "(名称未設定)";
+        const row = document.createElement("div");
+        row.className = "perf-reorder-item";
+        row.dataset.origIndex = String(i);
+        row.innerHTML = `<span class="perf-reorder-handle">☰</span><span class="perf-reorder-name"></span>`;
+        row.querySelector(".perf-reorder-name").textContent = name;
+        list.appendChild(row);
+    });
+    wirePerfReorderDrag(list);
+    document.getElementById("perfReorderOverlay").style.display = "flex";
+}
+
+function closePerfReorderPanel() {
+    const list = document.getElementById("perfReorderList");
+    const performanceList = document.getElementById("performanceList");
+    const perfItems = [...performanceList.querySelectorAll(".perf-item")];
+    [...list.querySelectorAll(".perf-reorder-item")].forEach(row => {
+        const el = perfItems[Number(row.dataset.origIndex)];
+        if (el) performanceList.appendChild(el);
+    });
+    document.getElementById("perfReorderOverlay").style.display = "none";
+}
+
+function wirePerfReorderDrag(list) {
+    list.querySelectorAll(".perf-reorder-item").forEach(item => {
+        const handle = item.querySelector(".perf-reorder-handle");
+        handle.addEventListener("pointerdown", (e) => {
+            e.preventDefault();
+            const pointerId = e.pointerId;
+            handle.setPointerCapture(pointerId);
+            item.classList.add("dragging");
+            let currentY = e.clientY;
+
+            const onMove = (ev) => {
+                currentY = ev.clientY;
+                const items = [...list.querySelectorAll(".perf-reorder-item")];
+                const idx = items.indexOf(item);
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i] === item) continue;
+                    const r = items[i].getBoundingClientRect();
+                    const mid = r.top + r.height / 2;
+                    if (i < idx && currentY < mid) { list.insertBefore(item, items[i]); break; }
+                    if (i > idx && currentY > mid) { list.insertBefore(item, items[i].nextSibling); break; }
+                }
+            };
+            const onUp = () => {
+                item.classList.remove("dragging");
+                handle.releasePointerCapture(pointerId);
+                handle.removeEventListener("pointermove", onMove);
+                handle.removeEventListener("pointerup", onUp);
+                handle.removeEventListener("pointercancel", onUp);
+            };
+            handle.addEventListener("pointermove", onMove);
+            handle.addEventListener("pointerup", onUp);
+            handle.addEventListener("pointercancel", onUp);
+        });
+    });
 }
 
 function renderPerformances(container, performances) {
@@ -777,10 +846,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("addPerformanceBtn").addEventListener("click", () => {
-        const list = document.getElementById("performanceList");
-        const nextNo = list.querySelectorAll(".perf-item").length + 1;
-        list.appendChild(buildPerfItem({ no: nextNo }));
+        document.getElementById("performanceList").appendChild(buildPerfItem({}));
     });
+
+    document.getElementById("reorderPerformancesBtn").addEventListener("click", openPerfReorderPanel);
+    document.getElementById("perfReorderDoneBtn").addEventListener("click", closePerfReorderPanel);
 
     document.querySelector(".save-event-btn").addEventListener("click", async () => {
         if (!confirm("保存しますか？")) return;

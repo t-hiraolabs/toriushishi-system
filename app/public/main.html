@@ -31,10 +31,16 @@
     flex-direction: column;
     gap: 8px;
 }
-.perf-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-.perf-item-header-left { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; flex: 1; }
-.perf-no-input { width: 56px; }
-.perf-tilde { color: var(--text-3); font-size: .85rem; flex-shrink: 0; }
+.perf-item-header { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.perf-time-row { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.perf-time-row input[type="time"] {
+    width: auto;
+    flex: 1;
+    min-width: 0;
+    padding: 6px 4px;
+    font-size: .8rem;
+}
+.perf-tilde { color: var(--text-3); font-size: .8rem; flex-shrink: 0; }
 .perf-remove-btn {
     width: 28px; height: 28px;
     border-radius: 50%;
@@ -220,6 +226,100 @@
     white-space: pre-wrap;
     word-break: break-all;
 }
+
+/* ===== 演目 並び替え ===== */
+.perf-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+#reorderPerformancesBtn {
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    border-radius: 100px;
+    padding: 5px 12px;
+    font-size: .78rem;
+    cursor: pointer;
+}
+.perf-reorder-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 300;
+    background: rgba(0,0,0,.6);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+.perf-reorder-panel {
+    width: 100%;
+    max-width: 480px;
+    max-height: 78vh;
+    background: var(--surface, #1a1a1a);
+    border-radius: 20px 20px 0 0;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.5);
+}
+.perf-reorder-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 6px;
+}
+#perfReorderDoneBtn {
+    background: var(--accent, #e63946);
+    color: #fff;
+    border: none;
+    border-radius: 100px;
+    padding: 7px 18px;
+    font-size: .85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.perf-reorder-hint {
+    font-size: .78rem;
+    color: var(--text-3);
+    margin: 0 0 10px;
+}
+.perf-reorder-list {
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    touch-action: none;
+}
+.perf-reorder-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    font-size: .92rem;
+    color: var(--text-1);
+    user-select: none;
+    -webkit-user-select: none;
+}
+.perf-reorder-item.dragging {
+    background: var(--surface-3);
+    box-shadow: 0 6px 18px rgba(0,0,0,.4);
+    position: relative;
+    z-index: 10;
+}
+.perf-reorder-handle {
+    color: var(--text-3);
+    font-size: 1rem;
+    cursor: grab;
+    flex-shrink: 0;
+    touch-action: none;
+    padding: 4px;
+}
+.perf-reorder-name { flex: 1; }
 </style>
 </head>
 
@@ -530,12 +630,27 @@
             <textarea id="eventComment" placeholder="連絡事項を入力"></textarea>
         </div>
         <div class="event-create-card-performances">
-            <label>演目</label>
+            <div class="perf-section-header">
+                <label>演目</label>
+                <button type="button" id="reorderPerformancesBtn">並び替え</button>
+            </div>
             <div id="performanceList"></div>
             <button type="button" id="addPerformanceBtn">演目を追加</button>
         </div>
         <button class="save-event-btn">保存</button>
         <button class="delete-event-btn" id="deleteEventBtn" style="display:none;">このイベントを削除</button>
+    </div>
+
+    <!-- 演目 並び替えパネル -->
+    <div class="perf-reorder-overlay" id="perfReorderOverlay" style="display:none;">
+        <div class="perf-reorder-panel">
+            <div class="perf-reorder-panel-header">
+                <span>演目の並び替え</span>
+                <button type="button" id="perfReorderDoneBtn">完了</button>
+            </div>
+            <p class="perf-reorder-hint">名前をつかんで上下にドラッグしてください</p>
+            <div id="perfReorderList" class="perf-reorder-list"></div>
+        </div>
     </div>
 
 
