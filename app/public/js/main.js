@@ -447,8 +447,7 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
         <div class="role-tags-container"></div>
         <input type="hidden" class="role-members-input" value="${escQ(data.members || '')}">
         <div class="role-member-picker-row">
-            <input type="text" class="role-member-picker" placeholder="名前を選んで追加（Enterでも追加）" autocomplete="off">
-            <button class="role-member-add-btn" type="button">＋ 追加</button>
+            <input type="text" class="role-member-picker" placeholder="名前を選んで追加" autocomplete="off">
         </div>
         ${getParentLabel ? "" : `
         <div class="perf-subroles-list"></div>
@@ -509,7 +508,6 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
         picker.value = "";
         picker.focus();
     };
-    row.querySelector(".role-member-add-btn").addEventListener("click", addPickedName);
     picker.addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); addPickedName(); }
     });
