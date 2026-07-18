@@ -318,6 +318,8 @@ function wireTimeAutoFill(mainEl, otherEl) {
     });
 }
 
+// 一回目のタップではキーボードを開かずリストだけ表示し、
+// リストが開いている状態でもう一度タップした時だけ入力できるようにする
 function wireNamePicker(inputEl, getOptions) {
     const wrap = document.createElement("div");
     wrap.className = "name-picker-wrap";
@@ -328,6 +330,8 @@ function wireNamePicker(inputEl, getOptions) {
     list.style.display = "none";
     wrap.appendChild(list);
 
+    inputEl.setAttribute("readonly", "readonly");
+
     function render() {
         const options = getOptions();
         const q = inputEl.value.trim();
@@ -336,18 +340,34 @@ function wireNamePicker(inputEl, getOptions) {
         list.innerHTML = filtered.map(o => `<div class="name-picker-option">${escHtml(o)}</div>`).join("");
         list.style.display = "block";
     }
-    inputEl.addEventListener("focus", render);
-    inputEl.addEventListener("click", render);
+    function closeList() {
+        list.style.display = "none";
+        inputEl.setAttribute("readonly", "readonly");
+    }
+    inputEl.addEventListener("click", () => {
+        const isOpen = list.style.display === "block";
+        if (isOpen && inputEl.hasAttribute("readonly")) {
+            // 2回目のタップ：キーボードを開いて自由入力できるようにする
+            inputEl.blur();
+            setTimeout(() => {
+                inputEl.removeAttribute("readonly");
+                inputEl.focus();
+            }, 0);
+        } else if (!isOpen) {
+            render();
+        }
+    });
+    inputEl.addEventListener("focus", () => { if (list.style.display !== "block") render(); });
     inputEl.addEventListener("input", render);
     list.addEventListener("mousedown", (e) => {
         const opt = e.target.closest(".name-picker-option");
         if (!opt) return;
         e.preventDefault();
         inputEl.value = opt.textContent;
-        list.style.display = "none";
+        closeList();
         inputEl.dispatchEvent(new Event("change"));
     });
-    inputEl.addEventListener("blur", () => { setTimeout(() => { list.style.display = "none"; }, 150); });
+    inputEl.addEventListener("blur", () => { setTimeout(closeList, 150); });
 }
 
 function buildPerfItem(data = {}, opts = {}) {
