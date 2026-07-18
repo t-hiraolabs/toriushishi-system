@@ -579,10 +579,10 @@ li { list-style: none; }
 /* =======================================================
   Create / Edit Form
 ======================================================= */
-.event-create-card { padding: 8px 0 0; gap: 0; color-scheme: dark; }
+.event-create-card { padding: 6px 0 0; gap: 0; color-scheme: dark; }
 
 .event-create-card > *:not(.close-card-btn):not(.save-event-btn):not(.save-practice-btn) {
-  margin: 0 16px;
+  margin: 0 12px;
 }
 
 .event-create-card-type,
@@ -594,48 +594,48 @@ li { list-style: none; }
 .event-create-card-performances,
 .practice-mode-toggle {
   background: var(--surface-2);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
-  margin: 6px 16px !important;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin: 4px 12px !important;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 5px;
 }
 
 .event-create-card > .close-card-btn {
   position: sticky;
   top: 0;
-  margin: 8px 16px 4px;
+  margin: 6px 12px 2px;
   z-index: 10;
 }
 
-.event-create-card { overflow-y: auto; padding-bottom: 40px; }
+.event-create-card { overflow-y: auto; padding-bottom: 24px; }
 
 .event-create-card label,
 .weekday-select label {
-  font-size: .88rem;
+  font-size: .74rem;
   font-weight: 700;
   letter-spacing: .04em;
   color: var(--text-2);
   text-transform: uppercase;
 }
 
-.time-input-wrap { display: flex; align-items: center; gap: 12px; }
+.time-input-wrap { display: flex; align-items: center; gap: 8px; }
 .time-input-wrap input[type="time"] { flex: 1; }
 .time-input-wrap input[type="time"]:disabled { opacity: 0.4; pointer-events: none; }
-.undecided-label { display: flex; align-items: center; gap: 5px; white-space: nowrap; color: var(--text-2); font-size: 0.9rem; cursor: pointer; }
-.undecided-label input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+.undecided-label { display: flex; align-items: center; gap: 4px; white-space: nowrap; color: var(--text-2); font-size: 0.82rem; cursor: pointer; }
+.undecided-label input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
 .event-create-card input[type="text"],
 .event-create-card input[type="date"],
 .event-create-card input[type="time"],
 .event-create-card textarea {
   width: 100%;
-  padding: 13px 16px;
+  padding: 8px 10px;
   background: var(--surface-2) !important;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-1) !important;
-  font-size: 1.05rem;
+  font-size: 16px; /* iOSズーム防止のため16px未満にしない */
   transition: border-color var(--transition);
 }
 .event-create-card input[type="text"],
@@ -666,53 +666,53 @@ li { list-style: none; }
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opacity: 1; }
 
-.event-create-card textarea { height: 100px; resize: none; white-space: pre-wrap; line-height: 1.5; }
+.event-create-card textarea { height: 70px; resize: none; white-space: pre-wrap; line-height: 1.4; }
 
-.event-type-options { display: flex; gap: 12px; margin-top: 4px; }
+.event-type-options { display: flex; gap: 10px; margin-top: 2px; }
 
 .event-type-options label {
-  display: flex; align-items: center; gap: 6px;
-  font-size: .9rem; font-weight: 600; text-transform: none; color: var(--text-1); cursor: pointer;
+  display: flex; align-items: center; gap: 5px;
+  font-size: .84rem; font-weight: 600; text-transform: none; color: var(--text-1); cursor: pointer;
 }
 
 .practice-mode-toggle label {
-  display: flex; align-items: center; gap: 8px;
-  font-size: .92rem; font-weight: 600; text-transform: none; color: var(--text-1); cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  font-size: .84rem; font-weight: 600; text-transform: none; color: var(--text-1); cursor: pointer;
 }
 
-.practice-mode-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+.practice-mode-toggle input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); }
 
-.weekday-select { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.weekday-select { display: flex; flex-direction: column; gap: 5px; margin-top: 2px; }
 
-.weekday-checkboxes { display: flex; flex-wrap: wrap; gap: 8px; }
+.weekday-checkboxes { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .weekday-checkboxes label {
-  display: flex; align-items: center; gap: 4px;
-  font-size: .88rem; font-weight: 600; text-transform: none; color: var(--text-1);
+  display: flex; align-items: center; gap: 3px;
+  font-size: .8rem; font-weight: 600; text-transform: none; color: var(--text-1);
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 100px; padding: 5px 12px; cursor: pointer; transition: var(--transition);
+  border-radius: 100px; padding: 4px 10px; cursor: pointer; transition: var(--transition);
 }
 
 .weekday-checkboxes label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: #fff; }
 .weekday-checkboxes input[type="checkbox"] { display: none; }
 
-#performanceList { display: flex; flex-direction: column; gap: 8px; }
+#performanceList { display: flex; flex-direction: column; gap: 6px; }
 
 .performance-item {
   background: var(--surface); border-radius: var(--radius-sm);
-  padding: 10px; display: flex; flex-direction: column; gap: 6px;
+  padding: 8px; display: flex; flex-direction: column; gap: 5px;
 }
 
 .performance-item input {
-  width: 100%; padding: 8px 12px;
+  width: 100%; padding: 8px 10px;
   background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--text-1); font-size: .9rem;
+  border-radius: 6px; color: var(--text-1); font-size: 16px;
 }
 
 #addPerformanceBtn {
-  padding: 10px; background: var(--surface);
+  padding: 8px; background: var(--surface);
   border: 1px dashed var(--border); border-radius: var(--radius-sm);
-  color: var(--text-2); font-size: .88rem; font-weight: 600;
+  color: var(--text-2); font-size: .8rem; font-weight: 600;
   cursor: pointer; transition: var(--transition);
 }
 #addPerformanceBtn:hover { border-color: var(--accent); color: var(--accent); }
@@ -720,13 +720,13 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
 .save-event-btn,
 .save-practice-btn {
   display: block;
-  margin: 8px 16px 16px;
-  padding: 17px;
+  margin: 6px 12px 12px;
+  padding: 13px;
   background: var(--accent);
   border: none;
   border-radius: var(--radius-md);
   color: #fff;
-  font-size: 1.1rem;
+  font-size: .96rem;
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition);
