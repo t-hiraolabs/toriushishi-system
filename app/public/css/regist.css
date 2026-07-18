@@ -212,3 +212,11 @@ input::placeholder { color: #555; }
 }
 
 .back-btn:hover { background: #2e2e2e; }
+
+/* 必須項目マーク */
+.required-mark {
+  font-size: .68em;
+  color: #e63946;
+  margin-left: 2px;
+  vertical-align: super;
+}
