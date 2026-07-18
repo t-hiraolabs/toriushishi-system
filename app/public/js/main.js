@@ -287,7 +287,13 @@ const PERF_ROLE_SUGGESTIONS = {
     "のみとり": ["子役", "獅子"],
     "三継ぎ【頭】": ["右", "子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
     "三継ぎ【扇子】": ["右", "子役", "中台", "土台", "子台", "前付き"],
-    "三番叟": ["獅子(雄)", "獅子(雌)", "前(子役)", "前(台)", "後右(子役)", "後右(台)", "後左(子役)", "後左(台)", "子役乗せ"],
+    "三番叟": ["獅子(雄)", "獅子(雌)"],
+};
+
+// 役割の中にさらに入る役割の候補（獅子(雄)・獅子(雌)の下など）
+const PERF_SUBROLE_SUGGESTIONS = {
+    "獅子(雄)": ["前(子役)", "前(台)", "後右(子役)", "後右(台)", "後左(子役)", "後左(台)", "子役乗せ"],
+    "獅子(雌)": ["前(子役)", "前(台)", "後右(子役)", "後右(台)", "後左(子役)", "後左(台)", "子役乗せ"],
 };
 
 function wireNamePicker(inputEl, getOptions) {
@@ -384,7 +390,7 @@ function buildPerfItem(data = {}, opts = {}) {
     return div;
 }
 
-function addRoleRow(container, data = {}, getPerfName) {
+function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
     const row = document.createElement("div");
     row.className = "perf-role-row";
     const escQ = s => (s || '').replace(/"/g, '&quot;');
@@ -399,10 +405,17 @@ function addRoleRow(container, data = {}, getPerfName) {
             <input type="text" class="role-member-picker" placeholder="名前を選んで追加（Enterでも追加）" autocomplete="off">
             <button class="role-member-add-btn" type="button">＋ 追加</button>
         </div>
+        <div class="perf-subroles-list"></div>
+        <button class="perf-add-subrole-btn" type="button">＋ この役割の中に役割を追加</button>
     `;
     row.querySelector(".role-remove-btn").addEventListener("click", () => row.remove());
     const labelInput = row.querySelector(".role-label-input");
     wireNamePicker(labelInput, () => {
+        if (getParentLabel) {
+            const parentLabel = getParentLabel();
+            const suggested = PERF_SUBROLE_SUGGESTIONS[parentLabel] || [];
+            return [...new Set([...suggested, ...PERF_ROLE_BASE_OPTIONS])];
+        }
         const perfName = getPerfName ? getPerfName() : "";
         const suggested = PERF_ROLE_SUGGESTIONS[perfName] || [];
         return [...new Set([...suggested, ...PERF_ROLE_BASE_OPTIONS])];
@@ -440,7 +453,27 @@ function addRoleRow(container, data = {}, getPerfName) {
         if (e.key === "Enter") { e.preventDefault(); addPickedName(); }
     });
     picker.addEventListener("change", addPickedName);
+
+    // この役割の中にさらに役割を入れる（例：獅子(雄) の中に 前(子役)・前(台)…）
+    const subRolesList = row.querySelector(".perf-subroles-list");
+    const getMyLabel = () => labelInput.value.trim();
+    row.querySelector(".perf-add-subrole-btn").addEventListener("click", () => addRoleRow(subRolesList, {}, getPerfName, getMyLabel));
+    if (Array.isArray(data.subRoles)) {
+        data.subRoles.forEach(sr => addRoleRow(subRolesList, sr, getPerfName, getMyLabel));
+    }
+
     container.appendChild(row);
+}
+
+function collectRoleRow(rowEl) {
+    const label = rowEl.querySelector(".role-label-input")?.value.trim();
+    if (!label) return null;
+    const members = rowEl.querySelector(".role-members-input")?.value.trim() || "";
+    const subRolesListEl = rowEl.querySelector(".perf-subroles-list");
+    const subRoles = subRolesListEl
+        ? [...subRolesListEl.children].map(collectRoleRow).filter(Boolean)
+        : [];
+    return { label, members, subRoles };
 }
 
 function collectPerformances() {
@@ -450,12 +483,8 @@ function collectPerformances() {
         const name = item.querySelector(".perf-name")?.value.trim();
         if (!name) return;
         index++;
-        const roles = [];
-        item.querySelectorAll(".perf-role-row").forEach(row => {
-            const label = row.querySelector(".role-label-input")?.value.trim();
-            const members = row.querySelector(".role-members-input")?.value.trim();
-            if (label) roles.push({ label, members: members || "" });
-        });
+        const rolesListEl = item.querySelector(".perf-roles-list");
+        const roles = rolesListEl ? [...rolesListEl.children].map(collectRoleRow).filter(Boolean) : [];
         performances.push({
             no: String(index),
             timeFrom: item.querySelector(".perf-time-from")?.value || "",
@@ -537,6 +566,17 @@ function wirePerfReorderDrag(list) {
     });
 }
 
+function renderRoleDetail(r, depth = 0) {
+    const subHtml = Array.isArray(r.subRoles) && r.subRoles.length
+        ? `<div class="perf-detail-subroles">${r.subRoles.map(sr => renderRoleDetail(sr, depth + 1)).join('')}</div>`
+        : '';
+    return `
+        <div class="perf-detail-role" style="margin-left:${depth * 14}px;">
+            <span class="perf-role-label-text">${r.label || ''}</span>
+            <span class="perf-role-members-text">${(r.members || '').replace(/\n/g, '、')}</span>
+        </div>${subHtml}`;
+}
+
 function renderPerformances(container, performances) {
     container.innerHTML = "";
     if (!performances?.length) return;
@@ -546,11 +586,7 @@ function renderPerformances(container, performances) {
         const time = perf.timeFrom ? `${perf.timeFrom}〜${perf.timeTo || ''}` : '';
         let rolesHtml = '';
         if (Array.isArray(perf.roles)) {
-            rolesHtml = perf.roles.map(r => `
-                <div class="perf-detail-role">
-                    <span class="perf-role-label-text">${r.label || ''}</span>
-                    <span class="perf-role-members-text">${(r.members || '').replace(/\n/g, '、')}</span>
-                </div>`).join('');
+            rolesHtml = perf.roles.map(r => renderRoleDetail(r)).join('');
         } else if (perf.roles && typeof perf.roles === 'object') {
             rolesHtml = Object.entries(perf.roles).filter(([, v]) => v).map(([k, v]) => `
                 <div class="perf-detail-role">
