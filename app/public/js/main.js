@@ -344,20 +344,27 @@ function wireNamePicker(inputEl, getOptions) {
         list.style.display = "none";
         inputEl.setAttribute("readonly", "readonly");
     }
+    // focusはclickより先に発火するため、「focusが起きた直後のclick」＝1回目のタップとして無視し、
+    // 「既にフォーカス済みの状態でのclick」＝2回目のタップとしてキーボードを開く
+    let justFocused = false;
+    inputEl.addEventListener("focus", () => {
+        justFocused = true;
+        render();
+    });
     inputEl.addEventListener("click", () => {
-        const isOpen = list.style.display === "block";
-        if (isOpen && inputEl.hasAttribute("readonly")) {
-            // 2回目のタップ：キーボードを開いて自由入力できるようにする
+        if (justFocused) {
+            justFocused = false;
+            return;
+        }
+        if (inputEl.hasAttribute("readonly")) {
             inputEl.blur();
             setTimeout(() => {
                 inputEl.removeAttribute("readonly");
                 inputEl.focus();
             }, 0);
-        } else if (!isOpen) {
-            render();
         }
     });
-    inputEl.addEventListener("focus", () => { if (list.style.display !== "block") render(); });
+    inputEl.addEventListener("blur", () => { justFocused = false; });
     inputEl.addEventListener("input", render);
     list.addEventListener("mousedown", (e) => {
         const opt = e.target.closest(".name-picker-option");
