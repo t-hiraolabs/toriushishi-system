@@ -277,7 +277,7 @@ function createPracticeCard(pr) {
 const PERF_NAME_OPTIONS = ["提婆", "狐", "ひょっとこ", "のみとり", "三継ぎ【頭】", "三継ぎ【扇子】", "三番叟", "練る", "宮出し"];
 
 // 役割の基本候補（常に表示）
-const PERF_ROLE_BASE_OPTIONS = ["演者", "獅子", "獅子(雄)♂", "獅子(雌)♀"];
+const PERF_ROLE_BASE_OPTIONS = ["演者", "獅子", "獅子(雄)", "獅子(雌)"];
 
 // 演目名ごとの役割候補（提婆・狐など選択時に優先表示）
 const PERF_ROLE_SUGGESTIONS = {
@@ -285,15 +285,18 @@ const PERF_ROLE_SUGGESTIONS = {
     "狐": ["演者", "獅子"],
     "ひょっとこ": ["演者", "獅子"],
     "のみとり": ["子役", "獅子"],
-    "三継ぎ【頭】": ["右", "子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
-    "三継ぎ【扇子】": ["右", "子役", "中台", "土台", "子台", "前付き"],
+    "三継ぎ【頭】": ["右", "左", "1本"],
+    "三継ぎ【扇子】": ["右", "左", "1本"],
     "三番叟": ["獅子(雄)", "獅子(雌)"],
 };
 
-// 役割の中にさらに入る役割の候補（獅子(雄)・獅子(雌)の下など）
+// 役割の中にさらに入る役割の候補（獅子(雄)・獅子(雌)、三継ぎの右・左・1本の下など）
 const PERF_SUBROLE_SUGGESTIONS = {
     "獅子(雄)": ["前(子役)", "前(台)", "後右(子役)", "後右(台)", "後左(子役)", "後左(台)", "子役乗せ"],
     "獅子(雌)": ["前(子役)", "前(台)", "後右(子役)", "後右(台)", "後左(子役)", "後左(台)", "子役乗せ"],
+    "右": ["子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
+    "左": ["子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
+    "1本": ["子役", "中台", "土台", "子台", "前付き", "湯単持ち"],
 };
 
 function wireNamePicker(inputEl, getOptions) {
@@ -439,7 +442,11 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
     }
     renderTags();
 
-    wireNamePicker(picker, () => (labelInput.value.trim().includes("子役") ? perfChildNameOptions : perfMemberNameOptions));
+    wireNamePicker(picker, () => {
+        const label = labelInput.value.trim();
+        const isChildRole = label.includes("子役") && label !== "子役乗せ";
+        return isChildRole ? perfChildNameOptions : perfMemberNameOptions;
+    });
     const addPickedName = () => {
         const name = picker.value.trim();
         if (!name) return;
