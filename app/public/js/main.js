@@ -318,6 +318,7 @@ function wireNamePicker(inputEl, getOptions) {
         list.style.display = "block";
     }
     inputEl.addEventListener("focus", render);
+    inputEl.addEventListener("click", render);
     inputEl.addEventListener("input", render);
     list.addEventListener("mousedown", (e) => {
         const opt = e.target.closest(".name-picker-option");
@@ -408,8 +409,10 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
             <input type="text" class="role-member-picker" placeholder="名前を選んで追加（Enterでも追加）" autocomplete="off">
             <button class="role-member-add-btn" type="button">＋ 追加</button>
         </div>
+        ${getParentLabel ? "" : `
         <div class="perf-subroles-list"></div>
         <button class="perf-add-subrole-btn" type="button">＋ この役割の中に役割を追加</button>
+        `}
     `;
     row.querySelector(".role-remove-btn").addEventListener("click", () => row.remove());
     const labelInput = row.querySelector(".role-label-input");
@@ -462,11 +465,14 @@ function addRoleRow(container, data = {}, getPerfName, getParentLabel) {
     picker.addEventListener("change", addPickedName);
 
     // この役割の中にさらに役割を入れる（例：獅子(雄) の中に 前(子役)・前(台)…）
-    const subRolesList = row.querySelector(".perf-subroles-list");
-    const getMyLabel = () => labelInput.value.trim();
-    row.querySelector(".perf-add-subrole-btn").addEventListener("click", () => addRoleRow(subRolesList, {}, getPerfName, getMyLabel));
-    if (Array.isArray(data.subRoles)) {
-        data.subRoles.forEach(sr => addRoleRow(subRolesList, sr, getPerfName, getMyLabel));
+    // 階層は「演目名→役割→役割」の3階層までなので、すでに役割の中の役割(サブ役割)である場合は追加ボタンを出さない
+    if (!getParentLabel) {
+        const subRolesList = row.querySelector(".perf-subroles-list");
+        const getMyLabel = () => labelInput.value.trim();
+        row.querySelector(".perf-add-subrole-btn").addEventListener("click", () => addRoleRow(subRolesList, {}, getPerfName, getMyLabel));
+        if (Array.isArray(data.subRoles)) {
+            data.subRoles.forEach(sr => addRoleRow(subRolesList, sr, getPerfName, getMyLabel));
+        }
     }
 
     container.appendChild(row);
