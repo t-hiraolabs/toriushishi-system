@@ -311,8 +311,23 @@
 .perf-role-pair-item {
     font-size: .88rem;
     color: var(--text-1);
-    white-space: pre-wrap;
-    word-break: break-all;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+.perf-detail-name-tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.perf-detail-name-tag {
+    display: inline-block;
+    background: var(--surface-3);
+    color: var(--text-1);
+    border-radius: 100px;
+    padding: 2px 10px;
+    font-size: .8rem;
 }
 
 /* ===== 演目 並び替え ===== */

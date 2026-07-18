@@ -650,14 +650,21 @@ function groupPairedRoles(roles) {
     return grouped;
 }
 
+// 改行区切りの名前をタグ表示用のHTMLに変換
+function renderNameTags(membersStr) {
+    const names = (membersStr || "").split("\n").map(s => s.trim()).filter(Boolean);
+    if (!names.length) return '';
+    return `<span class="perf-detail-name-tags">${names.map(n => `<span class="perf-detail-name-tag">${escHtml(n)}</span>`).join('')}</span>`;
+}
+
 function renderRoleDetail(r, depth = 0) {
     if (r.paired) {
         return `
         <div class="perf-detail-role perf-detail-role-paired" style="margin-left:${depth * 14}px;">
             <span class="perf-role-label-text">${escHtml(r.prefix)}</span>
             <span class="perf-role-pair-members">
-                <span class="perf-role-pair-item">子役: ${escHtml((r.child.members || '').replace(/\n/g, '、'))}</span>
-                <span class="perf-role-pair-item">台: ${escHtml((r.dai.members || '').replace(/\n/g, '、'))}</span>
+                <span class="perf-role-pair-item">子役: ${renderNameTags(r.child.members)}</span>
+                <span class="perf-role-pair-item">台: ${renderNameTags(r.dai.members)}</span>
             </span>
         </div>`;
     }
@@ -668,7 +675,7 @@ function renderRoleDetail(r, depth = 0) {
     return `
         <div class="perf-detail-role" style="margin-left:${depth * 14}px;">
             <span class="perf-role-label-text">${r.label || ''}</span>
-            <span class="perf-role-members-text">${(r.members || '').replace(/\n/g, '、')}</span>
+            ${renderNameTags(r.members)}
         </div>${subHtml}`;
 }
 
@@ -686,7 +693,7 @@ function renderPerformances(container, performances) {
             rolesHtml = Object.entries(perf.roles).filter(([, v]) => v).map(([k, v]) => `
                 <div class="perf-detail-role">
                     <span class="perf-role-label-text">${k}</span>
-                    <span class="perf-role-members-text">${v}</span>
+                    ${renderNameTags(v)}
                 </div>`).join('');
         }
         div.innerHTML = `
