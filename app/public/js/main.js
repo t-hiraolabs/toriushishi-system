@@ -704,8 +704,8 @@ function renderPerformances(container, performances) {
             </div>
             ${(perf.taikoDai || perf.taikoKo) ? `
             <div class="perf-detail-drums">
-                ${perf.taikoDai ? `<span>大太鼓: ${perf.taikoDai}</span>` : ''}
-                ${perf.taikoKo ? `<span>小太鼓: ${perf.taikoKo}</span>` : ''}
+                ${perf.taikoDai ? `<span>大太鼓: <span class="perf-detail-name-tag">${escHtml(perf.taikoDai)}</span></span>` : ''}
+                ${perf.taikoKo ? `<span>小太鼓: <span class="perf-detail-name-tag">${escHtml(perf.taikoKo)}</span></span>` : ''}
             </div>` : ''}
             <div class="perf-detail-roles">${rolesHtml}</div>
         `;
