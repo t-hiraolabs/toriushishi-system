@@ -832,6 +832,126 @@ function renderPerformances(container, performances) {
     });
 }
 
+// =============================
+// 演目一覧の印刷（A4レイアウト）
+// =============================
+function printRoleForPrint(r, depth = 0) {
+    const indent = `style="margin-left:${depth * 18}px;"`;
+    if (r.paired) {
+        const child = (r.child.members || '').split('\n').map(s => s.trim()).filter(Boolean).join('、');
+        const dai = (r.dai.members || '').split('\n').map(s => s.trim()).filter(Boolean).join('、');
+        return `<div class="p-role" ${indent}><span class="p-role-label">${escHtml(r.prefix)}</span><span class="p-role-members">子役: ${escHtml(child)}　台: ${escHtml(dai)}</span></div>`;
+    }
+    const members = (r.members || '').split('\n').map(s => s.trim()).filter(Boolean).join('、');
+    const subs = Array.isArray(r.subRoles) ? groupPairedRoles(r.subRoles) : [];
+    const subHtml = subs.map(sr => printRoleForPrint(sr, depth + 1)).join('');
+    return `<div class="p-role" ${indent}><span class="p-role-label">${escHtml(r.label || '')}</span><span class="p-role-members">${escHtml(members)}</span></div>${subHtml}`;
+}
+
+function printPerformances(eventData) {
+    const performances = eventData.performances || [];
+    const rows = performances.map(perf => {
+        const time = perf.timeFrom ? `${perf.timeFrom}〜${perf.timeTo || ''}` : '';
+        let rolesHtml = '';
+        if (Array.isArray(perf.roles)) {
+            rolesHtml = groupPairedRoles(perf.roles).map(r => printRoleForPrint(r)).join('');
+        }
+        return `
+        <div class="p-item">
+            <div class="p-item-head">
+                ${perf.no ? `<span class="p-no">${escHtml(String(perf.no))}</span>` : ''}
+                <span class="p-name">${escHtml(perf.name || '')}</span>
+                ${time ? `<span class="p-time">${escHtml(time)}</span>` : ''}
+            </div>
+            ${(perf.taikoDai || perf.taikoKo) ? `
+            <div class="p-drums">
+                ${perf.taikoDai ? `<span>大太鼓: ${escHtml(perf.taikoDai)}</span>` : ''}
+                ${perf.taikoKo ? `<span>小太鼓: ${escHtml(perf.taikoKo)}</span>` : ''}
+            </div>` : ''}
+            <div class="p-roles">${rolesHtml}</div>
+        </div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="ja"><head><meta charset="UTF-8">
+<title>${escHtml(eventData.title || '演目一覧')}</title>
+<style>
+  @page { size: A4; margin: 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+    color: #111;
+    margin: 0;
+    padding: 0;
+  }
+  .p-header {
+    border-bottom: 3px solid #111;
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+  }
+  .p-header h1 { font-size: 20px; margin: 0 0 4px; }
+  .p-header .p-meta { font-size: 12px; color: #444; }
+  .p-item {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
+  }
+  .p-item-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+  }
+  .p-no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    background: #111;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .p-name { font-size: 15px; font-weight: 700; }
+  .p-time { font-size: 12px; color: #444; margin-left: auto; }
+  .p-drums { display: flex; gap: 16px; font-size: 12px; color: #333; margin-bottom: 4px; }
+  .p-role {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    padding: 2px 0;
+  }
+  .p-role-label { font-weight: 700; color: #444; min-width: 60px; flex-shrink: 0; }
+  .p-role-members { color: #111; }
+  @media print {
+    .p-noprint { display: none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="p-header">
+    <h1>${escHtml(eventData.title || '')} 演目一覧</h1>
+    <div class="p-meta">${escHtml(eventData.date || '')}${eventData.time ? '　' + escHtml(eventData.time) : ''}${eventData.location ? '　' + escHtml(eventData.location) : ''}</div>
+  </div>
+  ${rows || '<p>演目がありません</p>'}
+</body></html>`;
+
+    const printWin = window.open('', '_blank');
+    if (!printWin) { alert('ポップアップがブロックされました。ブラウザの設定を確認してください。'); return; }
+    printWin.document.open();
+    printWin.document.write(html);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => { printWin.print(); }, 300);
+}
+
 /* =======================================================
 イベント委譲
 ======================================================= */
@@ -1414,6 +1534,13 @@ async function fillDetailCard(eventData, userId, card) {
         card.querySelectorAll(".response-list").forEach(ul => ul.style.display = "none");
         const perfList = card.querySelector(".performance-list");
         if (perfList) perfList.style.display = "none";
+
+        const printBtn = document.getElementById("printPerformancesBtn");
+        if (printBtn) {
+            const hasPerformances = Array.isArray(eventData.performances) && eventData.performances.length > 0;
+            printBtn.style.display = hasPerformances ? "block" : "none";
+            printBtn.onclick = () => printPerformances(eventData);
+        }
     } catch(e) { console.error(e); }
     finally { if (loadingOverlay) loadingOverlay.style.display = "none"; }
 }
