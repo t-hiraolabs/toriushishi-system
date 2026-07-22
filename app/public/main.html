@@ -164,10 +164,6 @@
 .perf-detail-subroles {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding-left: 10px;
-    margin-top: 2px;
-    border-left: 2px solid var(--border);
 }
 .perf-item input[type="text"],
 .perf-item input[type="number"],
@@ -304,70 +300,56 @@
     text-align: center;
 }
 /* ===== 演目詳細表示 ===== */
-.performance-list { padding: 4px 0; display: flex; flex-direction: column; gap: 10px; }
+.performance-list { padding: 4px 0; }
 .perf-detail-item {
     background: var(--surface-2);
-    border-radius: var(--radius-md);
-    border-left: 3px solid var(--accent);
-    padding: 12px 14px;
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    margin-bottom: 8px;
 }
 .perf-detail-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 8px;
+    gap: 8px;
+    margin-bottom: 6px;
     flex-wrap: wrap;
 }
 .perf-no-badge {
-    width: 22px; height: 22px;
+    width: 24px; height: 24px;
     background: var(--accent);
     color: #fff;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: .72rem;
+    font-size: .75rem;
     font-weight: 800;
     flex-shrink: 0;
 }
-.perf-detail-name { font-weight: 700; font-size: 1.02rem; color: var(--text-1); }
-.perf-detail-time {
-    font-size: .76rem;
-    color: var(--accent-teal);
-    font-weight: 600;
-    margin-left: auto;
-    background: rgba(6,214,160,.12);
-    padding: 2px 8px;
-    border-radius: 100px;
-}
+.perf-detail-time { font-size: .8rem; color: var(--accent-teal); font-weight: 600; }
+.perf-detail-name { font-weight: 700; font-size: .95rem; }
 .perf-detail-drums {
     font-size: .8rem;
     color: var(--text-2);
-    margin-bottom: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 6px;
     display: flex;
-    gap: 16px;
+    gap: 14px;
     flex-wrap: wrap;
 }
-.perf-detail-roles { display: flex; flex-direction: column; gap: 6px; }
 .perf-detail-role {
     display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 5px 0;
+    gap: 8px;
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: baseline;
 }
+.perf-detail-role:last-child { border-bottom: none; }
 .perf-role-label-text {
-    display: inline-block;
-    font-size: .72rem;
+    font-size: .75rem;
     font-weight: 700;
-    color: var(--text-2);
+    color: var(--text-3);
     white-space: nowrap;
-    background: var(--surface-3);
-    border-radius: 100px;
-    padding: 3px 10px;
-    flex-shrink: 0;
-    margin-top: 1px;
+    min-width: 46px;
 }
 .perf-role-members-text {
     font-size: .88rem;
@@ -378,7 +360,7 @@
 .perf-detail-role-paired { flex-wrap: wrap; }
 .perf-role-pair-members {
     display: flex;
-    gap: 16px;
+    gap: 14px;
     flex-wrap: wrap;
 }
 .perf-role-pair-item {
