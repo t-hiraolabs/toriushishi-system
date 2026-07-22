@@ -759,11 +759,21 @@ function groupPairedRoles(roles) {
     return grouped;
 }
 
-// 改行区切りの名前をタグ表示用のHTMLに変換
+// 空白の有無を無視して名前を比較するための正規化
+function normalizeNameForCompare(s) {
+    return (s || "").replace(/\s+/g, "");
+}
+function isMyName(n) {
+    return typeof userName !== "undefined" && userName && normalizeNameForCompare(n) === normalizeNameForCompare(userName);
+}
+
+// 改行区切りの名前をタグ表示用のHTMLに変換（自分の名前は色付きで強調）
 function renderNameTags(membersStr) {
     const names = (membersStr || "").split("\n").map(s => s.trim()).filter(Boolean);
     if (!names.length) return '';
-    return `<span class="perf-detail-name-tags">${names.map(n => `<span class="perf-detail-name-tag">${escHtml(n)}</span>`).join('')}</span>`;
+    return `<span class="perf-detail-name-tags">${names.map(n =>
+        `<span class="perf-detail-name-tag${isMyName(n) ? ' perf-detail-name-tag-me' : ''}">${escHtml(n)}</span>`
+    ).join('')}</span>`;
 }
 
 function renderRoleDetail(r, depth = 0) {
@@ -813,8 +823,8 @@ function renderPerformances(container, performances) {
             </div>
             ${(perf.taikoDai || perf.taikoKo) ? `
             <div class="perf-detail-drums">
-                ${perf.taikoDai ? `<span>大太鼓: <span class="perf-detail-name-tag">${escHtml(perf.taikoDai)}</span></span>` : ''}
-                ${perf.taikoKo ? `<span>小太鼓: <span class="perf-detail-name-tag">${escHtml(perf.taikoKo)}</span></span>` : ''}
+                ${perf.taikoDai ? `<span>大太鼓: <span class="perf-detail-name-tag${isMyName(perf.taikoDai) ? ' perf-detail-name-tag-me' : ''}">${escHtml(perf.taikoDai)}</span></span>` : ''}
+                ${perf.taikoKo ? `<span>小太鼓: <span class="perf-detail-name-tag${isMyName(perf.taikoKo) ? ' perf-detail-name-tag-me' : ''}">${escHtml(perf.taikoKo)}</span></span>` : ''}
             </div>` : ''}
             <div class="perf-detail-roles">${rolesHtml}</div>
         `;
