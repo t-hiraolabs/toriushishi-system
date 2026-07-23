@@ -1411,10 +1411,7 @@ async function fillDetailCard(eventData, userId, card) {
         card.querySelector(".toggle-response-btn.yes").textContent = `参加者 ${eventData.members.yes.length}人`;
         card.querySelector(".toggle-response-btn.no").textContent = `不参加者 ${eventData.members.no.length}人`;
         card.querySelector(".toggle-response-btn.na").textContent = `未回答者 ${eventData.members.na.length}人`;
-        renderPerformances(card.querySelector(".performance-list"), eventData.performances);
         card.querySelectorAll(".response-list").forEach(ul => ul.style.display = "none");
-        const perfList = card.querySelector(".performance-list");
-        if (perfList) perfList.style.display = "none";
 
         const viewBtn = document.getElementById("viewPerformancesBtn");
         if (viewBtn) {
