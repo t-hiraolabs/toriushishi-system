@@ -724,6 +724,7 @@
             </div>
             <button class="toggle-performances-btn">演目一覧</button>
             <div class="performance-list"></div>
+            <button class="view-performances-btn" id="viewPerformancesBtn" type="button" style="display:none;">📋 演目一覧を1画面で見る</button>
         </div>
     </div>
 
@@ -1165,6 +1166,13 @@
                 <span id="pwChangeMessage"></span>
             </div>
         </div>
+    </div>
+
+    <!-- 演目一覧 全画面表示 -->
+    <div class="member-card" id="performanceViewCard">
+        <button class="close-card-btn" data-target="performance-view">戻る</button>
+        <h2 id="performanceViewTitle">演目一覧</h2>
+        <div class="performance-list" id="performanceViewList"></div>
     </div>
 
     <!-- ゲームカード -->

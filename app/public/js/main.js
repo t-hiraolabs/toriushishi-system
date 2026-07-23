@@ -917,6 +917,7 @@ function initEventDelegation() {
                 case "gear-management":    document.getElementById("gearCard")?.classList.remove("active"); break;
                 case "app-settings":       document.getElementById("appSettingsCard")?.classList.remove("active"); break;
                 case "game":               document.getElementById("gameCard")?.classList.remove("active"); break;
+                case "performance-view":   document.getElementById("performanceViewCard")?.classList.remove("active"); break;
                 case "gear-edit":          document.getElementById("gearEditCard")?.classList.remove("active"); break;
                 case "mypage":             document.getElementById("myPageCard")?.classList.remove("active"); break;
                 case "member-info-edit":   document.getElementById("memberInfoEditCard")?.classList.remove("active"); break;
@@ -1414,6 +1415,17 @@ async function fillDetailCard(eventData, userId, card) {
         card.querySelectorAll(".response-list").forEach(ul => ul.style.display = "none");
         const perfList = card.querySelector(".performance-list");
         if (perfList) perfList.style.display = "none";
+
+        const viewBtn = document.getElementById("viewPerformancesBtn");
+        if (viewBtn) {
+            const hasPerformances = Array.isArray(eventData.performances) && eventData.performances.length > 0;
+            viewBtn.style.display = hasPerformances ? "block" : "none";
+            viewBtn.onclick = () => {
+                document.getElementById("performanceViewTitle").textContent = `${eventData.title || ""} 演目一覧`;
+                renderPerformances(document.getElementById("performanceViewList"), eventData.performances);
+                document.getElementById("performanceViewCard").classList.add("active");
+            };
+        }
     } catch(e) { console.error(e); }
     finally { if (loadingOverlay) loadingOverlay.style.display = "none"; }
 }

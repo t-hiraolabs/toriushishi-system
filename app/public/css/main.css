@@ -531,6 +531,23 @@ li { list-style: none; }
 .toggle-response-btn.open::after,
 .toggle-performances-btn.open::after { content: "▲"; }
 
+.view-performances-btn {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  font-size: .88rem;
+  font-weight: 700;
+  padding: 11px 14px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-top: 8px;
+  transition: filter var(--transition);
+}
+.view-performances-btn:hover { filter: brightness(1.1); }
+
+#performanceViewList { padding: 4px 16px 24px; overflow-y: auto; }
+
 /* =======================================================
   Response Lists
 ======================================================= */
