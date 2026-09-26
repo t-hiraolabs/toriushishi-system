@@ -130,7 +130,7 @@
 .otabi-actual-wrap { display: flex; flex-direction: column; gap: 1px; }
 .otabi-actual-time { font-size: .75rem; font-weight: 700; color: #06d6a0; }
 .otabi-diff { font-size: .7rem; font-weight: 700; }
-.otabi-diff-late  { color: #e63946; }
+.otabi-diff-late  { color: #BE1423; }
 .otabi-diff-early { color: #06d6a0; }
 .otabi-diff-zero  { color: var(--text-3); }
 .otabi-entry-done { opacity: 0.7; }
@@ -168,7 +168,7 @@
   margin-bottom: -2px;
 }
 .prog-tab-btn.active {
-  color: #fff; border-bottom-color: #e63946;
+  color: #fff; border-bottom-color: #BE1423;
 }
 .prog-tab-count { font-size: .8rem; font-weight: 400; margin-left: 4px; }
 .prog-group { margin-bottom: 20px; }
@@ -709,7 +709,7 @@
 .prog-donation {
   display: inline-block;
   font-size: .72rem;
-  color: #e63946;
+  color: #BE1423;
   font-weight: 600;
   margin-left: 6px;
   vertical-align: middle;
