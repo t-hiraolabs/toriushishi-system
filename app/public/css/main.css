@@ -7,7 +7,7 @@
   --surface-2:   #242424;
   --surface-3:   #2e2e2e;
   --border:      #333333;
-  --accent:      #e63946;
+  --accent:      #BE1423;
   --accent-dim:  #7a1520;
   --accent-blue: #3a86ff;
   --accent-teal: #06d6a0;
@@ -1257,7 +1257,7 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(.7); opac
 .haru-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .haru-actual { font-weight: 700; color: #ffd166; font-size: .8rem; }
 .haru-diff        { font-size: .72rem; font-weight: 700; }
-.haru-diff-late   { color: #e63946; }
+.haru-diff-late   { color: #BE1423; }
 .haru-diff-early  { color: #06d6a0; }
 .haru-diff-zero   { color: var(--text-3); }
 .haru-complete-btn {

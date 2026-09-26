@@ -101,7 +101,7 @@ body::after {
 
 .login input:focus {
   outline: none;
-  border-color: #e63946;
+  border-color: #BE1423;
 }
 
 .login input::placeholder { color: #555; }
@@ -115,7 +115,7 @@ body::after {
   font-weight: 700;
   border-radius: 12px;
   border: none;
-  background: #e63946;
+  background: #BE1423;
   color: #fff;
   cursor: pointer;
   transition: filter .2s, box-shadow .2s;
@@ -142,4 +142,4 @@ body::after {
   transition: color .2s;
 }
 
-.regist li a:hover { color: #e63946; }
+.regist li a:hover { color: #BE1423; }

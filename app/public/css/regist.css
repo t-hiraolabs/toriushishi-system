@@ -89,7 +89,7 @@ select {
 input:focus,
 select:focus {
   outline: none;
-  border-color: #e63946;
+  border-color: #BE1423;
 }
 
 input::placeholder { color: #555; }
@@ -160,7 +160,7 @@ input::placeholder { color: #555; }
 .sns-consent-wrap input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #e63946;
+  accent-color: #BE1423;
   flex-shrink: 0;
 }
 
@@ -189,10 +189,10 @@ input::placeholder { color: #555; }
   font-size: .88rem;
 }
 
-.add-btn:hover { border-color: #e63946; color: #e63946; }
+.add-btn:hover { border-color: #BE1423; color: #BE1423; }
 
 #registBtn {
-  background: #e63946;
+  background: #BE1423;
   box-shadow: 0 4px 16px rgba(230,57,70,.35);
 }
 
